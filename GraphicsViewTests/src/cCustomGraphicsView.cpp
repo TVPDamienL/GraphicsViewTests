@@ -26,27 +26,27 @@ cCustomGraphicsView::cCustomGraphicsView( QWidget *parent ) :
 
     auto imgA = new  cGraphicItem( this );
     imgA->setZValue( -1 );
-    imgA->setFile( "Resources/ImgA.png" );
+    imgA->setFile( "Resources/canvas.png" );
     scene->addItem( imgA );
     mAnimationImages.push_back( imgA );
 
-    auto imgB = new  cGraphicItem( this );
-    imgB->setZValue( -1 );
-    imgB->setFile( "Resources/ImgB.png" );
-    scene->addItem( imgB );
-    mAnimationImages.push_back( imgB );
+    //auto imgB = new  cGraphicItem( this );
+    //imgB->setZValue( -1 );
+    //imgB->setFile( "Resources/ImgB.png" );
+    //scene->addItem( imgB );
+    //mAnimationImages.push_back( imgB );
 
-    auto imgC = new  cGraphicItem( this );
-    imgC->setZValue( -1 );
-    imgC->setFile( "Resources/ImgC.png" );
-    scene->addItem( imgC );
-    mAnimationImages.push_back( imgC );
+    //auto imgC = new  cGraphicItem( this );
+    //imgC->setZValue( -1 );
+    //imgC->setFile( "Resources/ImgC.png" );
+    //scene->addItem( imgC );
+    //mAnimationImages.push_back( imgC );
 
-    auto imgD = new  cGraphicItem( this );
-    imgD->setZValue( -1 );
-    imgD->setFile( "Resources/ImgD.png" );
-    scene->addItem( imgD );
-    mAnimationImages.push_back( imgD );
+    //auto imgD = new  cGraphicItem( this );
+    //imgD->setZValue( -1 );
+    //imgD->setFile( "Resources/ImgD.png" );
+    //scene->addItem( imgD );
+    //mAnimationImages.push_back( imgD );
 
     mAddItem = new  cAddItem( this );
     mAddItem->setZValue( -1 );

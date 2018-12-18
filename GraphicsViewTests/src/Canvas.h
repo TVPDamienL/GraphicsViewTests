@@ -66,6 +66,7 @@ private:
     cGridItem*          mGridItem;
     QPointF             mClickPos;
     QPixmap*            mItemPixmap;
+    QImage              mItemPixmapAsImage;
 
     eTool               mTool;
     cToolModel*         mToolModel;

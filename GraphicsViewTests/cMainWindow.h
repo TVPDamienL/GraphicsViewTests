@@ -35,6 +35,9 @@ public:
 signals:
     void  currentFrameChangeAsked( int iCurrentFrame );
 
+public slots:
+    void spinChanged( int );
+    void UpdateUI();
 
 private:
     Ui::cMainWindow     ui;

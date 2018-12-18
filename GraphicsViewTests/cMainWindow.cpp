@@ -19,13 +19,15 @@ cMainWindow::cMainWindow(QWidget *parent) :
     mAnimationTimer = new QTimer();
     mAnimationTimer->start( 1000 / 24 );
 
-    mMapper = new QDataWidgetMapper( this );
-    mMapper->setModel( mToolModel );
-    mMapper->setOrientation( Qt::Vertical );
-    mMapper->addMapping( ui.penSizeSpinBox, 0 );
-    mMapper->addMapping( ui.antiAliasCheckBox, 1 );
+    //mMapper = new QDataWidgetMapper( this );
+    //mMapper->setModel( mToolModel );
+    //mMapper->setOrientation( Qt::Vertical );
+    //mMapper->addMapping( ui.penSizeSpinBox, 0 );
+    //mMapper->addMapping( ui.antiAliasCheckBox, 1 );
 
-    mMapper->toFirst();
+    //mMapper->toFirst();
+
+    UpdateUI();
 
     ui.colorSwatch->SetColor( mToolModel->getColor() );
 
@@ -41,6 +43,9 @@ cMainWindow::cMainWindow(QWidget *parent) :
     connect( ui.colorSwatch, &ColorSwatch::swatchClicked, this, &cMainWindow::AskColor );
 
     connect( mToolModel, &QAbstractItemModel::dataChanged, this, &cMainWindow::toolDataChanged );
+
+
+    connect (ui.penSizeSpinBox, SIGNAL(valueChanged(int)), this, SLOT(spinChanged(int)) );
 
     CurrentFrameChanged( 0 );
 }
@@ -108,7 +113,7 @@ cMainWindow::AskColor()
     if( dialog.exec() )
     {
         mToolModel->setColor( dialog.selectedColor() );
-        UpdateColor();
+        UpdateUI();
     }
 }
 
@@ -116,6 +121,24 @@ cMainWindow::AskColor()
 void
 cMainWindow::toolDataChanged( const QModelIndex & iLeft, const QModelIndex & iRight, const QVector<int>& iRoles )
 {
-    if( iLeft.row() == 2 )
+    if( iLeft.row() == 1 )
         UpdateColor();
 }
+
+
+void
+cMainWindow::spinChanged( int iNew )
+{
+    mToolModel->setSize( iNew );
+}
+
+
+void
+cMainWindow::UpdateUI()
+{
+    ui.penSizeSpinBox->setValue( mToolModel->getSize() );
+    ui.colorSwatch->SetColor( mToolModel->getColor() );
+}
+
+
+

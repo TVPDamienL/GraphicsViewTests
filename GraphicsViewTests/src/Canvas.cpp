@@ -16,7 +16,8 @@
 cCanvas::cCanvas( QWidget *parent ) :
     QGraphicsView( parent ),
     cursorPixmap( 0 ),
-    mToolModel( 0 )
+    mToolModel( 0 ),
+    mPainter( 0 )
 {
     // Config
     setAcceptDrops( true );
@@ -151,7 +152,7 @@ cCanvas::mousePressEvent( QMouseEvent * iEvent )
         {
             mState = kDrawing;
             mItemPixmap = mEditableItem->mpixmap;
-            mPainter = mToolModel->getNewPainter( mItemPixmap );
+            mItemPixmapAsImage = mItemPixmap->toImage();
 
             if( mTool == kEraser )
                 mPainter->setCompositionMode( QPainter::CompositionMode_Clear );
@@ -184,9 +185,11 @@ cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
     {
         QPointF originInItemCoordinate = mEditableItem->mapFromScene( mapToScene( mClickPos.x(), mClickPos.y() ) );
         QPointF newPointInItemCoordinate = mEditableItem->mapFromScene( mapToScene( iEvent->pos().x(), iEvent->pos().y() ) );
-        mPainter->drawLine( originInItemCoordinate, newPointInItemCoordinate );
-        mEditableItem->update();
-        currentFrameGotPainted( *mItemPixmap );
+
+        mToolModel->DrawLine( &mItemPixmapAsImage, originInItemCoordinate.x(), originInItemCoordinate.y(), newPointInItemCoordinate.x(), newPointInItemCoordinate.y() );
+
+        SetPixmap( QPixmap::fromImage( mItemPixmapAsImage )  );
+        currentFrameGotPainted( *mEditableItem->mpixmap );
     }
 
     mClickPos = iEvent->pos();
@@ -200,7 +203,7 @@ cCanvas::mouseReleaseEvent( QMouseEvent * iEvent )
     if( mState == kDrawing )
     {
         delete  mPainter;
-        currentFrameGotPainted( *mItemPixmap );
+        currentFrameGotPainted( *mEditableItem->mpixmap );
     }
 
     mState = kIdle;
@@ -243,7 +246,6 @@ cCanvas::SetPixmap( const QPixmap & iPixmap )
     if( mState == kDrawing )
     {
         mItemPixmap = mEditableItem->mpixmap;
-        mPainter = mToolModel->getNewPainter( mItemPixmap );
     }
 }
 
@@ -273,7 +275,7 @@ cCanvas::UpdateGridItem()
 void
 cCanvas::UpCursor()
 {
-    if( cursorPixmap->height() * mEditableItem->scale() > width() )
+    if( !cursorPixmap || ( cursorPixmap->height() * mEditableItem->scale() > width() ) )
         setCursor( Qt::ArrowCursor );
     else
         setCursor( QCursor( cursorPixmap->scaledToHeight( cursorPixmap->height() * mEditableItem->scale() ) ) );
@@ -284,7 +286,6 @@ void
 cCanvas::DrawCursor()
 {
     delete  cursorPixmap;
-    cursorPixmap = mToolModel->getToolHUD();
     UpCursor();
 }
 

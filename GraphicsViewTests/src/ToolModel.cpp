@@ -4,117 +4,45 @@
 
 cToolModel::~cToolModel()
 {
-    delete  mPen;
-    delete  mBrush;
 }
 
 
 cToolModel::cToolModel( QObject * iParent ) :
-    QAbstractListModel( iParent )
+    ToolBase( iParent )
 {
     mToolSize = 5;
-    mAntiAliasingOn = true;
+    mColor = Qt::red;
 
-    mBrush = new QBrush();
-    mBrush->setStyle( Qt::SolidPattern );
-    mBrush->setColor( mAPen );
-
-    mPen  = new QPen();
-    mPen->setWidth( mToolSize );
-    mPen->setBrush( *mBrush );
-    mPen->setCapStyle( Qt::RoundCap );
-    mPen->setJoinStyle( Qt::RoundJoin );
-}
-
-
-int
-cToolModel::rowCount( const QModelIndex & iIndex ) const
-{
-    return  2;
-}
-
-
-QVariant
-cToolModel::data( const QModelIndex & iIndex, int iRole ) const
-{
-    if( iRole == Qt::DisplayRole || iRole == Qt::EditRole )
-    {
-        if( iIndex.row() == 0 )
-            return  mToolSize;
-        else if( iIndex.row() == 1 )
-            return  mAntiAliasingOn;
-        else if( iIndex.row() == 2 )
-            return  mAPen;
-    }
-
-    return QVariant();
-}
-
-
-QVariant
-cToolModel::headerData( int iSection, Qt::Orientation iOrientation, int iRole ) const
-{
-    if( iSection == 0 && iRole == Qt::DisplayRole )
-        return  "ToolValue";
-
-    return QVariant();
-}
-
-
-bool
-cToolModel::setData( const QModelIndex & iIndex, const QVariant & iValue, int iRole )
-{
-    if( iRole == Qt::EditRole )
-    {
-        if( iIndex.row() == 0 )
-        {
-            mToolSize = iValue.toInt();
-            mPen->setWidth( mToolSize );
-            dataChanged( iIndex, iIndex );
-        }
-        else if( iIndex.row() == 1 )
-        {
-            mAntiAliasingOn = iValue.toBool();
-            dataChanged( iIndex, iIndex );
-        }
-        else if( iIndex.row() == 2 )
-        {
-            mAPen = iValue.value<QColor>();
-            mBrush->setColor( mAPen );
-            mPen->setBrush( *mBrush );
-            dataChanged( iIndex, iIndex );
-        }
-    }
-
-    return false;
+    buildTool();
 }
 
 
 Qt::ItemFlags
 cToolModel::flags( const QModelIndex & iIndex ) const
 {
-    return  QAbstractListModel::flags( iIndex) | Qt::ItemIsEditable;
+    return  ToolBase::flags( iIndex) | Qt::ItemIsEditable;
 }
 
 
 int
 cToolModel::getSize() const
 {
-    return  data( createIndex( 0, 0 ) ).toInt();
+    return  itemFromIndex( index( 0, 0 ) )->data().toInt();
 }
 
 
 void
 cToolModel::setSize( int iSize )
 {
-    setData( createIndex( 0, 0 ), iSize );
+    itemFromIndex( index( 0, 0 ) )->setData( iSize );
+    mToolSize = iSize;
 }
 
 
 QColor
 cToolModel::getColor() const
 {
-    QVariant dataColor = data( createIndex( 2, 0 ) );
+    QVariant dataColor = itemFromIndex( index( 1, 0 ) )->data();
     return  dataColor.value< QColor >();
 }
 
@@ -122,52 +50,88 @@ cToolModel::getColor() const
 void
 cToolModel::setColor( const QColor & iColor )
 {
-    setData( createIndex( 2, 0 ), iColor );
+    itemFromIndex( index( 1, 0 ) )->setData( iColor );
+    mColor = iColor;
 }
 
 
-QPainter *
-cToolModel::getNewPainter( QPaintDevice* iPaintDevice )
+float
+cToolModel::getStep() const
 {
-    QPainter* painter = new QPainter( iPaintDevice );
-
-    if( mAntiAliasingOn )
-        painter->setRenderHint( QPainter::Antialiasing );
-
-    painter->setPen( *mPen );
-
-    return  painter;
+    return  mStep;
 }
 
 
-QPen *
-cToolModel::getPen()
+void
+cToolModel::setStep( float iStep )
 {
-    return  mPen;
+    mStep = iStep;
+    itemFromIndex( index( 2, 0 ) )->setData( iStep );
 }
 
 
-QBrush *
-cToolModel::getBrush()
+void
+cToolModel::buildTool()
 {
-    return  mBrush;
+    QStandardItem* sizeItem = new QStandardItem( "Size" );
+    sizeItem->setData( mToolSize );
+    setItem( 0, 0, sizeItem );
+    QStandardItem* color = new QStandardItem( "Color" );
+    color->setData( mColor );
+    setItem( 1, 0, color );
+    QStandardItem* step = new QStandardItem( "Step" );
+    step->setData( mStep );
+    setItem( 2, 0, step );
+
 }
 
 
-QPixmap*
-cToolModel::getToolHUD()
+void
+cToolModel::DrawDot( QImage* iImage, int x, int y )
 {
-    QPixmap* brushHUD = new QPixmap( mToolSize, mToolSize );
-    brushHUD->fill( Qt::transparent );
-    QPainter painter( brushHUD );
+    uchar* data = iImage->bits();
 
-    painter.setBrush( Qt::transparent );
-    painter.setPen( Qt::lightGray );
+    int topLeftX = x - mToolSize/2;
+    int topLeftY = y - mToolSize/2;
 
-    if( mToolSize == 1 )
-        painter.drawPoint( 0, 0 );
-    else
-        painter.drawEllipse( 0, 0, mToolSize-1, mToolSize-1 );
 
-    return  brushHUD;
+    // Constrains
+    topLeftX = topLeftX < 0 ? 0 : topLeftX;
+    topLeftY = topLeftY < 0 ? 0 : topLeftY;
+
+    if( topLeftX + mToolSize >= iImage->width() )
+        topLeftX = iImage->width() - mToolSize - 1;
+    if( topLeftY + mToolSize >= iImage->height() )
+        topLeftY = iImage->height() - mToolSize - 1;
+    // ==========
+
+
+    int index = 0;
+    for( int y = topLeftY; y < topLeftY + mToolSize ; ++y )
+    {
+        for( int x = topLeftX; x < topLeftX + mToolSize; ++x )
+        {
+            index = y * iImage->width()*4 + x*4;
+
+            data[index]     = mColor.blue();    // B
+            data[index+1]   = mColor.green();   // G
+            data[index+2]   = mColor.red();     // R
+            data[index+3]   = mColor.alpha();   // A
+        }
+    }
 }
+
+
+void
+cToolModel::DrawLine( QImage * iImage, int x1, int y1, int x2, int y2 )
+{
+    DrawDot( iImage, x1, y1 );
+    DrawDot( iImage, x2, y2 );
+
+    // All inbetweens
+}
+
+
+
+
+

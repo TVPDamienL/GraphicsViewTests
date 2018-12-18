@@ -93,6 +93,9 @@
     <ClCompile Include="powerslider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ToolBase.cpp">
+      <Filter>src\ToolModel</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="cMainWindow.h">
@@ -112,6 +115,9 @@
     </QtMoc>
     <QtMoc Include="powerslider.h">
       <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="ToolBase.h">
+      <Filter>src\ToolModel</Filter>
     </QtMoc>
   </ItemGroup>
   <ItemGroup>
