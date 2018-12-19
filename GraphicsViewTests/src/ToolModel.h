@@ -17,6 +17,7 @@ public:
     virtual ~cToolModel();
     cToolModel( QObject* iParent = Q_NULLPTR );
 
+
 public:
     Qt::ItemFlags   flags( const QModelIndex& iIndex ) const override;
 
@@ -29,21 +30,18 @@ public:
     float           getStep() const;
     void            setStep( float iStep );
 
-
     void            buildTool();
 
 
+public:
+    // Overrides
     virtual  void  DrawDot( QImage* iImage, int x, int y ) override;
     virtual  void  DrawLine( QImage* iImage, int x1, int y1, int x2, int y2 ) override;
-    virtual  void  DrawPath( QImage* iImage );
-
-    QPoint  __DrawDotVectorTruc_RequiresAName_( QImage* iImage, const QPoint& iStart, const QPointF& iVector );
 
 
 private:
     // Tools
     int             mToolSize;
     QColor          mColor;
-    float           mStep;
 };
 

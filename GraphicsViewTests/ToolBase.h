@@ -16,12 +16,18 @@ public:
 public:
     virtual  void  DrawDot( QImage* iImage, int x, int y ) = 0;
     virtual  void  DrawLine( QImage* iImage, int x1, int y1, int x2, int y2 ) = 0;
-    virtual  void  DrawPath( QImage* iImage ) = 0;
+    virtual  void  DrawPath( QImage* iImage );
+
 
     void  PathAddPoint( const QPoint& iPoint );
 
+
+private:
+    QPoint  __DrawDotVectorTruc_RequiresAName_( QImage* iImage, const QPoint& iStart, const QPointF& iVector );
+
 protected:
-    std::vector< QPoint > mPath;
+    std::vector< QPoint >   mPath;
+    float                   mStep;
 };
 
 
