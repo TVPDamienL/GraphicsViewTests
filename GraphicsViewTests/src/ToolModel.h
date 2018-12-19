@@ -37,7 +37,7 @@ public:
     virtual  void  DrawLine( QImage* iImage, int x1, int y1, int x2, int y2 ) override;
     virtual  void  DrawPath( QImage* iImage );
 
-    QPoint  __DrawDotVectorTruc_( QImage* iImage, const QPoint& iStart, const QPointF& iVector, float iAmount );
+    QPoint  __DrawDotVectorTruc_RequiresAName_( QImage* iImage, const QPoint& iStart, const QPointF& iVector );
 
 
 private:
