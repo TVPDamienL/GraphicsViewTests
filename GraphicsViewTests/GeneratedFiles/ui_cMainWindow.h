@@ -45,6 +45,8 @@ public:
     QCheckBox *antiAliasCheckBox;
     QLabel *label;
     ColorSwatch *colorSwatch;
+    QLabel *stepLabel;
+    QSpinBox *stepSpinBox;
     cCanvas *canvas;
     QHBoxLayout *horizontalLayout;
     QPushButton *playButton;
@@ -123,6 +125,18 @@ public:
 
         formLayout->setWidget(2, QFormLayout::FieldRole, colorSwatch);
 
+        stepLabel = new QLabel(centralWidget);
+        stepLabel->setObjectName(QString::fromUtf8("stepLabel"));
+
+        formLayout->setWidget(3, QFormLayout::LabelRole, stepLabel);
+
+        stepSpinBox = new QSpinBox(centralWidget);
+        stepSpinBox->setObjectName(QString::fromUtf8("stepSpinBox"));
+        stepSpinBox->setMinimum(1);
+        stepSpinBox->setMaximum(99999);
+
+        formLayout->setWidget(3, QFormLayout::FieldRole, stepSpinBox);
+
 
         verticalLayout->addLayout(formLayout);
 
@@ -190,6 +204,7 @@ public:
         antiAliasLabel->setText(QApplication::translate("cMainWindow", "AntiAlias", nullptr));
         label->setText(QApplication::translate("cMainWindow", "Color", nullptr));
         colorSwatch->setText(QString());
+        stepLabel->setText(QApplication::translate("cMainWindow", "Step", nullptr));
         playButton->setText(QApplication::translate("cMainWindow", "Play", nullptr));
         stopButton->setText(QApplication::translate("cMainWindow", "Stop", nullptr));
     } // retranslateUi

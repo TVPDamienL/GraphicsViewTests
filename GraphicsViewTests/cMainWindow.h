@@ -36,7 +36,8 @@ signals:
     void  currentFrameChangeAsked( int iCurrentFrame );
 
 public slots:
-    void spinChanged( int );
+    void sizeChanged( int );
+    void stepChanged( int );
     void UpdateUI();
 
 private:

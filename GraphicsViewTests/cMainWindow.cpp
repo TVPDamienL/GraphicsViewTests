@@ -45,7 +45,8 @@ cMainWindow::cMainWindow(QWidget *parent) :
     connect( mToolModel, &QAbstractItemModel::dataChanged, this, &cMainWindow::toolDataChanged );
 
 
-    connect (ui.penSizeSpinBox, SIGNAL(valueChanged(int)), this, SLOT(spinChanged(int)) );
+    connect (ui.penSizeSpinBox, SIGNAL(valueChanged(int)), this, SLOT(sizeChanged(int)) );
+    connect (ui.stepSpinBox, SIGNAL(valueChanged(int)), this, SLOT(stepChanged(int)) );
 
     CurrentFrameChanged( 0 );
 }
@@ -127,9 +128,16 @@ cMainWindow::toolDataChanged( const QModelIndex & iLeft, const QModelIndex & iRi
 
 
 void
-cMainWindow::spinChanged( int iNew )
+cMainWindow::sizeChanged( int iNew )
 {
     mToolModel->setSize( iNew );
+}
+
+
+void
+cMainWindow::stepChanged( int iStep )
+{
+    mToolModel->setStep( iStep );
 }
 
 

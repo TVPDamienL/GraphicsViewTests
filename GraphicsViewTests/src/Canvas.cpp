@@ -12,6 +12,8 @@
 #include <QDragEnterEvent>
 #include <QMimeData>
 
+#include <QDebug>
+
 
 cCanvas::cCanvas( QWidget *parent ) :
     QGraphicsView( parent ),
@@ -186,7 +188,14 @@ cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
         QPointF originInItemCoordinate = mEditableItem->mapFromScene( mapToScene( mClickPos.x(), mClickPos.y() ) );
         QPointF newPointInItemCoordinate = mEditableItem->mapFromScene( mapToScene( iEvent->pos().x(), iEvent->pos().y() ) );
 
-        mToolModel->DrawLine( &mItemPixmapAsImage, originInItemCoordinate.x(), originInItemCoordinate.y(), newPointInItemCoordinate.x(), newPointInItemCoordinate.y() );
+        //auto oldColor = mToolModel->getColor();
+
+        //mToolModel->setColor( Qt::green );
+        //mToolModel->DrawDot( &mItemPixmapAsImage, newPointInItemCoordinate.x(), newPointInItemCoordinate.y() );
+
+        //mToolModel->setColor( oldColor );
+        mToolModel->PathAddPoint( QPoint( newPointInItemCoordinate.x(), newPointInItemCoordinate.y() ) );
+
 
         SetPixmap( QPixmap::fromImage( mItemPixmapAsImage )  );
         currentFrameGotPainted( *mEditableItem->mpixmap );
@@ -202,7 +211,8 @@ cCanvas::mouseReleaseEvent( QMouseEvent * iEvent )
 {
     if( mState == kDrawing )
     {
-        delete  mPainter;
+        mToolModel->DrawPath( &mItemPixmapAsImage );
+        SetPixmap( QPixmap::fromImage( mItemPixmapAsImage )  );
         currentFrameGotPainted( *mEditableItem->mpixmap );
     }
 

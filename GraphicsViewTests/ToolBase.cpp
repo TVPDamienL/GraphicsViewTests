@@ -11,3 +11,10 @@ ToolBase::ToolBase(QObject *parent)
 ToolBase::~ToolBase()
 {
 }
+
+
+void
+ToolBase::PathAddPoint( const QPoint & iPoint )
+{
+    mPath.push_back( iPoint );
+}
