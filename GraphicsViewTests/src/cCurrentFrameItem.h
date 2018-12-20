@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QGraphicsItem >
+#include <QGraphicsItem>
 
 class  cCustomGraphicsView;
 

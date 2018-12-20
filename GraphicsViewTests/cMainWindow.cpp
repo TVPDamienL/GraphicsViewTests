@@ -1,8 +1,8 @@
 #include "cMainWindow.h"
 
 #include "cGraphicItem.h"
-#include <QGraphicsPixmapItem >
-#include <QColorDialog >
+#include <QGraphicsPixmapItem>
+#include <QColorDialog>
 
 
 #include "ColorSwatch.h"

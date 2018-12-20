@@ -1,18 +1,19 @@
 #include "colorPickerDialog.h"
 
+#include <cmath>
 
 static
 float
 Smooth( float value, float max )
 {
-    return  max  * std::powf(value / max, 4.0);
+    return  max  * powf(value / max, 4.0);
 }
 
 static
 float
 SmoothInverse( float value, float max )
 {
-    return  max * std::powf(value/max, 1.0/4.0);
+    return  max * powf(value/max, 1.0/4.0);
 }
 
 

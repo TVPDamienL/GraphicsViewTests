@@ -2,7 +2,7 @@
 
 #include <QStandardItemModel>
 
-
+#include <cmath>
 
 class ToolBase :
     public QStandardItemModel
@@ -77,7 +77,7 @@ inline
 float
 Distance2Points( const QPoint& iP1, const QPoint& iP2 )
 {
-    return  sqrt( Distance2PointsSquared( iP1, iP2 ) );
+    return  std::sqrt( Distance2PointsSquared( iP1, iP2 ) );
 }
 
 
