@@ -3,6 +3,7 @@
 #include <QVector2D>
 #include <QDebug>
 
+
 cToolModel::~cToolModel()
 {
 }
@@ -26,21 +27,6 @@ cToolModel::flags( const QModelIndex & iIndex ) const
 }
 
 
-int
-cToolModel::getSize() const
-{
-    return  itemFromIndex( index( 0, 0 ) )->data().toInt();
-}
-
-
-void
-cToolModel::setSize( int iSize )
-{
-    itemFromIndex( index( 0, 0 ) )->setData( iSize );
-    mToolSize = iSize;
-}
-
-
 QColor
 cToolModel::getColor() const
 {
@@ -54,21 +40,6 @@ cToolModel::setColor( const QColor & iColor )
 {
     itemFromIndex( index( 1, 0 ) )->setData( iColor );
     mColor = iColor;
-}
-
-
-float
-cToolModel::getStep() const
-{
-    return  mStep;
-}
-
-
-void
-cToolModel::setStep( float iStep )
-{
-    mStep = iStep;
-    itemFromIndex( index( 2, 0 ) )->setData( iStep );
 }
 
 

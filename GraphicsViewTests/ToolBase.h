@@ -13,21 +13,42 @@ public:
     ToolBase(QObject *parent);
     ~ToolBase();
 
+
 public:
+    int             getSize() const;
+    void            setSize( int iSize );
+
+    float           getStep() const;
+    void            setStep( float iStep );
+
+
+public:
+    virtual  void  StartDrawing();
+
     virtual  void  DrawDot( QImage* iImage, int x, int y ) = 0;
     virtual  void  DrawLine( QImage* iImage, int x1, int y1, int x2, int y2 ) = 0;
-    virtual  void  DrawPath( QImage* iImage );
+    virtual  void  DrawFullPath( QImage* iImage );
+    virtual  void  DrawPathFromLastRenderedPoint( QImage* iImage );
+
+    virtual  void  EndDrawing();
 
 
     void  PathAddPoint( const QPoint& iPoint );
 
-
 private:
     QPoint  __DrawDotVectorTruc_RequiresAName_( QImage* iImage, const QPoint& iStart, const QPointF& iVector );
 
+
+
+
 protected:
+    int                     mToolSize;
     std::vector< QPoint >   mPath;
     float                   mStep;
+
+private:
+    int     mLastRenderedPathIndex;
+    float   mRequiredPathLength;
 };
 
 

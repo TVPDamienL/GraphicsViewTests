@@ -156,6 +156,8 @@ cCanvas::mousePressEvent( QMouseEvent * iEvent )
             mItemPixmap = mEditableItem->mpixmap;
             mItemPixmapAsImage = mItemPixmap->toImage();
 
+            mToolModel->StartDrawing();
+
             if( mTool == kEraser )
                 mPainter->setCompositionMode( QPainter::CompositionMode_Clear );
         }
@@ -188,13 +190,8 @@ cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
         QPointF originInItemCoordinate = mEditableItem->mapFromScene( mapToScene( mClickPos.x(), mClickPos.y() ) );
         QPointF newPointInItemCoordinate = mEditableItem->mapFromScene( mapToScene( iEvent->pos().x(), iEvent->pos().y() ) );
 
-        //auto oldColor = mToolModel->getColor();
-
-        //mToolModel->setColor( Qt::green );
-        //mToolModel->DrawDot( &mItemPixmapAsImage, newPointInItemCoordinate.x(), newPointInItemCoordinate.y() );
-
-        //mToolModel->setColor( oldColor );
         mToolModel->PathAddPoint( QPoint( newPointInItemCoordinate.x(), newPointInItemCoordinate.y() ) );
+        mToolModel->DrawPathFromLastRenderedPoint( &mItemPixmapAsImage );
 
 
         SetPixmap( QPixmap::fromImage( mItemPixmapAsImage )  );
@@ -211,8 +208,7 @@ cCanvas::mouseReleaseEvent( QMouseEvent * iEvent )
 {
     if( mState == kDrawing )
     {
-        mToolModel->DrawPath( &mItemPixmapAsImage );
-        SetPixmap( QPixmap::fromImage( mItemPixmapAsImage )  );
+        mToolModel->EndDrawing();
         currentFrameGotPainted( *mEditableItem->mpixmap );
     }
 
