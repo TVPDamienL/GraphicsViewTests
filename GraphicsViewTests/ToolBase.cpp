@@ -13,7 +13,7 @@ ToolBase::ToolBase(QObject *parent)
 {
     mStep = 10.0F;
     mLastRenderedPathIndex = 0;
-    mRequiredPathLength = mStep;
+    mRequiredStepLength = mStep;
 }
 
 
@@ -72,7 +72,7 @@ ToolBase::setStep( float iStep )
 void
 ToolBase::StartDrawing()
 {
-    mRequiredPathLength = 0;
+    mRequiredStepLength = 0;
     mLastRenderedPathIndex = 0;
 }
 
@@ -83,7 +83,7 @@ ToolBase::DrawFullPath( QImage * iImage )
     if( mPath.size() <= 0 )
         return;
 
-    mRequiredPathLength = 0;
+    mRequiredStepLength = 0;
     mLastRenderedPathIndex = 0;
 
     DrawPathFromLastRenderedPoint( iImage );
@@ -112,9 +112,9 @@ ToolBase::DrawPathFromLastRenderedPoint( QImage * iImage )
             continue;
 
         // Not enough distance on that path segment to draw a dot, so we'll see on the next one, after decreasing the requiredToStep
-        if( mRequiredPathLength - distance > 0 )
+        if( mRequiredStepLength - distance > 0 )
         {
-            mRequiredPathLength -= distance;
+            mRequiredStepLength -= distance;
             continue;
         }
 
@@ -132,10 +132,10 @@ ToolBase::DrawPathFromLastRenderedPoint( QImage * iImage )
 
 
         // If spare steps from previous it, we apply it, and then use this point as first
-        if( abs( mRequiredPathLength - mStep ) > 0.1F )
+        if( abs( mRequiredStepLength - mStep ) > 0.1F )
         {
-            startingPoint = __DrawDotVectorTruc_RequiresAName_( iImage, p1, stepVectorNormalizedAsPF * mRequiredPathLength );
-            remainingDistance -= mRequiredPathLength;
+            startingPoint = __DrawDotVectorTruc_RequiresAName_( iImage, p1, stepVectorNormalizedAsPF * mRequiredStepLength );
+            remainingDistance -= mRequiredStepLength;
         }
 
         // Now, we go step by step
@@ -150,7 +150,7 @@ ToolBase::DrawPathFromLastRenderedPoint( QImage * iImage )
         }
 
         // Here, we probably have space between the last dot and the next point, not enough for a step, but still space, so we remember it for next iteration
-        mRequiredPathLength = mStep - remainingDistance;
+        mRequiredStepLength = mStep - remainingDistance;
 
     }
 }

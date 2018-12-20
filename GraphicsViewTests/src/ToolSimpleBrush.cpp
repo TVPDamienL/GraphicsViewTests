@@ -102,7 +102,7 @@ cToolSimpleBrush::DrawDot( QImage* iImage, int x, int y )
         }
         else
         {
-            --radius;
+            --Q;
             D = D + 4 * (P-Q) + 10;
         }
 

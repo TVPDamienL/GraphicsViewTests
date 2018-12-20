@@ -50,7 +50,7 @@ protected:
 
 private:
     int     mLastRenderedPathIndex;
-    float   mRequiredPathLength;
+    float   mRequiredStepLength;
 };
 
 
