@@ -18,6 +18,9 @@ public:
     int             getSize() const;
     void            setSize( int iSize );
 
+    QColor          getColor() const;
+    void            setColor( const QColor& iColor );
+
     float           getStep() const;
     void            setStep( float iStep );
 
@@ -39,10 +42,9 @@ private:
     QPoint  __DrawDotVectorTruc_RequiresAName_( QImage* iImage, const QPoint& iStart, const QPointF& iVector );
 
 
-
-
 protected:
     int                     mToolSize;
+    QColor                  mColor;
     std::vector< QPoint >   mPath;
     float                   mStep;
 

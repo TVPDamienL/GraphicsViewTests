@@ -4,12 +4,14 @@
 #include <QGraphicsPixmapItem>
 #include <QColorDialog>
 
+#include "ToolSimpleBrush.h"
+
 
 #include "ColorSwatch.h"
 
 cMainWindow::cMainWindow(QWidget *parent) :
     QMainWindow(parent),
-    mToolModel( new cToolModel() )
+    mToolModel( new cToolSimpleBrush() )
 {
     ui.setupUi(this);
 
@@ -146,6 +148,7 @@ cMainWindow::UpdateUI()
 {
     ui.penSizeSpinBox->setValue( mToolModel->getSize() );
     ui.colorSwatch->SetColor( mToolModel->getColor() );
+    ui.stepSpinBox->setValue( mToolModel->getStep() );
 }
 
 

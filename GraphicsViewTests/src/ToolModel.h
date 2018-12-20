@@ -21,10 +21,8 @@ public:
 public:
     Qt::ItemFlags   flags( const QModelIndex& iIndex ) const override;
 
-    QColor          getColor() const;
-    void            setColor( const QColor& iColor );
-
-    void            buildTool();
+private:
+    void    _BuildTool();
 
 
 public:
@@ -35,6 +33,5 @@ public:
 
 private:
     // Tools
-    QColor          mColor;
 };
 

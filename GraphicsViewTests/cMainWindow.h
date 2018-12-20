@@ -8,7 +8,7 @@
 #include <QTimer>
 #include <QDataWidgetMapper>
 
-#include "ToolModel.h"
+#include "ToolBase.h"
 
 class cCustomGraphicsView;
 
@@ -49,6 +49,6 @@ private:
     QTimer*             mAnimationTimer;
 
     QDataWidgetMapper*  mMapper;
-    cToolModel*         mToolModel;
+    ToolBase*           mToolModel;
 
 };

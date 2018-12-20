@@ -3,7 +3,7 @@
 #include <QGraphicsView>
 #include <QPaintEvent>
 
-#include "ToolModel.h"
+#include "ToolBase.h"
 #include "cGridItem.h"
 
 class cEditableItem;
@@ -34,7 +34,7 @@ public:
 
 public:
     void  SetPixmap( const QPixmap& iPixmap );
-    void  SetToolModel( cToolModel* iToolModel );
+    void  SetToolModel( ToolBase* iToolModel );
 
     void  UpdateGridItem();
     void  UpCursor();
@@ -69,7 +69,7 @@ private:
     QImage              mItemPixmapAsImage;
 
     eTool               mTool;
-    cToolModel*         mToolModel;
+    ToolBase*           mToolModel;
     QPainter*           mPainter;
 
     QPixmap*            cursorPixmap;

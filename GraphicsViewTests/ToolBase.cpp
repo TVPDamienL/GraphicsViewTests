@@ -35,6 +35,22 @@ ToolBase::setSize( int iSize )
 }
 
 
+QColor
+ToolBase::getColor() const
+{
+    QVariant dataColor = itemFromIndex( index( 1, 0 ) )->data();
+    return  dataColor.value< QColor >();
+}
+
+
+void
+ToolBase::setColor( const QColor & iColor )
+{
+    itemFromIndex( index( 1, 0 ) )->setData( iColor );
+    mColor = iColor;
+}
+
+
 float
 ToolBase::getStep() const
 {

@@ -96,6 +96,9 @@
     <ClCompile Include="ToolBase.cpp">
       <Filter>src\ToolModel</Filter>
     </ClCompile>
+    <ClCompile Include="src\ToolSimpleBrush.cpp">
+      <Filter>src\ToolModel</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="cMainWindow.h">
@@ -146,6 +149,9 @@
     </ClInclude>
     <ClInclude Include="colorPickerDialog.h">
       <Filter>src\Picker</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ToolSimpleBrush.h">
+      <Filter>src\ToolModel</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

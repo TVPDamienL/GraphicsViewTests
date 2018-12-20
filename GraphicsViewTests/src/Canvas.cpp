@@ -166,8 +166,8 @@ cCanvas::mousePressEvent( QMouseEvent * iEvent )
     {
         if( QApplication::keyboardModifiers() & Qt::ControlModifier )
         {
-            auto test = new colorPickerDialog( mToolModel, this );
-            test->openAtPosition( iEvent->screenPos() - QPointF( test->size().width()/2, test->size().height()/2 ) );
+            //auto test = new colorPickerDialog( mToolModel, this );
+            //test->openAtPosition( iEvent->screenPos() - QPointF( test->size().width()/2, test->size().height()/2 ) );
         }
     }
 
@@ -257,7 +257,7 @@ cCanvas::SetPixmap( const QPixmap & iPixmap )
 
 
 void
-cCanvas::SetToolModel( cToolModel* iToolModel )
+cCanvas::SetToolModel( ToolBase* iToolModel )
 {
     if( mToolModel )
         disconnect( mToolModel, &QAbstractItemModel::dataChanged, this, &cCanvas::toolChanged );

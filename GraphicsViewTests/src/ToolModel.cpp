@@ -16,7 +16,7 @@ cToolModel::cToolModel( QObject * iParent ) :
     mColor = Qt::red;
     mStep = 10.0F; // Because we stay in squared numerics, to avoid the sqrt, so this would be a 5 pixel step
 
-    buildTool();
+    _BuildTool();
 }
 
 
@@ -27,24 +27,8 @@ cToolModel::flags( const QModelIndex & iIndex ) const
 }
 
 
-QColor
-cToolModel::getColor() const
-{
-    QVariant dataColor = itemFromIndex( index( 1, 0 ) )->data();
-    return  dataColor.value< QColor >();
-}
-
-
 void
-cToolModel::setColor( const QColor & iColor )
-{
-    itemFromIndex( index( 1, 0 ) )->setData( iColor );
-    mColor = iColor;
-}
-
-
-void
-cToolModel::buildTool()
+cToolModel::_BuildTool()
 {
     QStandardItem* sizeItem = new QStandardItem( "Size" );
     sizeItem->setData( mToolSize );
