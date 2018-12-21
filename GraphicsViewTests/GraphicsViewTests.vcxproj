@@ -141,6 +141,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\CurveBase.h" />
+    <ClInclude Include="src\CurveTests.h" />
     <ClInclude Include="src\ToolSimpleBrush.h" />
     <QtMoc Include="ToolBase.h" />
     <QtMoc Include="ColorSwatch.h" />

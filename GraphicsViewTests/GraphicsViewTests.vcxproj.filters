@@ -162,6 +162,9 @@
     <ClInclude Include="src\CurveBase.h">
       <Filter>src\Curve</Filter>
     </ClInclude>
+    <ClInclude Include="src\CurveTests.h">
+      <Filter>src\Curve</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="cMainWindow.ui">
