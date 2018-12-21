@@ -102,8 +102,8 @@ ToolBase::DrawPathFromLastRenderedPoint( QImage * iImage )
     for( mLastRenderedPathIndex; mLastRenderedPathIndex < mPath.size() - 1; ++mLastRenderedPathIndex )
     {
         // Setting base variables : starting point, ending point and their distance
-        QPoint p1 = mPath[ mLastRenderedPathIndex ];
-        QPoint p2 = mPath[ mLastRenderedPathIndex + 1 ];
+        QPoint p1 = mPath[ mLastRenderedPathIndex ].mPosition;
+        QPoint p2 = mPath[ mLastRenderedPathIndex + 1 ].mPosition;
         float distance = Distance2Points( p1, p2 );
 
 
@@ -167,7 +167,7 @@ ToolBase::EndDrawing()
 
 
 void
-ToolBase::PathAddPoint( const QPoint & iPoint )
+ToolBase::PathAddPoint( sPointData iPoint )
 {
     mPath.push_back( iPoint );
 }

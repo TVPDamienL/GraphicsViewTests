@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QGraphicsPixmapItem>
+#include <QTabletEvent>
 
 #include <filesystem>
 
@@ -20,9 +21,9 @@ public:
     void setFile( const QString& iFile );
 
 protected:
-    void        mousePressEvent( QGraphicsSceneMouseEvent* iEvent ) override;
-    void        mouseMoveEvent( QGraphicsSceneMouseEvent* iEvent ) override;
-    void        mouseReleaseEvent( QGraphicsSceneMouseEvent* iEvent ) override;
+    void        mousePressEvent( QGraphicsSceneMouseEvent* iEvent )     override;
+    void        mouseMoveEvent( QGraphicsSceneMouseEvent* iEvent )      override;
+    void        mouseReleaseEvent( QGraphicsSceneMouseEvent* iEvent )   override;
 
     void        contextMenuEvent( QGraphicsSceneContextMenuEvent* iEvent ) override;
 

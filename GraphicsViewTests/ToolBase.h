@@ -4,6 +4,21 @@
 
 #include <cmath>
 
+
+
+
+// Pressure, azimut, angle, rotation etc...
+struct sPointData
+{
+    QPoint mPosition;
+    float  mPressure;
+    float  mRotation;
+};
+
+
+
+
+
 class ToolBase :
     public QStandardItemModel
 {
@@ -36,17 +51,17 @@ public:
     virtual  void  EndDrawing();
 
 
-    void  PathAddPoint( const QPoint& iPoint );
+    void  PathAddPoint( sPointData iPoint );
 
 private:
     QPoint  __DrawDotVectorTruc_RequiresAName_( QImage* iImage, const QPoint& iStart, const QPointF& iVector );
 
 
 protected:
-    int                     mToolSize;
-    QColor                  mColor;
-    std::vector< QPoint >   mPath;
-    float                   mStep;
+    int                                 mToolSize;
+    QColor                              mColor;
+    std::vector< sPointData >  mPath;
+    float                               mStep;
 
 private:
     int     mLastRenderedPathIndex;

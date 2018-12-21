@@ -30,7 +30,8 @@ public:
     void  mousePressEvent( QMouseEvent* iEvent )    override;
     void  mouseMoveEvent( QMouseEvent* iEvent )     override;
     void  mouseReleaseEvent( QMouseEvent* iEvent )  override;
-    void  wheelEvent( QWheelEvent* iEvent )  override;
+    void  tabletEvent( QTabletEvent* iEvent )       override;
+    void  wheelEvent( QWheelEvent* iEvent )         override;
 
 public:
     void  SetPixmap( const QPixmap& iPixmap );

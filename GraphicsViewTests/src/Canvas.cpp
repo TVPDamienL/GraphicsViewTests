@@ -23,6 +23,7 @@ cCanvas::cCanvas( QWidget *parent ) :
 {
     // Config
     setAcceptDrops( true );
+    setAttribute(Qt::WA_TabletTracking);
 
     // Scene
     QGraphicsScene* scene = new QGraphicsScene( this );
@@ -190,7 +191,10 @@ cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
         QPointF originInItemCoordinate = mEditableItem->mapFromScene( mapToScene( mClickPos.x(), mClickPos.y() ) );
         QPointF newPointInItemCoordinate = mEditableItem->mapFromScene( mapToScene( iEvent->pos().x(), iEvent->pos().y() ) );
 
-        mToolModel->PathAddPoint( QPoint( newPointInItemCoordinate.x(), newPointInItemCoordinate.y() ) );
+        sPointData point;
+        point.mPosition = QPoint( newPointInItemCoordinate.x(), newPointInItemCoordinate.y() );
+
+        mToolModel->PathAddPoint( point );
         mToolModel->DrawPathFromLastRenderedPoint( &mItemPixmapAsImage );
 
 
@@ -214,6 +218,14 @@ cCanvas::mouseReleaseEvent( QMouseEvent * iEvent )
 
     mState = kIdle;
     QGraphicsView::mouseReleaseEvent( iEvent );
+}
+
+
+void
+cCanvas::tabletEvent( QTabletEvent * iEvent )
+{
+    iEvent->accept();
+    qDebug() << "Event";
 }
 
 

@@ -127,6 +127,7 @@
     <ClCompile Include="src\cCustomGraphicsView.cpp" />
     <ClCompile Include="src\cGraphicItem.cpp" />
     <ClCompile Include="src\cGridItem.cpp" />
+    <ClCompile Include="src\CurveBase.cpp" />
     <ClCompile Include="src\EditableItem.cpp" />
     <ClCompile Include="src\ToolModel.cpp" />
     <ClCompile Include="src\ToolSimpleBrush.cpp" />
@@ -139,6 +140,7 @@
     <QtRcc Include="cMainWindow.qrc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\CurveBase.h" />
     <ClInclude Include="src\ToolSimpleBrush.h" />
     <QtMoc Include="ToolBase.h" />
     <QtMoc Include="ColorSwatch.h" />

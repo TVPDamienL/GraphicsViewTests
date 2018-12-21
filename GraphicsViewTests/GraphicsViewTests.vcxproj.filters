@@ -49,6 +49,9 @@
     <Filter Include="src\Gadget">
       <UniqueIdentifier>{5146365f-077c-4980-94f3-ddae92b09e38}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Curve">
+      <UniqueIdentifier>{1920fd3d-99c1-4a82-8934-211965e26f14}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -98,6 +101,9 @@
     </ClCompile>
     <ClCompile Include="src\ToolSimpleBrush.cpp">
       <Filter>src\ToolModel</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CurveBase.cpp">
+      <Filter>src\Curve</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -152,6 +158,9 @@
     </ClInclude>
     <ClInclude Include="src\ToolSimpleBrush.h">
       <Filter>src\ToolModel</Filter>
+    </ClInclude>
+    <ClInclude Include="src\CurveBase.h">
+      <Filter>src\Curve</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
