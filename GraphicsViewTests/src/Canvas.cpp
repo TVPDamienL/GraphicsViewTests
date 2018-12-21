@@ -53,6 +53,59 @@ cCanvas::paintEvent( QPaintEvent * iEvent )
 
 
 void
+cCanvas::tabletEvent( QTabletEvent*  iEvent )
+{
+    qDebug() << iEvent;
+    switch( iEvent->type() )
+    {
+        case  QEvent::TabletPress:
+        {
+            mState = kDrawing;
+            mItemPixmap = mEditableItem->mpixmap;
+            mItemPixmapAsImage = mItemPixmap->toImage();
+
+            mToolModel->StartDrawing();
+
+            if( mTool == kEraser )
+                mPainter->setCompositionMode( QPainter::CompositionMode_Clear );
+            iEvent->accept();
+            break;
+        }
+        case  QEvent::TabletRelease:
+        {
+            if( mState == kDrawing )
+            {
+                mToolModel->EndDrawing();
+                currentFrameGotPainted( *mEditableItem->mpixmap );
+            }
+
+            mState = kIdle;
+            iEvent->accept();
+            break;
+        }
+        case  QEvent::TabletMove:
+        {
+            if( mState == kDrawing )
+            {
+                QPointF originInItemCoordinate = mEditableItem->mapFromScene( mapToScene( mClickPos.x(), mClickPos.y() ) );
+                QPointF newPointInItemCoordinate = mEditableItem->mapFromScene( mapToScene( iEvent->pos().x(), iEvent->pos().y() ) );
+
+                mToolModel->PathAddPoint( QPoint( newPointInItemCoordinate.x(), newPointInItemCoordinate.y() ) );
+                mToolModel->DrawPathFromLastRenderedPoint( &mItemPixmapAsImage );
+
+                SetPixmap( QPixmap::fromImage( mItemPixmapAsImage )  );
+                currentFrameGotPainted( *mEditableItem->mpixmap );
+            }
+
+            mClickPos = iEvent->pos();
+            iEvent->accept();
+            break;
+        }
+    }
+}
+
+
+void
 cCanvas::dragEnterEvent( QDragEnterEvent * iEvent )
 {
     iEvent->acceptProposedAction();

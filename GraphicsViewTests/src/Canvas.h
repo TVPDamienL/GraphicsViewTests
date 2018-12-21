@@ -20,6 +20,8 @@ public:
 public:
     void  paintEvent( QPaintEvent* iEvent ) override;
 
+    void  tabletEvent( QTabletEvent*  iEvent ) override;
+
     void  dragEnterEvent( QDragEnterEvent* iEvent ) override;
     void  dragMoveEvent( QDragMoveEvent* iEvent ) override;
     void  dragLeaveEvent( QDragLeaveEvent* iEvent ) override;
