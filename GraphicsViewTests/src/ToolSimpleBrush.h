@@ -22,10 +22,7 @@ public:
     void            buildTool();
 
 private:
-    // From https://www.tutorialspoint.com/computer_graphics/circle_generation_algorithm.htm
-    void  _CircleMethod( QImage* iImage, int iX, int iY, int iP, int iQ );
     void  _DrawPixel( uchar* iData, unsigned int iImageWidth, unsigned int iImageHeight,  int iX, int iY, int iR, int iG, int iB, int iA );
-
 
 public:
     // Overrides

@@ -36,31 +36,7 @@ cToolSimpleBrush::buildTool()
     QStandardItem* step = new QStandardItem( "Step" );
     step->setData( mStep );
     setItem( 2, 0, step );
-
 }
-
-
-void
-cToolSimpleBrush::_CircleMethod( QImage* iImage, int iX, int iY, int iP, int iQ )
-{
-    uchar* data = iImage->bits();
-    unsigned int width = iImage->width();
-    unsigned int height = iImage->height();
-    int R = mColor.red();
-    int G = mColor.green();
-    int B = mColor.blue();
-    int A = mColor.alpha();
-
-    _DrawPixel( data, width, height, iX + iP, iY + iQ, R, G, B, A );
-    _DrawPixel( data, width, height, iX - iP, iY + iQ, R, G, B, A );
-    _DrawPixel( data, width, height, iX + iP, iY - iQ, R, G, B, A );
-    _DrawPixel( data, width, height, iX - iP, iY - iQ, R, G, B, A );
-    _DrawPixel( data, width, height, iX + iQ, iY + iP, R, G, B, A );
-    _DrawPixel( data, width, height, iX - iQ, iY + iP, R, G, B, A );
-    _DrawPixel( data, width, height, iX + iQ, iY - iP, R, G, B, A );
-    _DrawPixel( data, width, height, iX - iQ, iY - iP, R, G, B, A );
-}
-
 
 void
 cToolSimpleBrush::_DrawPixel( uchar * iData, unsigned int iImageWidth, unsigned int iImageHeight, int iX, int iY, int iR, int iG, int iB, int iA )
@@ -70,7 +46,6 @@ cToolSimpleBrush::_DrawPixel( uchar * iData, unsigned int iImageWidth, unsigned 
 
     int y = iY < 0 ? 0 : iY;
     y = y > iImageHeight ? iImageHeight-1 : y;
-
 
     int index = y * iImageWidth * 4 + x * 4;
 
@@ -83,30 +58,26 @@ cToolSimpleBrush::_DrawPixel( uchar * iData, unsigned int iImageWidth, unsigned 
 
 
 void
-cToolSimpleBrush::DrawDot( QImage* iImage, int x, int y )
+cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY )
 {
-    int centerX = x;
-    int centerY = y;
-    int radius = mToolSize/2;
-    int P = 0;
-    int Q = radius;
-    int D = 3 - 2*radius;
-    while( P <= Q )
-    {
-        _CircleMethod( iImage, centerX, centerY, P, Q );
-        ++P
-            ;
-        if( D < 0 )
-        {
-            D = D + 4*P + 6;
-        }
-        else
-        {
-            --Q;
-            D = D + 4 * (P-Q) + 10;
-        }
+    uchar* data = iImage->bits();
+    unsigned int width = iImage->width();
+    unsigned int height = iImage->height();
+    int R = mColor.red();
+    int G = mColor.green();
+    int B = mColor.blue();
+    int A = mColor.alpha();
 
-        _CircleMethod( iImage, centerX, centerY, P, Q );
+    int r = mToolSize/2;
+    for( int dy = -r; dy <= r; ++dy)
+    {
+        for( int dx = -r; dx <= r; ++dx )
+        {
+            if( dx * dx + dy * dy <= r * r )
+            {
+                _DrawPixel( data, width, height, iX + dx, iY + dy, R, G, B, A );
+            }
+        }
     }
 }
 
