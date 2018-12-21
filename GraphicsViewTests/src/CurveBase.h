@@ -24,7 +24,8 @@ public:
     // Index and key searching
 public:
     int  ExactKeyIndexByTime( double iTime ) const;
-    // This will return the insertion index for given time, so, what's the index i should insert a key, that has iTime as time value
+
+    // This will return the insertion index for given time, so, at which index should we insert a key that has iTime as time value
     int _GetInsertionIndexByTime_( double iTime ) const; // Name isn't best here
 
 
