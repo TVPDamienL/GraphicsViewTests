@@ -9,9 +9,11 @@ cToolSimpleBrush::~cToolSimpleBrush()
 cToolSimpleBrush::cToolSimpleBrush( QObject * iParent ) :
     ToolBase( iParent )
 {
+    // Some debug values to work with
     mToolSize = 50;
     mColor = Qt::red;
     mStep = 10.0F; // Because we stay in squared numerics, to avoid the sqrt, so this would be a 5 pixel step
+    mApplyProfile = true;
 
     buildTool();
 }
@@ -27,7 +29,6 @@ cToolSimpleBrush::flags( const QModelIndex & iIndex ) const
 void
 cToolSimpleBrush::buildTool()
 {
-    // This is useless : no more qt modeling
     QStandardItem* sizeItem = new QStandardItem( "Size" );
     sizeItem->setData( mToolSize );
     setItem( 0, 0, sizeItem );
@@ -38,11 +39,27 @@ cToolSimpleBrush::buildTool()
     step->setData( mStep );
     setItem( 2, 0, step );
 
-    // This isn't useless
+
+    // Trying to get the linear profile to render better atm
     mProfile.SetValueAtTime( 0.0, 0.0 );
-    mProfile.SetValueAtTime( 0.1, 0.7 );
+    //mProfile.SetValueAtTime( 0.2, 1.0 );
     mProfile.SetValueAtTime( 1.0, 1.0 );
 }
+
+
+void
+cToolSimpleBrush::ApplyProfile( bool iApply )
+{
+    mApplyProfile = iApply;
+}
+
+
+bool
+cToolSimpleBrush::ApplyProfile() const
+{
+    return  mApplyProfile;
+}
+
 
 void
 cToolSimpleBrush::_DrawPixel( uchar * iData, unsigned int iImageWidth, unsigned int iImageHeight, int iX, int iY, int iR, int iG, int iB, int iA )
@@ -86,13 +103,16 @@ cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY )
         {
             if( dx * dx + dy * dy <= r * r )
             {
-                int distance = Distance2PointsSquared( QPoint( iX, iY ), QPoint( iX + dx, iY + dy ) );
-                float distanceParam = 1.0F - (float(distance) / float((mToolSize * mToolSize / 4)));
-                float mult = mProfile.GetValueAtTime( distanceParam );
+                float mult = 1.0F;
 
-                // Gotta mult every composant, because, i dunno if that's just the format qt uses, but if alpha = N, all comp have to be N at max
-                // So opaque = 255 max value, half transparent = 127 max value for all comp
-                // It means if alpha gets divided by two, all comp must go half
+                if( mApplyProfile )
+                {
+                    int distance = Distance2PointsSquared( QPoint( iX, iY ), QPoint( iX + dx, iY + dy ) );
+                    float distanceParam = 1.0F - (float(distance) / float((mToolSize * mToolSize / 4))); // 1 - distanceRatio so it goes outwards, otherwise, it's a reversed gradient
+                    mult = mProfile.GetValueAtTime( distanceParam );
+                }
+
+                // Color is premultiplied here with Qt, so gotta apply to all colors
                 _DrawPixel( data, width, height, iX + dx, iY + dy, R * mult, G * mult, B * mult, A * mult );
             }
         }

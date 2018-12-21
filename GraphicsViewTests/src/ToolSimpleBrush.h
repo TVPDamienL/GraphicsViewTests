@@ -10,6 +10,8 @@
 class cToolSimpleBrush :
     public ToolBase
 {
+    Q_OBJECT
+
 public:
     virtual ~cToolSimpleBrush();
     cToolSimpleBrush( QObject* iParent = Q_NULLPTR );
@@ -17,11 +19,12 @@ public:
 
 public:
     Qt::ItemFlags   flags( const QModelIndex& iIndex ) const override;
+    void  buildTool();
 
-    QColor          getColor() const;
-    void            setColor( const QColor& iColor );
+public:
+    void  ApplyProfile( bool iApply );
+    bool  ApplyProfile() const;
 
-    void            buildTool();
 
 private:
     void  _DrawPixel( uchar* iData, unsigned int iImageWidth, unsigned int iImageHeight,  int iX, int iY, int iR, int iG, int iB, int iA );
@@ -34,5 +37,6 @@ public:
 
 private:
     cCurveBase< float > mProfile;
+    bool                mApplyProfile;
 };
 

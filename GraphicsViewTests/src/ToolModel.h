@@ -13,6 +13,8 @@
 class cToolModel :
     public ToolBase
 {
+    Q_OBJECT
+
 public:
     virtual ~cToolModel();
     cToolModel( QObject* iParent = Q_NULLPTR );

@@ -39,7 +39,6 @@ cToolModel::_BuildTool()
     QStandardItem* step = new QStandardItem( "Step" );
     step->setData( mStep );
     setItem( 2, 0, step );
-
 }
 
 

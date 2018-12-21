@@ -17,8 +17,6 @@ struct sPointData
 
 
 
-
-
 class ToolBase :
     public QStandardItemModel
 {

@@ -44,11 +44,16 @@ cMainWindow::cMainWindow(QWidget *parent) :
 
     connect( ui.colorSwatch, &ColorSwatch::swatchClicked, this, &cMainWindow::AskColor );
 
-    connect( mToolModel, &QAbstractItemModel::dataChanged, this, &cMainWindow::toolDataChanged );
-
 
     connect (ui.penSizeSpinBox, SIGNAL(valueChanged(int)), this, SLOT(sizeChanged(int)) );
     connect (ui.stepSpinBox, SIGNAL(valueChanged(int)), this, SLOT(stepChanged(int)) );
+
+
+    connect( ui.antiAliasCheckBox, &QCheckBox::stateChanged, [ this ]( bool iNewState ){
+        auto simpleBrush = dynamic_cast< cToolSimpleBrush* >( mToolModel );
+        if( simpleBrush )
+            simpleBrush->ApplyProfile( iNewState );
+    });
 
     CurrentFrameChanged( 0 );
 }
@@ -149,6 +154,10 @@ cMainWindow::UpdateUI()
     ui.penSizeSpinBox->setValue( mToolModel->getSize() );
     ui.colorSwatch->SetColor( mToolModel->getColor() );
     ui.stepSpinBox->setValue( mToolModel->getStep() );
+
+    auto simpleBrush = dynamic_cast< cToolSimpleBrush* >( mToolModel );
+    if( simpleBrush )
+        ui.antiAliasCheckBox->setChecked( simpleBrush->ApplyProfile() );
 }
 
 

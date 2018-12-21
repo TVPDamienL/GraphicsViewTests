@@ -128,6 +128,12 @@
     <QtMoc Include="ToolBase.h">
       <Filter>src\ToolModel</Filter>
     </QtMoc>
+    <QtMoc Include="src\ToolModel.h">
+      <Filter>src\ToolModel</Filter>
+    </QtMoc>
+    <QtMoc Include="src\ToolSimpleBrush.h">
+      <Filter>src\ToolModel</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="cMainWindow.qrc">
@@ -147,17 +153,11 @@
     <ClInclude Include="src\EditableItem.h">
       <Filter>src\GraphicsItem</Filter>
     </ClInclude>
-    <ClInclude Include="src\ToolModel.h">
-      <Filter>src\ToolModel</Filter>
-    </ClInclude>
     <ClInclude Include="src\cGridItem.h">
       <Filter>src\GraphicsItem</Filter>
     </ClInclude>
     <ClInclude Include="colorPickerDialog.h">
       <Filter>src\Picker</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ToolSimpleBrush.h">
-      <Filter>src\ToolModel</Filter>
     </ClInclude>
     <ClInclude Include="src\CurveBase.h">
       <Filter>src\Curve</Filter>
