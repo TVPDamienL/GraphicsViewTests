@@ -27,6 +27,7 @@ cToolSimpleBrush::flags( const QModelIndex & iIndex ) const
 void
 cToolSimpleBrush::buildTool()
 {
+    // This is useless : no more qt modeling
     QStandardItem* sizeItem = new QStandardItem( "Size" );
     sizeItem->setData( mToolSize );
     setItem( 0, 0, sizeItem );
@@ -36,6 +37,11 @@ cToolSimpleBrush::buildTool()
     QStandardItem* step = new QStandardItem( "Step" );
     step->setData( mStep );
     setItem( 2, 0, step );
+
+    // This isn't useless
+    mProfile.SetValueAtTime( 0.0, 0.0 );
+    mProfile.SetValueAtTime( 0.2, 0.8 );
+    mProfile.SetValueAtTime( 1.0, 1.0 );
 }
 
 void

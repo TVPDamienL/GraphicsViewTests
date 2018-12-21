@@ -2,6 +2,8 @@
 
 
 #include "ToolBase.h"
+#include "CurveBase.h"
+
 #include <QColor>
 
 
@@ -28,5 +30,9 @@ public:
     // Overrides
     virtual  void  DrawDot( QImage* iImage, int x, int y ) override;
     virtual  void  DrawLine( QImage* iImage, int x1, int y1, int x2, int y2 ) override;
+
+
+private:
+    cCurveBase< float > mProfile;
 };
 
