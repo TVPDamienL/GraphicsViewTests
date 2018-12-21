@@ -64,7 +64,7 @@ void
 cCurveBase< tType >::SetValueAtTime( double iTime, tType iValue )
 {
     int index = ExactKeyIndexByTime( iTime );
-    if( index >= 0 )
+    if( index >= 0 ) // If there is a key at index, change its value
     {
         mKeys[ index ].mValue = iValue;
     }
@@ -80,7 +80,7 @@ tType
 cCurveBase< tType >::GetValueAtTime( double iTime ) const
 {
     int index = ExactKeyIndexByTime( iTime );
-    if( index >= 0 )
+    if( index >= 0 ) // If we are exactly on a key, we return its value
     {
         return  mKeys[ index ].mValue;
     }
@@ -96,21 +96,21 @@ cCurveBase< tType >::GetValueAtTime( double iTime ) const
         }
         else
         {
-            int indexLeftKey = _GetInsertionIndexByTime_( iTime ) - 1;
+            int indexLeftKey = _GetInsertionIndexByTime_( iTime ) - 1; // We get insertion index, which will be the index of the left key + 1
 
             if( indexLeftKey >= mKeys.size() - 1 ) // Asked for time on or after last key -> return last key value
             {
                 return  mKeys.back().mValue;
             }
-            else if( indexLeftKey < 0 ) // Asked for a value before first key
+            else if( indexLeftKey < 0 ) // Asked for a value on before first key
             {
                 return  mKeys[ 0 ].mValue;
             }
             else
             {
                 // Interpolate from indexLeftKey to indexLeftKey + 1
-                double  timeLeft  = mKeys[ indexLeftKey ].mTime;
-                double  timeRight = mKeys[ indexLeftKey + 1 ].mTime;
+                double  timeLeft    = mKeys[ indexLeftKey ].mTime;
+                double  timeRight   = mKeys[ indexLeftKey + 1 ].mTime;
                 tType   keyLeft     = mKeys[ indexLeftKey ].mValue;
                 tType   keyRight    = mKeys[ indexLeftKey + 1 ].mValue;
 
