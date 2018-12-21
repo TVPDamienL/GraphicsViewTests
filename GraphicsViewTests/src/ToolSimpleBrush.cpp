@@ -9,7 +9,7 @@ cToolSimpleBrush::~cToolSimpleBrush()
 cToolSimpleBrush::cToolSimpleBrush( QObject * iParent ) :
     ToolBase( iParent )
 {
-    mToolSize = 5;
+    mToolSize = 50;
     mColor = Qt::red;
     mStep = 10.0F; // Because we stay in squared numerics, to avoid the sqrt, so this would be a 5 pixel step
 
@@ -40,7 +40,7 @@ cToolSimpleBrush::buildTool()
 
     // This isn't useless
     mProfile.SetValueAtTime( 0.0, 0.0 );
-    mProfile.SetValueAtTime( 0.2, 0.8 );
+    mProfile.SetValueAtTime( 0.1, 0.7 );
     mProfile.SetValueAtTime( 1.0, 1.0 );
 }
 
@@ -55,11 +55,16 @@ cToolSimpleBrush::_DrawPixel( uchar * iData, unsigned int iImageWidth, unsigned 
 
     int index = y * iImageWidth * 4 + x * 4;
 
-    // BGRA format
-    iData[ index ] = iB;
-    iData[ index + 1 ] = iG;
-    iData[ index + 2 ] = iR;
-    iData[ index + 3 ] = iA;
+
+    float transparencyAmountInverse = 1.F - (float(iA) / 255.F);
+
+    // BGRA format and premultiplied alpha
+    // Premultiplied allows this simple equation, basically we do a weighted sum of source and destination, weighted by the src's alpha
+    // So we basically keep as much dst as src is transparent -> the more src is transparent, the more we want dst's color, so -> mult by 1-alpha, alpha between 0 and 1
+    iData[ index ]      = iB + iData[ index ]       * transparencyAmountInverse;
+    iData[ index + 1 ]  = iG + iData[ index + 1 ]   * transparencyAmountInverse;
+    iData[ index + 2 ]  = iR + iData[ index + 2 ]   * transparencyAmountInverse;
+    iData[ index + 3 ]  = iA + iData[ index + 3 ]   * transparencyAmountInverse;
 }
 
 
@@ -81,7 +86,14 @@ cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY )
         {
             if( dx * dx + dy * dy <= r * r )
             {
-                _DrawPixel( data, width, height, iX + dx, iY + dy, R, G, B, A );
+                int distance = Distance2PointsSquared( QPoint( iX, iY ), QPoint( iX + dx, iY + dy ) );
+                float distanceParam = 1.0F - (float(distance) / float((mToolSize * mToolSize / 4)));
+                float mult = mProfile.GetValueAtTime( distanceParam );
+
+                // Gotta mult every composant, because, i dunno if that's just the format qt uses, but if alpha = N, all comp have to be N at max
+                // So opaque = 255 max value, half transparent = 127 max value for all comp
+                // It means if alpha gets divided by two, all comp must go half
+                _DrawPixel( data, width, height, iX + dx, iY + dy, R * mult, G * mult, B * mult, A * mult );
             }
         }
     }

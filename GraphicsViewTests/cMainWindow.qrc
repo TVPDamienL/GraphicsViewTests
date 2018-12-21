@@ -1,4 +1,5 @@
 <RCC>
-    <qresource prefix="cMainWindow">
+    <qresource prefix="/cMainWindow">
+        <file>Resources/CanvasAlpha4k.png</file>
     </qresource>
 </RCC>

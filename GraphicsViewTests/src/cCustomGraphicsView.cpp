@@ -26,7 +26,7 @@ cCustomGraphicsView::cCustomGraphicsView( QWidget *parent ) :
 
     auto imgA = new  cGraphicItem( this );
     imgA->setZValue( -1 );
-    imgA->setFile( "Resources/canvas.png" );
+    imgA->setFile( ":/cMainWindow/Resources/CanvasAlpha4k.png" );
     scene->addItem( imgA );
     mAnimationImages.push_back( imgA );
 
