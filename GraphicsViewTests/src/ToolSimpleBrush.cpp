@@ -10,7 +10,7 @@ cToolSimpleBrush::cToolSimpleBrush( QObject * iParent ) :
     ToolBase( iParent )
 {
     // Some debug values to work with
-    mToolSize = 50;
+    mToolSize = 10;
     mColor = Qt::red;
     mStep = 10.0F; // Because we stay in squared numerics, to avoid the sqrt, so this would be a 5 pixel step
     mApplyProfile = true;
@@ -40,9 +40,8 @@ cToolSimpleBrush::buildTool()
     setItem( 2, 0, step );
 
 
-    // Trying to get the linear profile to render better atm
     mProfile.SetValueAtTime( 0.0, 0.0 );
-    //mProfile.SetValueAtTime( 0.2, 1.0 );
+    mProfile.SetValueAtTime( 0.5, 1.0 );
     mProfile.SetValueAtTime( 1.0, 1.0 );
 }
 
@@ -107,8 +106,8 @@ cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY )
 
                 if( mApplyProfile )
                 {
-                    int distance = Distance2PointsSquared( QPoint( iX, iY ), QPoint( iX + dx, iY + dy ) );
-                    float distanceParam = 1.0F - (float(distance) / float((mToolSize * mToolSize / 4))); // 1 - distanceRatio so it goes outwards, otherwise, it's a reversed gradient
+                    float distance = Distance2PointsSquared( QPoint( iX, iY ), QPoint( iX + dx, iY + dy ) );
+                    float distanceParam = 1.0F - ( distance / float(( mToolSize * mToolSize / 4 )) ); // 1 - distanceRatio so it goes outwards, otherwise, it's a reversed gradient
                     mult = mProfile.GetValueAtTime( distanceParam );
                 }
 
