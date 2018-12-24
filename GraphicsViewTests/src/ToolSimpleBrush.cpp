@@ -64,10 +64,10 @@ void
 cToolSimpleBrush::_DrawPixel( uchar * iData, unsigned int iImageWidth, unsigned int iImageHeight, int iX, int iY, int iR, int iG, int iB, int iA )
 {
     int x = iX < 0 ? 0 : iX;
-    x = x > iImageWidth ? iImageWidth-1 : x;
+    x = x >= iImageWidth ? iImageWidth-1 : x;
 
     int y = iY < 0 ? 0 : iY;
-    y = y > iImageHeight ? iImageHeight-1 : y;
+    y = y >= iImageHeight ? iImageHeight-1 : y;
 
     int index = y * iImageWidth * 4 + x * 4;
 

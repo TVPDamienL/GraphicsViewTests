@@ -62,7 +62,6 @@ cCanvas::tabletEvent( QTabletEvent*  iEvent )
         {
             mState = kDrawing;
             mItemPixmap = mEditableItem->mpixmap;
-            mItemPixmapAsImage = mItemPixmap->toImage();
 
             mToolModel->StartDrawing();
 
@@ -76,6 +75,7 @@ cCanvas::tabletEvent( QTabletEvent*  iEvent )
             if( mState == kDrawing )
             {
                 mToolModel->EndDrawing();
+                mClip->LayerAtIndex( 0 )->WriteUndoHistory();
                 currentFrameGotPainted( *mEditableItem->mpixmap );
             }
 
@@ -97,9 +97,9 @@ cCanvas::tabletEvent( QTabletEvent*  iEvent )
                 };
 
                 mToolModel->PathAddPoint( point );
-                mToolModel->DrawPathFromLastRenderedPoint( &mItemPixmapAsImage );
+                mToolModel->DrawPathFromLastRenderedPoint( mClip->LayerAtIndex( 0 )->Image() );
 
-                SetPixmap( QPixmap::fromImage( mItemPixmapAsImage )  );
+                SetPixmap( QPixmap::fromImage( *mClip->LayerAtIndex( 0 )->Image() )  );
                 currentFrameGotPainted( *mEditableItem->mpixmap );
             }
 
@@ -199,7 +199,13 @@ cCanvas::keyReleaseEvent( QKeyEvent * iEvent )
     else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_Z )
     {
         mClip->LayerAtIndex( 0 )->Undo();
-        _SetData( mClip->LayerAtIndex( 0 )->Data(), mClip->Width(), mClip->Height() );
+        _SetImage( mClip->LayerAtIndex( 0 )->Image() );
+        currentFrameGotPainted( *mEditableItem->mpixmap );
+    }
+    else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_Y )
+    {
+        mClip->LayerAtIndex( 0 )->Redo();
+        _SetImage( mClip->LayerAtIndex( 0 )->Image() );
         currentFrameGotPainted( *mEditableItem->mpixmap );
     }
 
@@ -222,7 +228,6 @@ cCanvas::mousePressEvent( QMouseEvent * iEvent )
         {
             mState = kDrawing;
             mItemPixmap = mEditableItem->mpixmap;
-            mItemPixmapAsImage = mItemPixmap->toImage();
 
             mToolModel->StartDrawing();
 
@@ -260,12 +265,14 @@ cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
 
         sPointData point;
         point.mPosition = QPoint( newPointInItemCoordinate.x(), newPointInItemCoordinate.y() );
+        point.mPressure = 1.0F;
+        point.mRotation = 0.0F;
 
         mToolModel->PathAddPoint( point );
-        mToolModel->DrawPathFromLastRenderedPoint( &mItemPixmapAsImage );
+        mToolModel->DrawPathFromLastRenderedPoint( mClip->LayerAtIndex( 0 )->Image() );
 
 
-        SetPixmap( QPixmap::fromImage( mItemPixmapAsImage )  );
+        SetPixmap( QPixmap::fromImage( *mClip->LayerAtIndex( 0 )->Image() )  );
         currentFrameGotPainted( *mEditableItem->mpixmap );
     }
 
@@ -280,7 +287,7 @@ cCanvas::mouseReleaseEvent( QMouseEvent * iEvent )
     if( mState == kDrawing )
     {
         mToolModel->EndDrawing();
-        mClip->LayerAtIndex( 0 )->RegisterUndo();
+        mClip->LayerAtIndex( 0 )->WriteUndoHistory();
         currentFrameGotPainted( *mEditableItem->mpixmap );
     }
 
@@ -332,7 +339,7 @@ void
 cCanvas::SetClip( cClip * iClip )
 {
     mClip = iClip;
-    _SetData( mClip->LayerAtIndex( 0 )->Data(), mClip->Width(), mClip->Height() );
+    _SetImage( mClip->LayerAtIndex( 0 )->Image() );
 }
 
 
@@ -385,24 +392,11 @@ cCanvas::toolChanged( const QModelIndex & Left, const QModelIndex & Right, const
 
 
 void
-cCanvas::_SetData( const uchar * iData, uint iWidth, uint iHeight )
+cCanvas::_SetImage( const QImage* iImage )
 {
     delete  mEditableItem->mpixmap;
-    QImage mediumRelou( iWidth, iHeight, QImage::Format_ARGB32_Premultiplied );
-    uchar* data = mediumRelou.bits();
-    for( int i = 0; i < iHeight; ++i )
-        for( int j = 0; j < iWidth; ++j )
-        {
-            unsigned int index = i * iWidth * 4 + j * 4;
 
-            data[ index ] = iData[ index ];
-            data[ index + 1 ] = iData[ index + 1 ];
-            data[ index + 2 ] = iData[ index + 2 ];
-            data[ index + 3 ] = iData[ index + 3 ];
-        }
-
-
-    mEditableItem->mpixmap = new QPixmap( QPixmap::fromImage( mediumRelou ) );
+    mEditableItem->mpixmap = new QPixmap( QPixmap::fromImage( *iImage ) );
     mEditableItem->update();
 
     if( mState == kDrawing )

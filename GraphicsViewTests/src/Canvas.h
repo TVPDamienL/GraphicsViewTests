@@ -51,7 +51,7 @@ signals:
 
 
 private:
-    void  _SetData( const uchar* iData, uint iWidth, uint iHeight );
+    void  _SetImage( const QImage* iImage );
 
 
 private:
@@ -74,7 +74,6 @@ private:
     cGridItem*          mGridItem;
     QPointF             mClickPos;
     QPixmap*            mItemPixmap;
-    QImage              mItemPixmapAsImage;
 
     eTool               mTool;
     ToolBase*           mToolModel;

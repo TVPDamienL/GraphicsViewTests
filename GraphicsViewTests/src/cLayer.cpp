@@ -3,69 +3,72 @@
 
 cLayer::~cLayer()
 {
-    delete[]  mData;
-    for( auto ptr : mUndoStack )
-        delete[] ptr;
+    delete  mImage;
+    for( auto image : mDrawingHistory )
+        delete image;
 }
 
 
 cLayer::cLayer( unsigned int iWidth, unsigned int iHeight ) :
-    mWidth( iWidth ),
-    mHeight( iHeight ),
-    mUndoStackCurrentIndex( 0 )
+    mCurrentHistoryIndex( 0 )
 {
-    unsigned int size = mWidth * mHeight * 4;
-    mData = new unsigned char[ size ];
+    mImage = new QImage( iWidth, iHeight, QImage::Format_ARGB32_Premultiplied );
 
-    for( int i = 0; i < size; i += 4 )
-    {
-        mData[ i ]      = 255;
-        mData[ i+1 ]    = 50;
-        mData[ i+2 ]    = 50;
-        mData[ i+3 ]    = 255;
-    }
+    mImage->fill( 0xFF333333 );
 
-    RegisterUndo();
+
+    // Manual version
+    //uchar*          data = emptyImage->bits();
+    //unsigned int    size = emptyImage->width() * emptyImage->height() * 4;
+    //for( int i = 0; i < size; i += 4 )
+    //{
+    //    Format is read reversed : BGRA
+    //    data[ i ]       = 255;    //B
+    //    data[ i + 1 ]   = 50;     //G
+    //    data[ i + 2 ]   = 50;     //R
+    //    data[ i + 3 ]   = 255;    //A
+    //}
+
+    WriteUndoHistory(); // First undo state, the empty image
+
+}
+
+
+QImage*
+cLayer::Image()
+{
+    return  mImage;
 }
 
 
 void
-cLayer::SetData( unsigned char * iData )
+cLayer::WriteUndoHistory()
 {
-    mData = iData;
-}
-
-
-unsigned char*
-cLayer::Data()
-{
-    return  mData;
-}
-
-
-void
-cLayer::RegisterUndo()
-{
-    if( mUndoStackCurrentIndex < int(mUndoStack.size()) - 1 )
+    // If we are not on the last image of the history, we erase history from afterCurrent to last
+    if( mCurrentHistoryIndex < int( mDrawingHistory.size() - 1 ) )
     {
-        for( int i = 0; i < mUndoStack.size() - 1; ++i )
-            delete[] mUndoStack[ i ];
+        for( int i = mCurrentHistoryIndex + 1; i < mDrawingHistory.size(); ++i )
+            delete  mDrawingHistory[ i ];
 
-        mUndoStack.erase( mUndoStack.begin() + mUndoStackCurrentIndex, mUndoStack.end() );
+        mDrawingHistory.erase( mDrawingHistory.begin() + mCurrentHistoryIndex + 1, mDrawingHistory.end() );
     }
 
-    mUndoStack.push_back( _CopyData() );
-    ++mUndoStackCurrentIndex;
+    // Here we copy the current image, so we won't change it afterward
+    mDrawingHistory.push_back( new QImage( *mImage ) );
+    // Now we are at the end of the history
+    mCurrentHistoryIndex = int( mDrawingHistory.size() ) - 1;
 }
 
 
 bool
 cLayer::Undo()
 {
-    if( mUndoStackCurrentIndex <= 0 )
+    if( mCurrentHistoryIndex <= 0 )
         return  false;
 
-    mData = mUndoStack[ --mUndoStackCurrentIndex ];
+    // Need to update the drawing buffer, so that if we draw from now, we'll draw in a buffer, not the actual snap in history
+    delete  mImage;
+    mImage = new QImage( *mDrawingHistory[ --mCurrentHistoryIndex ] );
 
     return  true;
 }
@@ -74,28 +77,12 @@ cLayer::Undo()
 bool
 cLayer::Redo()
 {
-    if( mUndoStackCurrentIndex > mUndoStack.size() - 1 )
+    if( mCurrentHistoryIndex >= mDrawingHistory.size() - 1 )
         return  false;
 
-    mData = mUndoStack[ ++mUndoStackCurrentIndex ];
+    // Need to update the drawing buffer, so that if we draw from now, we'll draw in a buffer, not the actual snap in history
+    delete  mImage;
+    mImage = new QImage( *mDrawingHistory[ ++mCurrentHistoryIndex ] );
 
     return  true;
-}
-
-
-unsigned char *
-cLayer::_CopyData()
-{
-    unsigned int size = mWidth * mHeight * 4;
-
-    unsigned char* copy = new unsigned char[ size ];
-    for( int i = 0; i < size; i += 4 )
-    {
-        copy[ i ]       = mData[ i ];
-        copy[ i + 1 ]   = mData[ i + 1 ];
-        copy[ i + 2 ]   = mData[ i + 2 ];
-        copy[ i + 3 ]   = mData[ i + 3 ];
-    }
-
-    return  copy;
 }
