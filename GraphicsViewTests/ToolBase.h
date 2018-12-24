@@ -41,7 +41,7 @@ public:
 public:
     virtual  void  StartDrawing();
 
-    virtual  void  DrawDot( QImage* iImage, int x, int y ) = 0;
+    virtual  void  DrawDot( QImage* iImage, int x, int y, float iPressure, float iRotation ) = 0;
     virtual  void  DrawLine( QImage* iImage, int x1, int y1, int x2, int y2 ) = 0;
     virtual  void  DrawFullPath( QImage* iImage );
     virtual  void  DrawPathFromLastRenderedPoint( QImage* iImage );
@@ -52,7 +52,7 @@ public:
     void  PathAddPoint( sPointData iPoint );
 
 private:
-    QPoint  __DrawDotVectorTruc_RequiresAName_( QImage* iImage, const QPoint& iStart, const QPointF& iVector );
+    QPoint  __DrawDotVectorTruc_RequiresAName_( QImage* iImage, const QPoint& iStart, const QPointF& iVector, float iPressure, float iRotation );
 
 
 protected:

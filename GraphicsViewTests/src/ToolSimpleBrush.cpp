@@ -85,7 +85,7 @@ cToolSimpleBrush::_DrawPixel( uchar * iData, unsigned int iImageWidth, unsigned 
 
 
 void
-cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY )
+cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY, float iPressure, float iRotation )
 {
     uchar* data = iImage->bits();
     unsigned int width = iImage->width();
@@ -95,7 +95,7 @@ cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY )
     int B = mColor.blue();
     int A = mColor.alpha();
 
-    int r = mToolSize/2;
+    int r = (mToolSize/2) * iPressure;
     for( int dy = -r; dy <= r; ++dy)
     {
         for( int dx = -r; dx <= r; ++dx )
@@ -122,8 +122,8 @@ cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY )
 void
 cToolSimpleBrush::DrawLine( QImage * iImage, int x1, int y1, int x2, int y2 )
 {
-    DrawDot( iImage, x1, y1 );
-    DrawDot( iImage, x2, y2 );
+    DrawDot( iImage, x1, y1, 1, 0 );
+    DrawDot( iImage, x2, y2, 1, 0 );
 
     // All inbetweens
 }

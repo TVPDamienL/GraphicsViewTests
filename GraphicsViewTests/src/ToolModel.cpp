@@ -43,22 +43,24 @@ cToolModel::_BuildTool()
 
 
 void
-cToolModel::DrawDot( QImage* iImage, int x, int y )
+cToolModel::DrawDot( QImage* iImage, int x, int y, float iPressure, float iRotation )
 {
     uchar* data = iImage->bits();
 
-    int topLeftX = x - mToolSize/2;
-    int topLeftY = y - mToolSize/2;
+    int toolSize = mToolSize * iPressure;
+
+    int topLeftX = x - toolSize / 2;
+    int topLeftY = y - toolSize / 2;
 
 
     // Constrains
     topLeftX = topLeftX < 0 ? 0 : topLeftX;
     topLeftY = topLeftY < 0 ? 0 : topLeftY;
 
-    if( topLeftX + mToolSize >= iImage->width() )
-        topLeftX = iImage->width() - mToolSize - 1;
-    if( topLeftY + mToolSize >= iImage->height() )
-        topLeftY = iImage->height() - mToolSize - 1;
+    if( topLeftX + toolSize >= iImage->width() )
+        topLeftX = iImage->width() - toolSize - 1;
+    if( topLeftY + toolSize >= iImage->height() )
+        topLeftY = iImage->height() - toolSize - 1;
     // ==========
 
 
@@ -81,8 +83,8 @@ cToolModel::DrawDot( QImage* iImage, int x, int y )
 void
 cToolModel::DrawLine( QImage * iImage, int x1, int y1, int x2, int y2 )
 {
-    DrawDot( iImage, x1, y1 );
-    DrawDot( iImage, x2, y2 );
+    DrawDot( iImage, x1, y1, 1, 0 );
+    DrawDot( iImage, x2, y2, 1, 0 );
 
     // All inbetweens
 }

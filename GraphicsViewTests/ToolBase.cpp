@@ -104,8 +104,11 @@ ToolBase::DrawPathFromLastRenderedPoint( QImage * iImage )
         // Setting base variables : starting point, ending point and their distance
         QPoint p1 = mPath[ mLastRenderedPathIndex ].mPosition;
         QPoint p2 = mPath[ mLastRenderedPathIndex + 1 ].mPosition;
+        float  pressure_p1 = mPath[ mLastRenderedPathIndex ].mPressure;
+        float  pressure_p2 = mPath[ mLastRenderedPathIndex + 1 ].mPressure;
+        float  rotation_p1 = mPath[ mLastRenderedPathIndex ].mRotation;
+        float  rotation_p2 = mPath[ mLastRenderedPathIndex + 1 ].mRotation;
         float distance = Distance2Points( p1, p2 );
-
 
         // Two identical points -> SKIP
         if( abs( distance ) < 0.01 )
@@ -134,17 +137,20 @@ ToolBase::DrawPathFromLastRenderedPoint( QImage * iImage )
         // If spare steps from previous it, we apply it, and then use this point as first
         if( abs( mRequiredStepLength - mStep ) > 0.1F )
         {
-            startingPoint = __DrawDotVectorTruc_RequiresAName_( iImage, p1, stepVectorNormalizedAsPF * mRequiredStepLength );
+            startingPoint = __DrawDotVectorTruc_RequiresAName_( iImage, p1, stepVectorNormalizedAsPF * mRequiredStepLength, pressure_p1, rotation_p1 );
             remainingDistance -= mRequiredStepLength;
         }
 
         // Now, we go step by step
         int count = 1; // Counting how many split have been drawn
 
+
         // We split the segment using mStep, and draw dots on each step while there is room on the segment
         while( remainingDistance >= mStep )
         {
-            __DrawDotVectorTruc_RequiresAName_( iImage, startingPoint, stepVectorNormalizedAsPF * mStep * count );
+            float pressure = std::abs(pressure_p2 - pressure_p1) * (1.0 - remainingDistance/distance) + std::min(pressure_p1, pressure_p2);
+            float rotation = std::abs(rotation_p2 - rotation_p1) * (1.0 - remainingDistance/distance) + std::min(rotation_p1, rotation_p2);
+            __DrawDotVectorTruc_RequiresAName_( iImage, startingPoint, stepVectorNormalizedAsPF * mStep * count, pressure, rotation );
             remainingDistance -= mStep;
             ++count;
         }
@@ -178,13 +184,13 @@ ToolBase::PathAddPoint( sPointData iPoint )
 
 
 QPoint
-ToolBase::__DrawDotVectorTruc_RequiresAName_( QImage* iImage, const QPoint & iStart, const QPointF & iVector )
+ToolBase::__DrawDotVectorTruc_RequiresAName_( QImage* iImage, const QPoint& iStart, const QPointF& iVector,  float iPressure, float iRotation )
 {
     // This takes a starting point, offsets by a vector, draws a dot there and return the offset point's coordinates
     QPoint stepVector = QPoint( std::roundf( iVector.x() ), std::roundf( iVector.y() ) );
     QPoint stepPosition = iStart + stepVector;
 
-    DrawDot( iImage, stepPosition.x(), stepPosition.y() );
+    DrawDot( iImage, stepPosition.x(), stepPosition.y(), iPressure, iRotation );
 
     return  stepPosition;
 }

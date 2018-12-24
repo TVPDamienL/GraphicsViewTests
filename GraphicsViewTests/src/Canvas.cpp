@@ -90,7 +90,13 @@ cCanvas::tabletEvent( QTabletEvent*  iEvent )
                 QPointF originInItemCoordinate = mEditableItem->mapFromScene( mapToScene( mClickPos.x(), mClickPos.y() ) );
                 QPointF newPointInItemCoordinate = mEditableItem->mapFromScene( mapToScene( iEvent->pos().x(), iEvent->pos().y() ) );
 
-                mToolModel->PathAddPoint( QPoint( newPointInItemCoordinate.x(), newPointInItemCoordinate.y() ) );
+                sPointData  point = {
+                    QPoint( newPointInItemCoordinate.x(), newPointInItemCoordinate.y() ),
+                    float(iEvent->pressure()),
+                    float(iEvent->rotation())
+                };
+
+                mToolModel->PathAddPoint( point );
                 mToolModel->DrawPathFromLastRenderedPoint( &mItemPixmapAsImage );
 
                 SetPixmap( QPixmap::fromImage( mItemPixmapAsImage )  );
@@ -280,14 +286,6 @@ cCanvas::mouseReleaseEvent( QMouseEvent * iEvent )
 
     mState = kIdle;
     QGraphicsView::mouseReleaseEvent( iEvent );
-}
-
-
-void
-cCanvas::tabletEvent( QTabletEvent * iEvent )
-{
-    iEvent->accept();
-    qDebug() << "Event";
 }
 
 
