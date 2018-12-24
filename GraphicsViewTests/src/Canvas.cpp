@@ -5,6 +5,8 @@
 
 #include "colorPickerDialog.h"
 
+#include "cLayer.h"
+
 
 #include <QApplication>
 #include <QClipboard>
@@ -135,6 +137,12 @@ cCanvas::keyReleaseEvent( QKeyEvent * iEvent )
         currentFrameGotPainted( *mItemPixmap );
         mEditableItem->update();
     }
+    else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_Z )
+    {
+        mClip->LayerAtIndex( 0 )->Undo();
+        _SetData( mClip->LayerAtIndex( 0 )->Data(), mClip->Width(), mClip->Height() );
+        currentFrameGotPainted( *mEditableItem->mpixmap );
+    }
 
     QGraphicsView::keyReleaseEvent( iEvent );
 }
@@ -213,6 +221,7 @@ cCanvas::mouseReleaseEvent( QMouseEvent * iEvent )
     if( mState == kDrawing )
     {
         mToolModel->EndDrawing();
+        mClip->LayerAtIndex( 0 )->RegisterUndo();
         currentFrameGotPainted( *mEditableItem->mpixmap );
     }
 
@@ -269,30 +278,10 @@ cCanvas::SetPixmap( const QPixmap & iPixmap )
 
 
 void
-cCanvas::SetData( const uchar * iData, uint iWidth, uint iHeight )
+cCanvas::SetClip( cClip * iClip )
 {
-    delete  mEditableItem->mpixmap;
-    QImage mediumRelou( iWidth, iHeight, QImage::Format_ARGB32_Premultiplied );
-    uchar* data = mediumRelou.bits();
-    for( int i = 0; i < iHeight; ++i )
-        for( int j = 0; j < iWidth; ++j )
-        {
-            unsigned int index = i * iWidth * 4 + j * 4;
-
-            data[ index ]   = iData[ index ];
-            data[ index+1 ] = iData[ index+1 ];
-            data[ index+2 ] = iData[ index+2 ];
-            data[ index+3 ] = iData[ index+3 ];
-        }
-
-
-    mEditableItem->mpixmap = new QPixmap( QPixmap::fromImage( mediumRelou ) );
-    mEditableItem->update();
-
-    if( mState == kDrawing )
-    {
-        mItemPixmap = mEditableItem->mpixmap;
-    }
+    mClip = iClip;
+    _SetData( mClip->LayerAtIndex( 0 )->Data(), mClip->Width(), mClip->Height() );
 }
 
 
@@ -341,5 +330,33 @@ cCanvas::toolChanged( const QModelIndex & Left, const QModelIndex & Right, const
 {
     if( Left.row() == 0 )
         DrawCursor();
+}
+
+
+void
+cCanvas::_SetData( const uchar * iData, uint iWidth, uint iHeight )
+{
+    delete  mEditableItem->mpixmap;
+    QImage mediumRelou( iWidth, iHeight, QImage::Format_ARGB32_Premultiplied );
+    uchar* data = mediumRelou.bits();
+    for( int i = 0; i < iHeight; ++i )
+        for( int j = 0; j < iWidth; ++j )
+        {
+            unsigned int index = i * iWidth * 4 + j * 4;
+
+            data[ index ] = iData[ index ];
+            data[ index + 1 ] = iData[ index + 1 ];
+            data[ index + 2 ] = iData[ index + 2 ];
+            data[ index + 3 ] = iData[ index + 3 ];
+        }
+
+
+    mEditableItem->mpixmap = new QPixmap( QPixmap::fromImage( mediumRelou ) );
+    mEditableItem->update();
+
+    if( mState == kDrawing )
+    {
+        mItemPixmap = mEditableItem->mpixmap;
+    }
 }
 

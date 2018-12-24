@@ -46,7 +46,7 @@ cLayer::Data()
 void
 cLayer::RegisterUndo()
 {
-    if( mUndoStackCurrentIndex < mUndoStack.size() - 1 )
+    if( mUndoStackCurrentIndex < int(mUndoStack.size()) - 1 )
     {
         for( int i = 0; i < mUndoStack.size() - 1; ++i )
             delete[] mUndoStack[ i ];
@@ -55,6 +55,7 @@ cLayer::RegisterUndo()
     }
 
     mUndoStack.push_back( _CopyData() );
+    ++mUndoStackCurrentIndex;
 }
 
 

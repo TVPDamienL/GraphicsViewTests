@@ -108,7 +108,7 @@ cMainWindow::CurrentFrameChanged( int iNewIndex )
 
     mCurrentFrame = iNewIndex;
     auto currentItem = ui.graphicsView->GetAnimationImages().at( mCurrentFrame );
-    ui.canvas->SetData( mClip->LayerAtIndex( 0 )->Data(), mClip->Width(), mClip->Height() );
+    ui.canvas->SetClip( mClip );
 }
 
 

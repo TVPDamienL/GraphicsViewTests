@@ -4,6 +4,7 @@
 #include <QPaintEvent>
 
 #include "ToolBase.h"
+#include "Clip.h"
 #include "cGridItem.h"
 
 class cEditableItem;
@@ -35,7 +36,7 @@ public:
 
 public:
     void  SetPixmap( const QPixmap& iPixmap );
-    void  SetData( const uchar* iData, uint iWidth, uint iHeight );
+    void  SetClip( cClip* iClip );
     void  SetToolModel( ToolBase* iToolModel );
 
     void  UpdateGridItem();
@@ -46,6 +47,10 @@ public:
 signals:
     void  currentFrameGotPainted( const QPixmap& iPixmap );
     void  previousFrameGotPainted( const QPixmap& iPixmap );
+
+
+private:
+    void  _SetData( const uchar* iData, uint iWidth, uint iHeight );
 
 
 private:
@@ -73,6 +78,7 @@ private:
     eTool               mTool;
     ToolBase*           mToolModel;
     QPainter*           mPainter;
+    cClip*              mClip;
 
     QPixmap*            cursorPixmap;
 };
