@@ -9,6 +9,7 @@
 #include <QDataWidgetMapper>
 
 #include "ToolBase.h"
+#include "Clip.h"
 
 class cCustomGraphicsView;
 
@@ -50,5 +51,7 @@ private:
 
     QDataWidgetMapper*  mMapper;
     ToolBase*           mToolModel;
+
+    cClip*                      mClip;
 
 };

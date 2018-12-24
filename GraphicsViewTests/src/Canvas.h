@@ -35,6 +35,7 @@ public:
 
 public:
     void  SetPixmap( const QPixmap& iPixmap );
+    void  SetData( const uchar* iData, uint iWidth, uint iHeight );
     void  SetToolModel( ToolBase* iToolModel );
 
     void  UpdateGridItem();

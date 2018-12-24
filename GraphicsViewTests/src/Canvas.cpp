@@ -269,6 +269,34 @@ cCanvas::SetPixmap( const QPixmap & iPixmap )
 
 
 void
+cCanvas::SetData( const uchar * iData, uint iWidth, uint iHeight )
+{
+    delete  mEditableItem->mpixmap;
+    QImage mediumRelou( iWidth, iHeight, QImage::Format_ARGB32_Premultiplied );
+    uchar* data = mediumRelou.bits();
+    for( int i = 0; i < iHeight; ++i )
+        for( int j = 0; j < iWidth; ++j )
+        {
+            unsigned int index = i * iWidth * 4 + j * 4;
+
+            data[ index ]   = iData[ index ];
+            data[ index+1 ] = iData[ index+1 ];
+            data[ index+2 ] = iData[ index+2 ];
+            data[ index+3 ] = iData[ index+3 ];
+        }
+
+
+    mEditableItem->mpixmap = new QPixmap( QPixmap::fromImage( mediumRelou ) );
+    mEditableItem->update();
+
+    if( mState == kDrawing )
+    {
+        mItemPixmap = mEditableItem->mpixmap;
+    }
+}
+
+
+void
 cCanvas::SetToolModel( ToolBase* iToolModel )
 {
     if( mToolModel )

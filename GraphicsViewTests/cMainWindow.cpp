@@ -6,6 +6,7 @@
 
 #include "ToolSimpleBrush.h"
 
+#include "cLayer.h"
 
 #include "ColorSwatch.h"
 
@@ -20,6 +21,10 @@ cMainWindow::cMainWindow(QWidget *parent) :
 
     mAnimationTimer = new QTimer();
     mAnimationTimer->start( 1000 / 24 );
+
+
+    mClip = new cClip( 1920, 1080 );
+    mClip->AddLayer();
 
     //mMapper = new QDataWidgetMapper( this );
     //mMapper->setModel( mToolModel );
@@ -103,7 +108,7 @@ cMainWindow::CurrentFrameChanged( int iNewIndex )
 
     mCurrentFrame = iNewIndex;
     auto currentItem = ui.graphicsView->GetAnimationImages().at( mCurrentFrame );
-    ui.canvas->SetPixmap( currentItem->pixmap() );
+    ui.canvas->SetData( mClip->LayerAtIndex( 0 )->Data(), mClip->Width(), mClip->Height() );
 }
 
 

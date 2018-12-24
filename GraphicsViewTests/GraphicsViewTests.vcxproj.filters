@@ -52,6 +52,12 @@
     <Filter Include="src\Curve">
       <UniqueIdentifier>{1920fd3d-99c1-4a82-8934-211965e26f14}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Projet">
+      <UniqueIdentifier>{ce179a56-c9e9-4ec7-af3c-588dd7ef44ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Undo">
+      <UniqueIdentifier>{9f3391d1-307b-43cc-ab73-44ed4b22ebd0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -104,6 +110,15 @@
     </ClCompile>
     <ClCompile Include="src\CurveBase.cpp">
       <Filter>src\Curve</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Clip.cpp">
+      <Filter>src\Projet</Filter>
+    </ClCompile>
+    <ClCompile Include="src\cLayer.cpp">
+      <Filter>src\Projet</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Undoable.cpp">
+      <Filter>src\Undo</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -164,6 +179,15 @@
     </ClInclude>
     <ClInclude Include="src\CurveTests.h">
       <Filter>src\Curve</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Clip.h">
+      <Filter>src\Projet</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cLayer.h">
+      <Filter>src\Projet</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Undoable.h">
+      <Filter>src\Undo</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

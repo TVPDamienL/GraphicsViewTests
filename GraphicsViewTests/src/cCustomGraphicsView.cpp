@@ -4,6 +4,8 @@
 #include "cAddItem.h"
 #include "cCurrentFrameItem.h"
 
+#include "Clip.h"
+
 #include <QDragEnterEvent>
 #include <QMimeData>
 
@@ -23,6 +25,7 @@ cCustomGraphicsView::cCustomGraphicsView( QWidget *parent ) :
     QGraphicsScene* scene = new QGraphicsScene( this );
     setScene( scene );
     setAlignment( Qt::AlignVCenter | Qt::AlignLeft );
+
 
     auto imgA = new  cGraphicItem( this );
     imgA->setZValue( -1 );

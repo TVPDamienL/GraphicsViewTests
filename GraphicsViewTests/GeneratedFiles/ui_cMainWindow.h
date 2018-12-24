@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'cMainWindow.ui'
 **
-** Created by: Qt User Interface Compiler version 5.12.0
+** Created by: Qt User Interface Compiler version 5.10.1
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
 ********************************************************************************/
@@ -10,10 +10,13 @@
 #define UI_CMAINWINDOW_H
 
 #include <QtCore/QVariant>
+#include <QtWidgets/QAction>
 #include <QtWidgets/QApplication>
+#include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QFormLayout>
 #include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenuBar>
@@ -59,16 +62,16 @@ public:
     void setupUi(QMainWindow *cMainWindow)
     {
         if (cMainWindow->objectName().isEmpty())
-            cMainWindow->setObjectName(QString::fromUtf8("cMainWindow"));
+            cMainWindow->setObjectName(QStringLiteral("cMainWindow"));
         cMainWindow->resize(649, 589);
         centralWidget = new QWidget(cMainWindow);
-        centralWidget->setObjectName(QString::fromUtf8("centralWidget"));
+        centralWidget->setObjectName(QStringLiteral("centralWidget"));
         verticalLayout_2 = new QVBoxLayout(centralWidget);
         verticalLayout_2->setSpacing(6);
         verticalLayout_2->setContentsMargins(11, 11, 11, 11);
-        verticalLayout_2->setObjectName(QString::fromUtf8("verticalLayout_2"));
+        verticalLayout_2->setObjectName(QStringLiteral("verticalLayout_2"));
         previewLabel = new QLabel(centralWidget);
-        previewLabel->setObjectName(QString::fromUtf8("previewLabel"));
+        previewLabel->setObjectName(QStringLiteral("previewLabel"));
         previewLabel->setMinimumSize(QSize(0, 0));
         previewLabel->setMaximumSize(QSize(16777215, 16777215));
         previewLabel->setAlignment(Qt::AlignCenter);
@@ -77,12 +80,12 @@ public:
 
         horizontalLayout_2 = new QHBoxLayout();
         horizontalLayout_2->setSpacing(6);
-        horizontalLayout_2->setObjectName(QString::fromUtf8("horizontalLayout_2"));
+        horizontalLayout_2->setObjectName(QStringLiteral("horizontalLayout_2"));
         verticalLayout = new QVBoxLayout();
         verticalLayout->setSpacing(6);
-        verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
+        verticalLayout->setObjectName(QStringLiteral("verticalLayout"));
         label_2 = new QLabel(centralWidget);
-        label_2->setObjectName(QString::fromUtf8("label_2"));
+        label_2->setObjectName(QStringLiteral("label_2"));
         QSizePolicy sizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
         sizePolicy.setHorizontalStretch(0);
         sizePolicy.setVerticalStretch(0);
@@ -93,45 +96,45 @@ public:
 
         formLayout = new QFormLayout();
         formLayout->setSpacing(6);
-        formLayout->setObjectName(QString::fromUtf8("formLayout"));
+        formLayout->setObjectName(QStringLiteral("formLayout"));
         penSizeLabel = new QLabel(centralWidget);
-        penSizeLabel->setObjectName(QString::fromUtf8("penSizeLabel"));
+        penSizeLabel->setObjectName(QStringLiteral("penSizeLabel"));
 
         formLayout->setWidget(0, QFormLayout::LabelRole, penSizeLabel);
 
         penSizeSpinBox = new QSpinBox(centralWidget);
-        penSizeSpinBox->setObjectName(QString::fromUtf8("penSizeSpinBox"));
+        penSizeSpinBox->setObjectName(QStringLiteral("penSizeSpinBox"));
         penSizeSpinBox->setMaximum(9999);
 
         formLayout->setWidget(0, QFormLayout::FieldRole, penSizeSpinBox);
 
         antiAliasLabel = new QLabel(centralWidget);
-        antiAliasLabel->setObjectName(QString::fromUtf8("antiAliasLabel"));
+        antiAliasLabel->setObjectName(QStringLiteral("antiAliasLabel"));
 
         formLayout->setWidget(1, QFormLayout::LabelRole, antiAliasLabel);
 
         antiAliasCheckBox = new QCheckBox(centralWidget);
-        antiAliasCheckBox->setObjectName(QString::fromUtf8("antiAliasCheckBox"));
+        antiAliasCheckBox->setObjectName(QStringLiteral("antiAliasCheckBox"));
 
         formLayout->setWidget(1, QFormLayout::FieldRole, antiAliasCheckBox);
 
         label = new QLabel(centralWidget);
-        label->setObjectName(QString::fromUtf8("label"));
+        label->setObjectName(QStringLiteral("label"));
 
         formLayout->setWidget(2, QFormLayout::LabelRole, label);
 
         colorSwatch = new ColorSwatch(centralWidget);
-        colorSwatch->setObjectName(QString::fromUtf8("colorSwatch"));
+        colorSwatch->setObjectName(QStringLiteral("colorSwatch"));
 
         formLayout->setWidget(2, QFormLayout::FieldRole, colorSwatch);
 
         stepLabel = new QLabel(centralWidget);
-        stepLabel->setObjectName(QString::fromUtf8("stepLabel"));
+        stepLabel->setObjectName(QStringLiteral("stepLabel"));
 
         formLayout->setWidget(3, QFormLayout::LabelRole, stepLabel);
 
         stepSpinBox = new QSpinBox(centralWidget);
-        stepSpinBox->setObjectName(QString::fromUtf8("stepSpinBox"));
+        stepSpinBox->setObjectName(QStringLiteral("stepSpinBox"));
         stepSpinBox->setMinimum(1);
         stepSpinBox->setMaximum(99999);
 
@@ -144,7 +147,7 @@ public:
         horizontalLayout_2->addLayout(verticalLayout);
 
         canvas = new cCanvas(centralWidget);
-        canvas->setObjectName(QString::fromUtf8("canvas"));
+        canvas->setObjectName(QStringLiteral("canvas"));
 
         horizontalLayout_2->addWidget(canvas);
 
@@ -153,14 +156,14 @@ public:
 
         horizontalLayout = new QHBoxLayout();
         horizontalLayout->setSpacing(6);
-        horizontalLayout->setObjectName(QString::fromUtf8("horizontalLayout"));
+        horizontalLayout->setObjectName(QStringLiteral("horizontalLayout"));
         playButton = new QPushButton(centralWidget);
-        playButton->setObjectName(QString::fromUtf8("playButton"));
+        playButton->setObjectName(QStringLiteral("playButton"));
 
         horizontalLayout->addWidget(playButton);
 
         stopButton = new QPushButton(centralWidget);
-        stopButton->setObjectName(QString::fromUtf8("stopButton"));
+        stopButton->setObjectName(QStringLiteral("stopButton"));
 
         horizontalLayout->addWidget(stopButton);
 
@@ -168,7 +171,7 @@ public:
         verticalLayout_2->addLayout(horizontalLayout);
 
         graphicsView = new cCustomGraphicsView(centralWidget);
-        graphicsView->setObjectName(QString::fromUtf8("graphicsView"));
+        graphicsView->setObjectName(QStringLiteral("graphicsView"));
         QSizePolicy sizePolicy1(QSizePolicy::Expanding, QSizePolicy::Preferred);
         sizePolicy1.setHorizontalStretch(0);
         sizePolicy1.setVerticalStretch(0);
@@ -180,14 +183,14 @@ public:
 
         cMainWindow->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(cMainWindow);
-        menuBar->setObjectName(QString::fromUtf8("menuBar"));
+        menuBar->setObjectName(QStringLiteral("menuBar"));
         menuBar->setGeometry(QRect(0, 0, 649, 21));
         cMainWindow->setMenuBar(menuBar);
         mainToolBar = new QToolBar(cMainWindow);
-        mainToolBar->setObjectName(QString::fromUtf8("mainToolBar"));
+        mainToolBar->setObjectName(QStringLiteral("mainToolBar"));
         cMainWindow->addToolBar(Qt::TopToolBarArea, mainToolBar);
         statusBar = new QStatusBar(cMainWindow);
-        statusBar->setObjectName(QString::fromUtf8("statusBar"));
+        statusBar->setObjectName(QStringLiteral("statusBar"));
         cMainWindow->setStatusBar(statusBar);
 
         retranslateUi(cMainWindow);

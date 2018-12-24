@@ -5,6 +5,7 @@
 class cGraphicItem;
 class cCurrentFrameItem;
 class cAddItem;
+class cClip;
 
 class cCustomGraphicsView :
     public QGraphicsView
