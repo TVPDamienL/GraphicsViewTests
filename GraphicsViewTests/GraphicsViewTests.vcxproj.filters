@@ -120,6 +120,12 @@
     <ClCompile Include="src\Undoable.cpp">
       <Filter>src\Undo</Filter>
     </ClCompile>
+    <ClCompile Include="src\ToolSelection.cpp">
+      <Filter>src\ToolModel</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ToolSelectionRectangle.cpp">
+      <Filter>src\ToolModel</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="cMainWindow.h">
@@ -188,6 +194,12 @@
     </ClInclude>
     <ClInclude Include="src\Undoable.h">
       <Filter>src\Undo</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ToolSelection.h">
+      <Filter>src\ToolModel</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ToolSelectionRectangle.h">
+      <Filter>src\ToolModel</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -132,6 +132,8 @@
     <ClCompile Include="src\CurveBase.cpp" />
     <ClCompile Include="src\EditableItem.cpp" />
     <ClCompile Include="src\ToolModel.cpp" />
+    <ClCompile Include="src\ToolSelection.cpp" />
+    <ClCompile Include="src\ToolSelectionRectangle.cpp" />
     <ClCompile Include="src\ToolSimpleBrush.cpp" />
     <ClCompile Include="src\Undoable.cpp" />
     <ClCompile Include="ToolBase.cpp" />
@@ -147,6 +149,8 @@
     <ClInclude Include="src\Clip.h" />
     <ClInclude Include="src\CurveBase.h" />
     <ClInclude Include="src\CurveTests.h" />
+    <ClInclude Include="src\ToolSelection.h" />
+    <ClInclude Include="src\ToolSelectionRectangle.h" />
     <ClInclude Include="src\Undoable.h" />
     <QtMoc Include="src\ToolSimpleBrush.h" />
     <QtMoc Include="ToolBase.h" />
