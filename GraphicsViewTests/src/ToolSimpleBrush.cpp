@@ -61,30 +61,6 @@ cToolSimpleBrush::ApplyProfile() const
 
 
 void
-cToolSimpleBrush::_DrawPixel( uchar * iData, unsigned int iImageWidth, unsigned int iImageHeight, int iX, int iY, int iR, int iG, int iB, int iA )
-{
-    int x = iX < 0 ? 0 : iX;
-    x = x >= iImageWidth ? iImageWidth-1 : x;
-
-    int y = iY < 0 ? 0 : iY;
-    y = y >= iImageHeight ? iImageHeight-1 : y;
-
-    int index = y * iImageWidth * 4 + x * 4;
-
-
-    float transparencyAmountInverse = 1.F - (float(iA) / 255.F);
-
-    // BGRA format and premultiplied alpha
-    // Premultiplied allows this simple equation, basically we do a weighted sum of source and destination, weighted by the src's alpha
-    // So we basically keep as much dst as src is transparent -> the more src is transparent, the more we want dst's color, so -> mult by 1-alpha, alpha between 0 and 1
-    iData[ index ]      = iB + iData[ index ]       * transparencyAmountInverse;
-    iData[ index + 1 ]  = iG + iData[ index + 1 ]   * transparencyAmountInverse;
-    iData[ index + 2 ]  = iR + iData[ index + 2 ]   * transparencyAmountInverse;
-    iData[ index + 3 ]  = iA + iData[ index + 3 ]   * transparencyAmountInverse;
-}
-
-
-void
 cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY, float iPressure, float iRotation )
 {
     uchar* data = iImage->bits();

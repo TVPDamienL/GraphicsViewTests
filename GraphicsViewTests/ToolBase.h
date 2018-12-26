@@ -48,22 +48,33 @@ public:
 
     virtual  void  EndDrawing();
 
+    void            PathAddPoint( sPointData iPoint );
 
-    void  PathAddPoint( sPointData iPoint );
+
+public:
+    void  SetAlphaMask( QImage* iImage );
+    void  ClearAlphaMask();
+
+
+protected:
+    void  _DrawPixel( uchar* iData, unsigned int iImageWidth, unsigned int iImageHeight, int iX, int iY, int iR, int iG, int iB, int iA );
+
 
 private:
     QPoint  __DrawDotVectorTruc_RequiresAName_( QImage* iImage, const QPoint& iStart, const QPointF& iVector, float iPressure, float iRotation );
 
 
 protected:
-    int                                 mToolSize;
-    QColor                              mColor;
-    std::vector< sPointData >  mPath;
-    float                               mStep;
+    int                         mToolSize;
+    QColor                      mColor;
+    std::vector< sPointData >   mPath;
+    float                       mStep;
+
+    const QImage*               mAlphaMask;
 
 private:
-    int     mLastRenderedPathIndex;
-    float   mRequiredStepLength;
+    int                         mLastRenderedPathIndex;
+    float                       mRequiredStepLength;
 };
 
 

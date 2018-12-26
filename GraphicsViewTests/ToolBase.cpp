@@ -8,8 +8,9 @@ ToolBase::~ToolBase()
 }
 
 
-ToolBase::ToolBase(QObject *parent)
-    : QStandardItemModel(parent)
+ToolBase::ToolBase( QObject *parent ) :
+    QStandardItemModel( parent ),
+    mAlphaMask( 0 )
 {
     mStep = 10.0F;
     mLastRenderedPathIndex = 0;
@@ -176,6 +177,57 @@ void
 ToolBase::PathAddPoint( sPointData iPoint )
 {
     mPath.push_back( iPoint );
+}
+
+
+void
+ToolBase::SetAlphaMask( QImage* iImage )
+{
+    mAlphaMask = iImage;
+}
+
+
+void
+ToolBase::ClearAlphaMask()
+{
+    mAlphaMask = 0;
+}
+
+
+void
+ToolBase::_DrawPixel( uchar * iData, unsigned int iImageWidth, unsigned int iImageHeight, int iX, int iY, int iR, int iG, int iB, int iA )
+{
+    int x = iX < 0 ? 0 : iX;
+    x = x >= iImageWidth ? iImageWidth - 1 : x;
+
+    int y = iY < 0 ? 0 : iY;
+    y = y >= iImageHeight ? iImageHeight - 1 : y;
+
+    int index = y * iImageWidth * 4 + x * 4;
+    int r = iR;
+    int g = iG;
+    int b = iB;
+    int a = iA;
+
+    if( mAlphaMask && mAlphaMask->width() == iImageWidth && mAlphaMask->height() == mAlphaMask->height() )
+    {
+        float alphaMaskTransparency = float(mAlphaMask->bits()[ index + 3 ]) / 255.F;
+        r *= alphaMaskTransparency;
+        g *= alphaMaskTransparency;
+        b *= alphaMaskTransparency;
+        a *= alphaMaskTransparency;
+    }
+
+    float transparencyAmountInverse = 1.F - ( float( a ) / 255.F );
+
+    // BGRA format and premultiplied alpha
+    // Premultiplied allows this simple equation, basically we do a weighted sum of source and destination, weighted by the src's alpha
+    // So we basically keep as much dst as src is transparent -> the more src is transparent, the more we want dst's color, so -> mult by 1-alpha, alpha between 0 and 1
+    iData[ index ]      = b + iData[ index ]      * transparencyAmountInverse;
+    iData[ index + 1 ]  = g + iData[ index + 1 ]  * transparencyAmountInverse;
+    iData[ index + 2 ]  = r + iData[ index + 2 ]  * transparencyAmountInverse;
+    iData[ index + 3 ]  = a + iData[ index + 3 ]  * transparencyAmountInverse;
+
 }
 
 

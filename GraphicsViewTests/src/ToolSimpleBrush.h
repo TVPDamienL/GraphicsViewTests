@@ -27,7 +27,6 @@ public:
 
 
 private:
-    void  _DrawPixel( uchar* iData, unsigned int iImageWidth, unsigned int iImageHeight,  int iX, int iY, int iR, int iG, int iB, int iA );
 
 public:
     // Overrides

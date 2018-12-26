@@ -42,6 +42,8 @@ cCanvas::cCanvas( QWidget *parent ) :
     setSceneRect( sceneRect );
 
     setStyleSheet( "background-color: #555555");
+
+    __DebugAlphaMaskTest__ = new QImage( ":/cMainWindow/Resources/AlphaMask.png" );
 }
 
 
@@ -230,6 +232,7 @@ cCanvas::mousePressEvent( QMouseEvent * iEvent )
             mItemPixmap = mEditableItem->mpixmap;
 
             mToolModel->StartDrawing();
+            mToolModel->SetAlphaMask( __DebugAlphaMaskTest__ );
 
             if( mTool == kEraser )
                 mPainter->setCompositionMode( QPainter::CompositionMode_Clear );

@@ -81,5 +81,7 @@ private:
     cClip*              mClip;
 
     QPixmap*            cursorPixmap;
+
+    QImage*             __DebugAlphaMaskTest__;
 };
 
