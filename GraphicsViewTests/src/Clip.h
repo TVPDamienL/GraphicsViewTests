@@ -15,12 +15,14 @@ public:
     cClip( unsigned int iWidth, unsigned int iHeight );
 
 
+    void DirtyArea( const QRect& iArea );
+
     //Layers
 public:
     cLayer* LayerAtIndex( int iIndex );
     void    AddLayer();
-    QImage* ComposeLayers() const;
-    QImage* GetOutputImage() const;
+    QImage* ComposeLayers();
+    QImage* GetOutputImage();
 
     //GetSet
 public:
@@ -39,6 +41,8 @@ private:
     std::vector< cLayer* >  mLayers;
 
     cSelection*             mSelection;
+    QImage*                 mCurrentFrameRendering;
+    QRect                   mDirtyArea;
 };
 
 

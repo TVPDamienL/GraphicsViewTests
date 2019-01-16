@@ -180,6 +180,14 @@ ToolBase::PathAddPoint( sPointData iPoint )
 }
 
 
+QRect
+ToolBase::GetToolBBox() const
+{
+    int startingPoint =  -mToolSize/2; // because we draw in center, this allows outside to just offset the bbox to the drawing location to get the dirty area in one go
+    return  QRect( startingPoint, startingPoint, mToolSize, mToolSize );
+}
+
+
 void
 ToolBase::SetAlphaMask( QImage* iImage )
 {

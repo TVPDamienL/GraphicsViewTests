@@ -39,16 +39,17 @@ public:
 
 
 public:
-    virtual  void  StartDrawing();
+    virtual  void   StartDrawing();
 
-    virtual  void  DrawDot( QImage* iImage, int x, int y, float iPressure, float iRotation ) = 0;
-    virtual  void  DrawLine( QImage* iImage, int x1, int y1, int x2, int y2 ) = 0;
-    virtual  void  DrawFullPath( QImage* iImage );
-    virtual  void  DrawPathFromLastRenderedPoint( QImage* iImage );
+    virtual  void   DrawDot( QImage* iImage, int x, int y, float iPressure, float iRotation ) = 0;
+    virtual  void   DrawLine( QImage* iImage, int x1, int y1, int x2, int y2 ) = 0;
+    virtual  void   DrawFullPath( QImage* iImage );
+    virtual  void   DrawPathFromLastRenderedPoint( QImage* iImage );
 
-    virtual  void  EndDrawing();
+    virtual  void   EndDrawing();
 
-    void           PathAddPoint( sPointData iPoint );
+    void            PathAddPoint( sPointData iPoint );
+    QRect           GetToolBBox() const;
 
 
 public:
