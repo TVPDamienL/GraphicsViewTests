@@ -5,6 +5,7 @@
 #include <QColorDialog>
 
 #include "ToolSimpleBrush.h"
+#include "cToolSelectionTest.h"
 
 #include "cLayer.h"
 
@@ -12,7 +13,8 @@
 
 cMainWindow::cMainWindow(QWidget *parent) :
     QMainWindow(parent),
-    mToolModel( new cToolSimpleBrush() )
+    mToolPaint( new cToolSimpleBrush() ),
+    mToolSelect( new cToolSelectionTest() )
 {
     ui.setupUi(this);
 
@@ -22,23 +24,14 @@ cMainWindow::cMainWindow(QWidget *parent) :
     mAnimationTimer = new QTimer();
     mAnimationTimer->start( 1000 / 24 );
 
-
     mClip = new cClip( 1920, 1080 );
     mClip->AddLayer();
 
-    //mMapper = new QDataWidgetMapper( this );
-    //mMapper->setModel( mToolModel );
-    //mMapper->setOrientation( Qt::Vertical );
-    //mMapper->addMapping( ui.penSizeSpinBox, 0 );
-    //mMapper->addMapping( ui.antiAliasCheckBox, 1 );
-
-    //mMapper->toFirst();
-
     UpdateUI();
 
-    ui.colorSwatch->SetColor( mToolModel->getColor() );
+    ui.colorSwatch->SetColor( mToolPaint->getColor() );
 
-    ui.canvas->SetToolModel( mToolModel );
+    ui.canvas->SetToolModel( mToolPaint );
 
     connect( ui.playButton, &QPushButton::clicked, this, &cMainWindow::PlayPressed );
     connect( ui.stopButton, &QPushButton::clicked, this, &cMainWindow::StopPressed );
@@ -47,20 +40,27 @@ cMainWindow::cMainWindow(QWidget *parent) :
     connect( ui.canvas, &cCanvas::currentFrameGotPainted, ui.graphicsView, &cCustomGraphicsView::CurrentFrameGotPainted );
     connect( ui.canvas, &cCanvas::previousFrameGotPainted, ui.graphicsView, &cCustomGraphicsView::PreviousFrameGotPainted );
 
+
+    // Tool controls
     connect( ui.colorSwatch, &ColorSwatch::swatchClicked, this, &cMainWindow::AskColor );
-
-
-    connect (ui.penSizeSpinBox, SIGNAL(valueChanged(int)), this, SLOT(sizeChanged(int)) );
-    connect (ui.stepSpinBox, SIGNAL(valueChanged(int)), this, SLOT(stepChanged(int)) );
-
-
+    connect( ui.penSizeSpinBox, SIGNAL(valueChanged(int)), this, SLOT(sizeChanged(int)) );
+    connect( ui.stepSpinBox, SIGNAL(valueChanged(int)), this, SLOT(stepChanged(int)) );
     connect( ui.antiAliasCheckBox, &QCheckBox::stateChanged, [ this ]( bool iNewState ){
-        auto simpleBrush = dynamic_cast< cToolSimpleBrush* >( mToolModel );
+        auto simpleBrush = dynamic_cast< cToolSimpleBrush* >( mToolPaint );
         if( simpleBrush )
             simpleBrush->ApplyProfile( iNewState );
     });
 
+
+    connect( ui.buttonToolSelect, &QPushButton::clicked, this, &cMainWindow::ToolSelectClicked );
+    connect( ui.buttonToolPaint, &QPushButton::clicked, this, &cMainWindow::ToolPaintClicked );
+
+
     CurrentFrameChanged( 0 );
+
+    // Tools setups
+    mToolPaint->SetAlphaMask( mClip->GetSelection()->GetSelectionMask() );
+    dynamic_cast< cToolSelectionTest* >( mToolSelect )->SetSelection( mClip->GetSelection() );
 }
 
 
@@ -115,17 +115,17 @@ cMainWindow::CurrentFrameChanged( int iNewIndex )
 void
 cMainWindow::UpdateColor()
 {
-    ui.colorSwatch->SetColor( mToolModel->getColor() );
+    ui.colorSwatch->SetColor( mToolPaint->getColor() );
 }
 
 
 void
 cMainWindow::AskColor()
 {
-    QColorDialog dialog( mToolModel->getColor(), this );
+    QColorDialog dialog( mToolPaint->getColor(), this );
     if( dialog.exec() )
     {
-        mToolModel->setColor( dialog.selectedColor() );
+        mToolPaint->setColor( dialog.selectedColor() );
         UpdateUI();
     }
 }
@@ -142,27 +142,43 @@ cMainWindow::toolDataChanged( const QModelIndex & iLeft, const QModelIndex & iRi
 void
 cMainWindow::sizeChanged( int iNew )
 {
-    mToolModel->setSize( iNew );
+    mToolPaint->setSize( iNew );
 }
 
 
 void
 cMainWindow::stepChanged( int iStep )
 {
-    mToolModel->setStep( iStep );
+    mToolPaint->setStep( iStep );
 }
 
 
 void
 cMainWindow::UpdateUI()
 {
-    ui.penSizeSpinBox->setValue( mToolModel->getSize() );
-    ui.colorSwatch->SetColor( mToolModel->getColor() );
-    ui.stepSpinBox->setValue( mToolModel->getStep() );
+    ui.penSizeSpinBox->setValue( mToolPaint->getSize() );
+    ui.colorSwatch->SetColor( mToolPaint->getColor() );
+    ui.stepSpinBox->setValue( mToolPaint->getStep() );
 
-    auto simpleBrush = dynamic_cast< cToolSimpleBrush* >( mToolModel );
+    auto simpleBrush = dynamic_cast< cToolSimpleBrush* >( mToolPaint );
     if( simpleBrush )
         ui.antiAliasCheckBox->setChecked( simpleBrush->ApplyProfile() );
+}
+
+
+void
+cMainWindow::ToolPaintClicked()
+{
+    ui.canvas->SetSelectionMode( false );
+    ui.canvas->SetToolModel( mToolPaint );
+}
+
+
+void
+cMainWindow::ToolSelectClicked()
+{
+    ui.canvas->SetSelectionMode( true );
+    ui.canvas->SetToolModel( mToolSelect );
 }
 
 

@@ -210,6 +210,10 @@ cCanvas::keyReleaseEvent( QKeyEvent * iEvent )
         _SetImage( mClip->LayerAtIndex( 0 )->Image() );
         currentFrameGotPainted( *mEditableItem->mpixmap );
     }
+    else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_D )
+    {
+        mClip->GetSelection()->Clear();
+    }
 
     QGraphicsView::keyReleaseEvent( iEvent );
 }
@@ -228,11 +232,22 @@ cCanvas::mousePressEvent( QMouseEvent * iEvent )
         }
         else
         {
+            if( !mSelectionMode )
+            {
+                if( mClip->GetSelection()->IsActive() )
+                {
+                    mToolModel->SetAlphaMask( mClip->GetSelection()->GetSelectionMask() );
+                }
+                else
+                {
+                    mToolModel->SetAlphaMask( 0 );
+                }
+            }
+
             mState = kDrawing;
             mItemPixmap = mEditableItem->mpixmap;
 
             mToolModel->StartDrawing();
-            mToolModel->SetAlphaMask( __DebugAlphaMaskTest__ );
 
             if( mTool == kEraser )
                 mPainter->setCompositionMode( QPainter::CompositionMode_Clear );
@@ -274,9 +289,15 @@ cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
         mToolModel->PathAddPoint( point );
         mToolModel->DrawPathFromLastRenderedPoint( mClip->LayerAtIndex( 0 )->Image() );
 
+        SetPixmap( QPixmap::fromImage( *mClip->LayerAtIndex( 0 )->Image() ) );
+        //QImage* composition = mClip->ComposeLayers();
+        //SetPixmap( QPixmap::fromImage( *composition ) );
+        //delete  composition;
 
-        SetPixmap( QPixmap::fromImage( *mClip->LayerAtIndex( 0 )->Image() )  );
-        currentFrameGotPainted( *mEditableItem->mpixmap );
+        if( !mSelectionMode )
+        {
+            currentFrameGotPainted( *mEditableItem->mpixmap );
+        }
     }
 
     mClickPos = iEvent->pos();
@@ -290,8 +311,18 @@ cCanvas::mouseReleaseEvent( QMouseEvent * iEvent )
     if( mState == kDrawing )
     {
         mToolModel->EndDrawing();
-        mClip->LayerAtIndex( 0 )->WriteUndoHistory();
-        currentFrameGotPainted( *mEditableItem->mpixmap );
+
+        if( !mSelectionMode )
+        {
+            mClip->LayerAtIndex( 0 )->WriteUndoHistory();
+            currentFrameGotPainted( *mEditableItem->mpixmap );
+        }
+        else
+        {
+            mClip->GetSelection()->ProcessEdgeDetection();
+            SetPixmap( QPixmap::fromImage( *mClip->GetSelection()->GetSelectionEdgeMask() )  );
+            currentFrameGotPainted( *mEditableItem->mpixmap );
+        }
     }
 
     mState = kIdle;
@@ -355,6 +386,13 @@ cCanvas::SetToolModel( ToolBase* iToolModel )
     mToolModel = iToolModel;
     DrawCursor();
     connect( mToolModel, &QAbstractItemModel::dataChanged, this, &cCanvas::toolChanged );
+}
+
+
+void
+cCanvas::SetSelectionMode( bool iMode )
+{
+    mSelectionMode = iMode;
 }
 
 

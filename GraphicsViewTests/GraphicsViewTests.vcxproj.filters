@@ -58,6 +58,9 @@
     <Filter Include="src\Undo">
       <UniqueIdentifier>{9f3391d1-307b-43cc-ab73-44ed4b22ebd0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Filter">
+      <UniqueIdentifier>{a3deb083-2589-4d60-9381-7090cf562a80}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -126,6 +129,15 @@
     <ClCompile Include="src\ToolSelectionRectangle.cpp">
       <Filter>src\ToolModel</Filter>
     </ClCompile>
+    <ClCompile Include="cToolSelectionTest.cpp">
+      <Filter>src\ToolModel</Filter>
+    </ClCompile>
+    <ClCompile Include="cSelection.cpp">
+      <Filter>src\Projet</Filter>
+    </ClCompile>
+    <ClCompile Include="cConvolution.cpp">
+      <Filter>src\Filter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="cMainWindow.h">
@@ -153,6 +165,9 @@
       <Filter>src\ToolModel</Filter>
     </QtMoc>
     <QtMoc Include="src\ToolSimpleBrush.h">
+      <Filter>src\ToolModel</Filter>
+    </QtMoc>
+    <QtMoc Include="cToolSelectionTest.h">
       <Filter>src\ToolModel</Filter>
     </QtMoc>
   </ItemGroup>
@@ -200,6 +215,12 @@
     </ClInclude>
     <ClInclude Include="src\ToolSelectionRectangle.h">
       <Filter>src\ToolModel</Filter>
+    </ClInclude>
+    <ClInclude Include="cSelection.h">
+      <Filter>src\Projet</Filter>
+    </ClInclude>
+    <ClInclude Include="cConvolution.h">
+      <Filter>src\Filter</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

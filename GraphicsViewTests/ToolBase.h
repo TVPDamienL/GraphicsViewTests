@@ -48,7 +48,7 @@ public:
 
     virtual  void  EndDrawing();
 
-    void            PathAddPoint( sPointData iPoint );
+    void           PathAddPoint( sPointData iPoint );
 
 
 public:
@@ -58,7 +58,6 @@ public:
 
 protected:
     void  _DrawPixel( uchar* iData, unsigned int iImageWidth, unsigned int iImageHeight, int iX, int iY, int iR, int iG, int iB, int iA );
-
 
 private:
     QPoint  __DrawDotVectorTruc_RequiresAName_( QImage* iImage, const QPoint& iStart, const QPointF& iVector, float iPressure, float iRotation );

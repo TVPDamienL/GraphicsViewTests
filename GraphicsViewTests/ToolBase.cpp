@@ -1,7 +1,7 @@
 #include "ToolBase.h"
 
 #include <QVector2D>
-
+#include <QDebug>
 
 ToolBase::~ToolBase()
 {

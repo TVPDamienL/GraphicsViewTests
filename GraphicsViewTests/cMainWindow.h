@@ -34,12 +34,14 @@ public:
     void toolDataChanged( const QModelIndex& iLeft, const QModelIndex& iRight, const QVector< int >& iRoles );
 
 signals:
-    void  currentFrameChangeAsked( int iCurrentFrame );
+    void currentFrameChangeAsked( int iCurrentFrame );
 
 public slots:
     void sizeChanged( int );
     void stepChanged( int );
     void UpdateUI();
+    void ToolPaintClicked();
+    void ToolSelectClicked();
 
 private:
     Ui::cMainWindow     ui;
@@ -50,8 +52,8 @@ private:
     QTimer*             mAnimationTimer;
 
     QDataWidgetMapper*  mMapper;
-    ToolBase*           mToolModel;
+    ToolBase*           mToolPaint;
+    ToolBase*           mToolSelect;
 
-    cClip*                      mClip;
-
+    cClip*              mClip;
 };

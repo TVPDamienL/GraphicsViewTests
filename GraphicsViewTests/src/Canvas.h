@@ -39,6 +39,7 @@ public:
     void  SetPixmap( const QPixmap& iPixmap );
     void  SetClip( cClip* iClip );
     void  SetToolModel( ToolBase* iToolModel );
+    void  SetSelectionMode( bool iMode );
 
     void  UpdateGridItem();
     void  UpCursor();
@@ -74,6 +75,8 @@ private:
     cGridItem*          mGridItem;
     QPointF             mClickPos;
     QPixmap*            mItemPixmap;
+
+    bool                mSelectionMode = false;
 
     eTool               mTool;
     ToolBase*           mToolModel;
