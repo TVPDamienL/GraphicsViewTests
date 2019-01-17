@@ -2,6 +2,9 @@
 
 #include <QDebug>
 
+#include "BenchmarkStuff.h"
+#include "Math.Fast.h"
+
 cToolSimpleBrush::~cToolSimpleBrush()
 {
     delete  mTipRendered;
@@ -112,17 +115,14 @@ cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY, float iPressure, floa
     int endingY = maxY >= iImage->height() ? iImage->height() - 1 : maxY;
 
     mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX, endingY - startingY ) );
-    if( endingX - startingX < 0 )
-        int a = 5;
 
-    for( int x = startingX; x < endingX ; ++x )
+    for( int y = startingY; y < endingY ; ++y )
     {
-        for( int y = startingY; y < endingY ; ++y )
-        {
-            int index = y * bytesPerLine + x * 4;
-            int indexTip = (y - minY) * bytesPerLineTip + (x - minX ) * 4;
+        dataReader = data +  y * bytesPerLine + startingX * 4;
 
-            dataReader = data + index;
+        for( int x = startingX; x < endingX; ++x )
+        {
+            int indexTip = (y - minY) * bytesPerLineTip + (x - minX ) * 4;
 
             int srcB = dataTip[ indexTip ];
             int srcG = dataTip[ indexTip+1 ];
@@ -131,10 +131,10 @@ cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY, float iPressure, floa
 
             float transparencyAmountInverse = 1.F - ( float( srcA ) * maxInverse );
 
-            dataReader[ 0 ]  = srcB + dataReader[ 0 ]  * transparencyAmountInverse;
-            dataReader[ 1 ]  = srcG + dataReader[ 1 ]  * transparencyAmountInverse;
-            dataReader[ 2 ]  = srcR + dataReader[ 2 ]  * transparencyAmountInverse;
-            dataReader[ 3 ]  = srcA + dataReader[ 3 ]  * transparencyAmountInverse;
+            *dataReader  = srcB + *dataReader  * transparencyAmountInverse; ++dataReader;
+            *dataReader  = srcG + *dataReader  * transparencyAmountInverse; ++dataReader;
+            *dataReader  = srcR + *dataReader  * transparencyAmountInverse; ++dataReader;
+            *dataReader  = srcA + *dataReader  * transparencyAmountInverse; ++dataReader;
         }
     }
 }
@@ -154,31 +154,30 @@ void
 cToolSimpleBrush::_DrawDot( QImage * iImage, int iX, int iY, float iPressure, float iRotation )
 {
     uchar* data = iImage->bits();
-    uchar* test = 0;
+    uchar* pixelRow = data;
     unsigned int width = iImage->width();
     unsigned int height = iImage->height();
-    int originR = mColor.red();
-    int originG = mColor.green();
-    int originB = mColor.blue();
-    int originA = mColor.alpha();
+    uint8_t originR = mColor.red();
+    uint8_t originG = mColor.green();
+    uint8_t originB = mColor.blue();
+    uint8_t originA = mColor.alpha();
 
-    int finalR = mColor.red();
-    int finalG = mColor.green();
-    int finalB = mColor.blue();
-    int finalA = mColor.alpha();
+    uint8_t finalR = mColor.red();
+    uint8_t finalG = mColor.green();
+    uint8_t finalB = mColor.blue();
+    uint8_t finalA = mColor.alpha();
 
-    unsigned int bytesPerLine = iImage->bytesPerLine();
+    const unsigned int bytesPerLine = iImage->bytesPerLine();
 
-    int r = (mToolSize/2) * iPressure;
-    int r2 = r*r;
+    const int r = (mToolSize/2) * iPressure;
+    const int r2 = r*r;
 
     int bboxMinX = iX - r;
     int bboxMaxX = iX + r;
     int bboxMinY = iY - r;
     int bboxMaxY = iY + r;
 
-    float maxInverse = 1/255.F;
-
+    const float radiusSq = mToolSize * mToolSize / 4;
 
     bboxMinX = bboxMinX < 0 ? 0 : bboxMinX;
     bboxMaxX = bboxMaxX >= width ? width - 1 : bboxMaxX;
@@ -186,49 +185,53 @@ cToolSimpleBrush::_DrawDot( QImage * iImage, int iX, int iY, float iPressure, fl
     bboxMinY = bboxMinY < 0 ? 0 : bboxMinY;
     bboxMaxY = bboxMaxY >= height ? height - 1 : bboxMaxY;
 
-    unsigned int iterationCount = (bboxMaxX - bboxMinX) * (bboxMaxY - bboxMinY);
+    const unsigned int iterationCount = (bboxMaxX - bboxMinX) * (bboxMaxY - bboxMinY);
 
-    for( int x = bboxMinX; x <= bboxMaxX ; ++x )
+    for( int y = bboxMinY; y <= bboxMaxY ; ++y )
     {
-        for( int y = bboxMinY; y <= bboxMaxY ; ++y )
+        pixelRow = data + y * bytesPerLine + bboxMinX * 4;
+
+        for( int x = bboxMinX; x <= bboxMaxX ; ++x )
         {
-            int dx = x - iX;
-            int dy = y - iY;
+            const int dx = x - iX;
+            const int dy = y - iY;
             if( dx * dx + dy * dy <= r2 )
             {
-                int index = y * bytesPerLine + x * 4;
-                test = data + index;
-
+                int xpos = x*4;
 
                 if( mApplyProfile )
                 {
                     float distance = Distance2PointsSquared( QPoint( iX, iY ), QPoint( iX + dx, iY + dy ) );
-                    float distanceParam = 1.0F - ( distance / float(( mToolSize * mToolSize / 4 )) ); // 1 - distanceRatio so it goes outwards, otherwise, it's a reversed gradient
-                    float mult = mProfile.GetValueAtTime( distanceParam );
-                    finalR = float( originR ) * mult;
-                    finalG = float( originG ) * mult;
-                    finalB = float( originB ) * mult;
-                    finalA = float( originA ) * mult;
+                    float distanceParam = 1.0F - ( distance / radiusSq ); // 1 - distanceRatio so it goes outwards, otherwise, it's a reversed gradient
+                    uint8_t mult = mProfile.GetValueAtTime( distanceParam ) * 255.F;
+                    finalR = BlinnMult( originR, mult );
+                    finalG = BlinnMult( originG, mult );
+                    finalB = BlinnMult( originB, mult );
+                    finalA = BlinnMult( originA, mult );
                 }
 
                 if( mAlphaMask && mAlphaMask->width() == width && mAlphaMask->height() == mAlphaMask->height() )
                 {
-                    float alphaMaskTransparency = float(mAlphaMask->bits()[ index + 3 ]) * maxInverse;
-                    finalR *= alphaMaskTransparency;
-                    finalG *= alphaMaskTransparency;
-                    finalB *= alphaMaskTransparency;
-                    finalA *= alphaMaskTransparency;
+                    int alphaMaskTransparency = mAlphaMask->bits()[ xpos + 3 ];
+                    finalR = BlinnMult( finalR, alphaMaskTransparency );
+                    finalG = BlinnMult( finalG, alphaMaskTransparency );
+                    finalB = BlinnMult( finalB, alphaMaskTransparency );
+                    finalA = BlinnMult( finalA, alphaMaskTransparency );
                 }
 
-                float transparencyAmountInverse = 1.F - ( float( finalA ) * maxInverse );
+                int transparencyAmountInverse = 255 - finalA;
 
                 // BGRA format and premultiplied alpha
                 // Premultiplied allows this simple equation, basically we do a weighted sum of source and destination, weighted by the src's alpha
                 // So we basically keep as much dst as src is transparent -> the more src is transparent, the more we want dst's color, so -> mult by 1-alpha, alpha between 0 and 1
-                test[ 0 ]  = finalB + test[ 0 ]  * transparencyAmountInverse;
-                test[ 1 ]  = finalG + test[ 1 ]  * transparencyAmountInverse;
-                test[ 2 ]  = finalR + test[ 2 ]  * transparencyAmountInverse;
-                test[ 3 ]  = finalA + test[ 3 ]  * transparencyAmountInverse;
+                *pixelRow  = finalB + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow;
+                *pixelRow  = finalG + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow;
+                *pixelRow  = finalR + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow;
+                *pixelRow  = finalA + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow;
+            }
+            else
+            {
+                pixelRow += 4;
             }
         }
     }

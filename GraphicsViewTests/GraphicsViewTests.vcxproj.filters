@@ -61,6 +61,9 @@
     <Filter Include="src\Filter">
       <UniqueIdentifier>{a3deb083-2589-4d60-9381-7090cf562a80}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Benchmark">
+      <UniqueIdentifier>{f313b6d0-6ffa-4f28-b424-ede6961be4f1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -137,6 +140,12 @@
     </ClCompile>
     <ClCompile Include="cConvolution.cpp">
       <Filter>src\Filter</Filter>
+    </ClCompile>
+    <ClCompile Include="cHUDItem.cpp">
+      <Filter>src\GraphicsItem</Filter>
+    </ClCompile>
+    <ClCompile Include="BenchmarkStuff.cpp">
+      <Filter>src\Benchmark</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -221,6 +230,15 @@
     </ClInclude>
     <ClInclude Include="cConvolution.h">
       <Filter>src\Filter</Filter>
+    </ClInclude>
+    <ClInclude Include="cHUDItem.h">
+      <Filter>src\GraphicsItem</Filter>
+    </ClInclude>
+    <ClInclude Include="BenchmarkStuff.h">
+      <Filter>src\Benchmark</Filter>
+    </ClInclude>
+    <ClInclude Include="Math.Fast.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

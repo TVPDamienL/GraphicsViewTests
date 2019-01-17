@@ -6,7 +6,6 @@
 
 #include <QColor>
 
-
 class cToolSimpleBrush :
     public ToolBase
 {
