@@ -49,7 +49,8 @@ public:
     virtual  void   EndDrawing();
 
     void            PathAddPoint( sPointData iPoint );
-    QRect           GetToolBBox() const;
+    QRect           GetDirtyArea() const;
+    QRect           GetDirtyAreaAndReset();
 
 
 public:
@@ -71,6 +72,7 @@ protected:
     float                       mStep;
 
     const QImage*               mAlphaMask;
+    QRect                       mDirtyArea;
 
 private:
     int                         mLastRenderedPathIndex;

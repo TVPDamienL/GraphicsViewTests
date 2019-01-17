@@ -1,5 +1,6 @@
 #include "ToolSimpleBrush.h"
 
+#include <QDebug>
 
 cToolSimpleBrush::~cToolSimpleBrush()
 {
@@ -70,6 +71,7 @@ cToolSimpleBrush::StartDrawing()
     mTipRendered->fill( Qt::transparent );
     _DrawDot( mTipRendered, mToolSize/2, mToolSize/2, 1.0, 0.0 );
     ToolBase::StartDrawing();
+    mDirtyArea = QRect( 0, 0, 0, 0 );
 }
 
 
@@ -98,11 +100,20 @@ cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY, float iPressure, floa
     int minY = iY - radius;
     int maxY = iY + radius;
 
+    // Basic out of bounds elimination
+    if( minX >= iImage->width() || minY >= iImage->height() )
+        return;
+    if( maxX < 0 || maxY < 0 )
+        return;
+
     int startingX = minX < 0 ? 0 : minX;
     int endingX = maxX >= iImage->width() ? iImage->width() - 1 : maxX;
     int startingY = minY < 0 ? 0 : minY;
     int endingY = maxY >= iImage->height() ? iImage->height() - 1 : maxY;
 
+    mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX, endingY - startingY ) );
+    if( endingX - startingX < 0 )
+        int a = 5;
 
     for( int x = startingX; x < endingX ; ++x )
     {
@@ -124,7 +135,6 @@ cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY, float iPressure, floa
             dataReader[ 1 ]  = srcG + dataReader[ 1 ]  * transparencyAmountInverse;
             dataReader[ 2 ]  = srcR + dataReader[ 2 ]  * transparencyAmountInverse;
             dataReader[ 3 ]  = srcA + dataReader[ 3 ]  * transparencyAmountInverse;
-
         }
     }
 }

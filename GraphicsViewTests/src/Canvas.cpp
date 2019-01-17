@@ -289,12 +289,8 @@ cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
         mToolModel->PathAddPoint( point );
         mToolModel->DrawPathFromLastRenderedPoint( mClip->LayerAtIndex( 0 )->Image() );
 
-
         //SetPixmap( QPixmap::fromImage( *mClip->LayerAtIndex( 0 )->Image() ) );
-
-        QRect dirtyArea = mToolModel->GetToolBBox();
-        dirtyArea.moveCenter( point.mPosition );
-        mClip->DirtyArea( dirtyArea );
+        mClip->DirtyArea( mToolModel->GetDirtyAreaAndReset() );
         SetPixmap( QPixmap::fromImage( *mClip->ComposeLayers() ) );
 
         if( !mSelectionMode )

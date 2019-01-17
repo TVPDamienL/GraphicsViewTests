@@ -2,6 +2,7 @@
 
 #include "cLayer.h"
 
+
 cClip::~cClip()
 {
 }
@@ -13,7 +14,7 @@ cClip::cClip( unsigned int iWidth, unsigned int iHeight ) :
     mHeight( iHeight )
 {
     mSelection = new cSelection( mWidth, mHeight );
-    mCurrentFrameRendering = new QImage( mWidth, mHeight, QImage::Format::Format_RGBA8888_Premultiplied );
+    mCurrentFrameRendering = new QImage( mWidth, mHeight, QImage::Format_ARGB32_Premultiplied );
     mCurrentFrameRendering->fill( Qt::transparent );
     mDirtyArea = QRect( 0, 0, mWidth, mHeight );
 }
@@ -46,9 +47,9 @@ cClip::ComposeLayers()
     uchar* renderData = mCurrentFrameRendering->bits();
 
     int minX = mDirtyArea.left();
-    int maxX = mDirtyArea.right();
+    int maxX = minX + mDirtyArea.width();
     int minY = mDirtyArea.top();
-    int maxY = mDirtyArea.bottom();
+    int maxY = minY + mDirtyArea.height();
 
     for( auto layer : mLayers )
     {
