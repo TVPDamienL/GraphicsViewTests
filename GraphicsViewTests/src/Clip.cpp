@@ -3,6 +3,7 @@
 #include "cLayer.h"
 
 #include "BenchmarkStuff.h"
+#include "Math.Fast.h"
 
 cClip::~cClip()
 {
@@ -54,68 +55,36 @@ cClip::ComposeLayers()
     int maxY = minY + mDirtyArea.height();
 
 
-    //Bench::ClockBegin();
+    for( auto layer : mLayers )
+    {
+        unsigned int bpr = layer->Image()->bytesPerLine();
 
-    //for( int i = 0; i < 100; ++i )
-    //{
-        for( auto layer : mLayers )
+        // BLENDIMAGE
+        unsigned int index = 0;
+        uchar* originData = layer->Image()->bits();
+        uchar* originPixelRow = originData;
+
+        for( unsigned int y = minY; y < maxY ; ++y )
         {
-            unsigned int bpr = layer->Image()->bytesPerLine();
+            pixelRow        = renderData + y * bpr + minX * 4;
+            originPixelRow  = originData + y * bpr + minX * 4;
 
-            // BLENDIMAGE
-            //unsigned int index = 0;
-            //const uchar* originData = layer->Image()->bits();
-            //const uchar* originPixelRow = originData;
-
-            //for( unsigned int y = minY; y < maxY ; ++y )
-            //{
-            //    pixelRow = renderData + y * bpr;
-            //    originPixelRow = originData + y * bpr;
-
-            //    for( unsigned int x = minX; x < maxX; ++x )
-            //    {
-            //        index = x * 4;
-            //        uchar sourceAlpha = originPixelRow[ index + 3 ];
-            //        if( sourceAlpha == 0 )
-            //            continue;
-
-            //        float transparencyAmountInverse = 1.F - ( float( sourceAlpha ) / 255.F );
-
-            //        pixelRow[ index ]      = originPixelRow[ index + 0 ] + pixelRow[ index ]      * transparencyAmountInverse;
-            //        pixelRow[ index + 1 ]  = originPixelRow[ index + 1 ] + pixelRow[ index + 1 ]  * transparencyAmountInverse;
-            //        pixelRow[ index + 2 ]  = originPixelRow[ index + 2 ] + pixelRow[ index + 2 ]  * transparencyAmountInverse;
-            //        pixelRow[ index + 3 ]  = originPixelRow[ index + 3 ] + pixelRow[ index + 3 ]  * transparencyAmountInverse;
-            //    }
-            //}
-            // /BLENDIMAGE
-
-
-            // BLENDIMAGE
-            unsigned int index = 0;
-            const uchar* originData = layer->Image()->bits();
-
-            for( unsigned int y = minY; y < maxY ; ++y )
+            for( unsigned int x = minX; x < maxX; ++x )
             {
-                for( unsigned int x = minX; x < maxX; ++x )
-                {
-                    index = y * bpr + x * 4;
-                    uchar sourceAlpha = originData[ index + 3 ];
-                    if( sourceAlpha == 0 )
-                        continue;
+                uchar sourceAlpha = originPixelRow[ 3 ];
+                if( sourceAlpha == 0 )
+                    continue;
 
-                    float transparencyAmountInverse = 1.F - ( float( sourceAlpha ) / 255.F );
+                int transparencyAmountInverse = 255 - sourceAlpha;
 
-                    renderData[ index ]      = originData[ index + 0 ] + renderData[ index ]      * transparencyAmountInverse;
-                    renderData[ index + 1 ]  = originData[ index + 1 ] + renderData[ index + 1 ]  * transparencyAmountInverse;
-                    renderData[ index + 2 ]  = originData[ index + 2 ] + renderData[ index + 2 ]  * transparencyAmountInverse;
-                    renderData[ index + 3 ]  = originData[ index + 3 ] + renderData[ index + 3 ]  * transparencyAmountInverse;
-                }
+                *pixelRow  = *originPixelRow + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow; ++originPixelRow;
+                *pixelRow  = *originPixelRow + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow; ++originPixelRow;
+                *pixelRow  = *originPixelRow + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow; ++originPixelRow;
+                *pixelRow  = *originPixelRow + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow; ++originPixelRow;
             }
-            // /BLENDIMAGE
         }
-    //}
-
-    //qDebug() << "TIME : " << Bench::ClockEnd();
+        // /BLENDIMAGE
+    }
 
     mDirtyArea = QRect( 0, 0, 0, 0 );
 
