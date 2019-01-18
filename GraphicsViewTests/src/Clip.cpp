@@ -4,6 +4,7 @@
 
 #include "BenchmarkStuff.h"
 #include "Math.Fast.h"
+#include "Blending.h"
 
 cClip::~cClip()
 {
@@ -54,6 +55,7 @@ cClip::ComposeLayers()
     int minY = mDirtyArea.top();
     int maxY = minY + mDirtyArea.height();
 
+
     for( auto layer : mLayers )
     {
         unsigned int bpr = layer->Image()->bytesPerLine();
@@ -72,18 +74,28 @@ cClip::ComposeLayers()
             {
                 uchar sourceAlpha = originPixelRow[ 3 ];
                 if( sourceAlpha == 0 )
+                {
+                    originPixelRow += 4;
+                    pixelRow += 4;
                     continue;
+                }
 
-                int transparencyAmountInverse = 255 - sourceAlpha;
+                // Longer from 1.71 sec benchmark to 1.76 sec average
+                BlendPixelNormal( &pixelRow, *(originPixelRow+2), *(originPixelRow+1), *(originPixelRow), *(originPixelRow+3) ); originPixelRow += 4;
 
-                *pixelRow  = *originPixelRow + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow; ++originPixelRow;
-                *pixelRow  = *originPixelRow + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow; ++originPixelRow;
-                *pixelRow  = *originPixelRow + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow; ++originPixelRow;
-                *pixelRow  = *originPixelRow + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow; ++originPixelRow;
+
+                //int transparencyAmountInverse = 255 - sourceAlpha;
+
+                //*pixelRow  = *originPixelRow + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow; ++originPixelRow;
+                //*pixelRow  = *originPixelRow + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow; ++originPixelRow;
+                //*pixelRow  = *originPixelRow + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow; ++originPixelRow;
+                //*pixelRow  = *originPixelRow + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow; ++originPixelRow;
             }
         }
         // /BLENDIMAGE
+
     }
+
 
     mDirtyArea = QRect( 0, 0, 0, 0 );
 

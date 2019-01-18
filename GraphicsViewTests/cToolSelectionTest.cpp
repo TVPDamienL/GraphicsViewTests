@@ -10,7 +10,7 @@ cToolSelectionTest::cToolSelectionTest( QObject* iParent ) :
     ToolBase( iParent )
 {
     mColor = Qt::black;
-    mToolSize = 10;
+    mToolSize = 50;
     mStep = 4.0F;
 }
 

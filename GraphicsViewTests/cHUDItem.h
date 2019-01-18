@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QGraphicsPixmapItem>
+#include <QTimer>
 
 class cHUDItem :
     public QGraphicsPixmapItem
@@ -15,9 +16,17 @@ public:
     void    paint( QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget ) override;
 
 public:
-    void SetPixmap( QPixmap*  iPixmap );
+    void SetImage( QImage*  iSelectionImage );
 
 private:
-    QPixmap* mPixmap;
+    void _RenderSelection();
+
+private slots:
+    void selectionTimerTimeout();
+
+private:
+    QImage*     mSelectionImage;
+    QTimer*     mSelectionDrawingTimer;
+    int         mBGOffset;
 };
 

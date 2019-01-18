@@ -217,7 +217,7 @@ cCanvas::keyReleaseEvent( QKeyEvent * iEvent )
     else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_D )
     {
         mClip->GetSelection()->Clear();
-        mHUDItem->SetPixmap( 0 );
+        mHUDItem->SetImage( 0 );
     }
 
     QGraphicsView::keyReleaseEvent( iEvent );
@@ -324,7 +324,7 @@ cCanvas::mouseReleaseEvent( QMouseEvent * iEvent )
         else
         {
             mClip->GetSelection()->ProcessEdgeDetection();
-            mHUDItem->SetPixmap( new QPixmap( QPixmap::fromImage( *mClip->GetSelection()->GetSelectionEdgeMask() ) )  );
+            mHUDItem->SetImage( mClip->GetSelection()->GetSelectionEdgeMask() );
         }
     }
 

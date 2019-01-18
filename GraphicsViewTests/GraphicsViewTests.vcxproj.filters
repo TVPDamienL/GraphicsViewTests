@@ -64,6 +64,9 @@
     <Filter Include="src\Benchmark">
       <UniqueIdentifier>{f313b6d0-6ffa-4f28-b424-ede6961be4f1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Blending">
+      <UniqueIdentifier>{ececbc47-2f4f-4229-bcd2-1efa6b4b87ea}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -239,6 +242,9 @@
     </ClInclude>
     <ClInclude Include="Math.Fast.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="Blending.h">
+      <Filter>src\Blending</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

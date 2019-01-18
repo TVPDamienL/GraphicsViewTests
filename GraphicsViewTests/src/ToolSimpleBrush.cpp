@@ -4,6 +4,7 @@
 
 #include "BenchmarkStuff.h"
 #include "Math.Fast.h"
+#include "Blending.h"
 
 cToolSimpleBrush::~cToolSimpleBrush()
 {
@@ -159,12 +160,7 @@ cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY, float iPressure, floa
             }
             else
             {
-                int transparencyAmountInverse = 255 - srcA;
-
-                *dataScanline  = srcB + BlinnMult( *dataScanline, transparencyAmountInverse ); ++dataScanline;
-                *dataScanline  = srcG + BlinnMult( *dataScanline, transparencyAmountInverse ); ++dataScanline;
-                *dataScanline  = srcR + BlinnMult( *dataScanline, transparencyAmountInverse ); ++dataScanline;
-                *dataScanline  = srcA + BlinnMult( *dataScanline, transparencyAmountInverse ); ++dataScanline;
+                BlendPixelNormal( &dataScanline, srcR, srcG, srcB, srcA );
             }
         }
     }
@@ -218,6 +214,7 @@ cToolSimpleBrush::_DrawDot( QImage * iImage, int iX, int iY, float iPressure, fl
 
     const unsigned int iterationCount = (bboxMaxX - bboxMinX) * (bboxMaxY - bboxMinY);
 
+
     for( int y = bboxMinY; y <= bboxMaxY ; ++y )
     {
         pixelRow = data + y * bytesPerLine + bboxMinX * 4;
@@ -241,15 +238,7 @@ cToolSimpleBrush::_DrawDot( QImage * iImage, int iX, int iY, float iPressure, fl
                     finalA = BlinnMult( originA, mult );
                 }
 
-                int transparencyAmountInverse = 255 - finalA;
-
-                // BGRA format and premultiplied alpha
-                // Premultiplied allows this simple equation, basically we do a weighted sum of source and destination, weighted by the src's alpha
-                // So we basically keep as much dst as src is transparent -> the more src is transparent, the more we want dst's color, so -> mult by 1-alpha, alpha between 0 and 1
-                *pixelRow  =  finalB + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow;
-                *pixelRow  =  finalG + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow;
-                *pixelRow  =  finalR + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow;
-                *pixelRow  =  finalA + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow;
+                BlendPixelNormal( &pixelRow, finalR, finalG, finalB, finalA );
             }
             else
             {
