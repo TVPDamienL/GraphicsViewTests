@@ -82,8 +82,13 @@ void
 cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY, float iPressure, float iRotation )
 {
     uchar* data = iImage->bits();
-    uchar* dataReader = 0;
+    uchar* dataScanline = data;
+
     uchar* dataTip = mTipRendered->bits();
+    uchar* dataTipScanline = dataTip;
+
+    const uchar* alphaData = 0;
+    const uchar* alphaScanline = 0;
 
     unsigned int bytesPerLine = iImage->bytesPerLine();
     unsigned int bytesPerLineTip = mTipRendered->bytesPerLine();
@@ -116,25 +121,51 @@ cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY, float iPressure, floa
 
     mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX, endingY - startingY ) );
 
+    bool useAlphaMask = mAlphaMask && mAlphaMask->width() == iImage->width() && mAlphaMask->height() == iImage->height();
+    if( useAlphaMask )
+    {
+        alphaData = mAlphaMask->bits();
+        alphaScanline = alphaData;
+    }
+
     for( int y = startingY; y < endingY ; ++y )
     {
-        dataReader = data +  y * bytesPerLine + startingX * 4;
+        int offset = y * bytesPerLine + startingX * 4;
+        dataScanline = data +  offset;
+        dataTipScanline = dataTip + (y - minY) * bytesPerLineTip;
+
+        if( useAlphaMask )
+            alphaScanline = alphaData +  offset + 3;
 
         for( int x = startingX; x < endingX; ++x )
         {
-            int indexTip = (y - minY) * bytesPerLineTip + (x - minX ) * 4;
+            int srcB = *dataTipScanline; ++dataTipScanline;
+            int srcG = *dataTipScanline; ++dataTipScanline;
+            int srcR = *dataTipScanline; ++dataTipScanline;
+            int srcA = *dataTipScanline; ++dataTipScanline;
 
-            int srcB = dataTip[ indexTip ];
-            int srcG = dataTip[ indexTip+1 ];
-            int srcR = dataTip[ indexTip+2 ];
-            int srcA = dataTip[ indexTip+3 ];
+            if( useAlphaMask )
+            {
+                int alphaMaskTransparency = *alphaScanline; alphaScanline += 4;
+                srcR = BlinnMult( srcR, alphaMaskTransparency );
+                srcG = BlinnMult( srcG, alphaMaskTransparency );
+                srcB = BlinnMult( srcB, alphaMaskTransparency );
+                srcA = BlinnMult( srcA, alphaMaskTransparency );
+            }
 
-            float transparencyAmountInverse = 1.F - ( float( srcA ) * maxInverse );
+            if( srcA == 0 )
+            {
+                dataScanline += 4;
+            }
+            else
+            {
+                int transparencyAmountInverse = 255 - srcA;
 
-            *dataReader  = srcB + *dataReader  * transparencyAmountInverse; ++dataReader;
-            *dataReader  = srcG + *dataReader  * transparencyAmountInverse; ++dataReader;
-            *dataReader  = srcR + *dataReader  * transparencyAmountInverse; ++dataReader;
-            *dataReader  = srcA + *dataReader  * transparencyAmountInverse; ++dataReader;
+                *dataScanline  = srcB + BlinnMult( *dataScanline, transparencyAmountInverse ); ++dataScanline;
+                *dataScanline  = srcG + BlinnMult( *dataScanline, transparencyAmountInverse ); ++dataScanline;
+                *dataScanline  = srcR + BlinnMult( *dataScanline, transparencyAmountInverse ); ++dataScanline;
+                *dataScanline  = srcA + BlinnMult( *dataScanline, transparencyAmountInverse ); ++dataScanline;
+            }
         }
     }
 }
@@ -210,24 +241,15 @@ cToolSimpleBrush::_DrawDot( QImage * iImage, int iX, int iY, float iPressure, fl
                     finalA = BlinnMult( originA, mult );
                 }
 
-                if( mAlphaMask && mAlphaMask->width() == width && mAlphaMask->height() == mAlphaMask->height() )
-                {
-                    int alphaMaskTransparency = mAlphaMask->bits()[ xpos + 3 ];
-                    finalR = BlinnMult( finalR, alphaMaskTransparency );
-                    finalG = BlinnMult( finalG, alphaMaskTransparency );
-                    finalB = BlinnMult( finalB, alphaMaskTransparency );
-                    finalA = BlinnMult( finalA, alphaMaskTransparency );
-                }
-
                 int transparencyAmountInverse = 255 - finalA;
 
                 // BGRA format and premultiplied alpha
                 // Premultiplied allows this simple equation, basically we do a weighted sum of source and destination, weighted by the src's alpha
                 // So we basically keep as much dst as src is transparent -> the more src is transparent, the more we want dst's color, so -> mult by 1-alpha, alpha between 0 and 1
-                *pixelRow  = finalB + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow;
-                *pixelRow  = finalG + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow;
-                *pixelRow  = finalR + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow;
-                *pixelRow  = finalA + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow;
+                *pixelRow  =  finalB + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow;
+                *pixelRow  =  finalG + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow;
+                *pixelRow  =  finalR + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow;
+                *pixelRow  =  finalA + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow;
             }
             else
             {

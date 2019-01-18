@@ -32,6 +32,10 @@ cCanvas::cCanvas( QWidget *parent ) :
     setScene( scene );
     setAlignment( Qt::AlignCenter );
 
+    mHUDItem = new cHUDItem();
+    scene->addItem( mHUDItem );
+    mHUDItem->setZValue( 10 );
+
     mEditableItem = new cEditableItem();
     scene->addItem( mEditableItem );
 
@@ -213,6 +217,7 @@ cCanvas::keyReleaseEvent( QKeyEvent * iEvent )
     else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_D )
     {
         mClip->GetSelection()->Clear();
+        mHUDItem->SetPixmap( 0 );
     }
 
     QGraphicsView::keyReleaseEvent( iEvent );
@@ -275,6 +280,7 @@ cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
         QPointF pos = mEditableItem->pos() + offset;
         mEditableItem->setPos( pos );
         mGridItem->setPos( pos );
+        mHUDItem->setPos( pos );
     }
     else if( mState == kDrawing )
     {
@@ -289,7 +295,6 @@ cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
         mToolModel->PathAddPoint( point );
         mToolModel->DrawPathFromLastRenderedPoint( mClip->LayerAtIndex( 0 )->Image() );
 
-        //SetPixmap( QPixmap::fromImage( *mClip->LayerAtIndex( 0 )->Image() ) );
         mClip->DirtyArea( mToolModel->GetDirtyAreaAndReset() );
         SetPixmap( QPixmap::fromImage( *mClip->ComposeLayers() ) );
 
@@ -319,8 +324,7 @@ cCanvas::mouseReleaseEvent( QMouseEvent * iEvent )
         else
         {
             mClip->GetSelection()->ProcessEdgeDetection();
-            SetPixmap( QPixmap::fromImage( *mClip->GetSelection()->GetSelectionEdgeMask() )  );
-            currentFrameGotPainted( *mEditableItem->mpixmap );
+            mHUDItem->SetPixmap( new QPixmap( QPixmap::fromImage( *mClip->GetSelection()->GetSelectionEdgeMask() ) )  );
         }
     }
 
@@ -336,9 +340,15 @@ cCanvas::wheelEvent( QWheelEvent * iEvent )
     if( QApplication::keyboardModifiers() & Qt::AltModifier )
     {
         if( delta > 0 )
+        {
             mEditableItem->setScale( mEditableItem->scale() * 1.5 );
+            mHUDItem->setScale( mHUDItem->scale() * 1.5 );
+        }
         else
+        {
             mEditableItem->setScale( mEditableItem->scale() / 1.5 );
+            mHUDItem->setScale( mHUDItem->scale() / 1.5 );
+        }
 
         UpCursor();
         UpdateGridItem();

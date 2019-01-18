@@ -54,7 +54,6 @@ cClip::ComposeLayers()
     int minY = mDirtyArea.top();
     int maxY = minY + mDirtyArea.height();
 
-
     for( auto layer : mLayers )
     {
         unsigned int bpr = layer->Image()->bytesPerLine();

@@ -6,6 +6,7 @@
 #include "ToolBase.h"
 #include "Clip.h"
 #include "cGridItem.h"
+#include "cHUDItem.h"
 
 class cEditableItem;
 
@@ -71,6 +72,8 @@ private:
     };
 
     eState              mState;
+
+    cHUDItem*           mHUDItem;
     cEditableItem*      mEditableItem;
     cGridItem*          mGridItem;
     QPointF             mClickPos;

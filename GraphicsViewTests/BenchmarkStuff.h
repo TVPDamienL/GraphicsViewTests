@@ -2,6 +2,14 @@
 
 #include <chrono>
 
+
+#define BENCHSTART  Bench::ClockBegin();                       \
+                    for( int i = 0; i< 100; ++i ) {
+
+
+#define BENCHEND    } qDebug() << "Time : " << Bench::ClockEnd();
+
+
 namespace Bench
 {
     static  std::chrono::high_resolution_clock::time_point  sOriginClock;
