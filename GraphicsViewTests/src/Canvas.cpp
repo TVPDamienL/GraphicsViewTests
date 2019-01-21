@@ -64,6 +64,15 @@ cCanvas::paintEvent( QPaintEvent * iEvent )
 
 
 void
+cCanvas::resizeEvent( QResizeEvent * iEvent )
+{
+    QRect geom( 0, 0, width(), height() );
+    mHUDView->setGeometry( geom );
+    mHUDView->update();
+}
+
+
+void
 cCanvas::tabletEvent( QTabletEvent*  iEvent )
 {
     qDebug() << iEvent;

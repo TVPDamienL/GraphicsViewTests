@@ -1,6 +1,6 @@
 #include "cHUDView.h"
 
-#include "cHUDHandle.h"
+#include "cHUDTransform.h"
 
 cHUDView::~cHUDView()
 {
@@ -10,7 +10,9 @@ cHUDView::~cHUDView()
 cHUDView::cHUDView( QWidget* iParent ) :
     QWidget( iParent )
 {
-    mHUDObjects.push_back( new cHUDHandle() );
+    auto transform = new cHUDTransform();
+    transform->SetFrame( QRect( 100, 100, 100, 100 ) );
+    mHUDObjects.push_back( transform );
 }
 
 

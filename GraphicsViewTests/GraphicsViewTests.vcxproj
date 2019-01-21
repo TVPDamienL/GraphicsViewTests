@@ -120,6 +120,7 @@
     <ClCompile Include="cHUDHandle.cpp" />
     <ClCompile Include="cHUDItem.cpp" />
     <ClCompile Include="cHUDObject.cpp" />
+    <ClCompile Include="cHUDTransform.cpp" />
     <ClCompile Include="cHUDView.cpp" />
     <ClCompile Include="cMainWindow.cpp" />
     <ClCompile Include="colorPicker.cpp" />
@@ -176,6 +177,7 @@
       <Define Condition="'$(Configuration)|$(Platform)'=='Release|x64'">UNICODE;_UNICODE;WIN32;WIN64;QT_NO_DEBUG;NDEBUG;QT_CORE_LIB;QT_GUI_LIB;QT_WIDGETS_LIB</Define>
     </QtMoc>
     <ClInclude Include="cHUDObject.h" />
+    <ClInclude Include="cHUDTransform.h" />
     <ClInclude Include="cSelection.h" />
     <ClInclude Include="Math.Fast.h" />
     <ClInclude Include="src\cLayer.h" />

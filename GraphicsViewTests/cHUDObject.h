@@ -11,9 +11,13 @@ public:
     cHUDObject();
 
 public:
-    virtual  void Draw( QPainter* iPainter ) = 0;
+    virtual  void   Draw( QPainter* iPainter ) = 0;
 
-private:
-    QTransform mTransformation;
+    virtual  void   SetFrame( const QRect& iFrame );
+    void  MoveBy( const QPoint& iOffset );
+
+protected:
+    QTransform  mTransformation;
+    QRect       mFrame;
 };
 

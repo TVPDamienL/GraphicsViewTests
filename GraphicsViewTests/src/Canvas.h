@@ -21,6 +21,7 @@ public:
 
 public:
     void  paintEvent( QPaintEvent* iEvent ) override;
+    void  resizeEvent( QResizeEvent* iEvent ) override;
 
     void  tabletEvent( QTabletEvent*  iEvent ) override;
 

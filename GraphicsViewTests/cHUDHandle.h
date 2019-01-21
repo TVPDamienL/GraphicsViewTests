@@ -11,8 +11,5 @@ public:
 
 public:
     virtual  void Draw( QPainter* iPainter ) override;
-
-private:
-    int mSize = 10;
 };
 
