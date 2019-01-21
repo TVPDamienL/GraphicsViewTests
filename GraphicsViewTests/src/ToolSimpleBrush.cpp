@@ -68,21 +68,32 @@ cToolSimpleBrush::ApplyProfile() const
 
 
 void
-cToolSimpleBrush::StartDrawing()
+cToolSimpleBrush::StartDrawing( QImage* iImage )
 {
+    ToolBase::StartDrawing( iImage );
+
     delete  mTipRendered;
     mTipRendered = new QImage( mToolSize, mToolSize, QImage::Format::Format_RGBA8888_Premultiplied );
     mTipRendered->fill( Qt::transparent );
     _DrawDot( mTipRendered, mToolSize/2, mToolSize/2, 1.0, 0.0 );
-    ToolBase::StartDrawing();
     mDirtyArea = QRect( 0, 0, 0, 0 );
 }
 
 
-void
-cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY, float iPressure, float iRotation )
+QRect
+cToolSimpleBrush::MoveDrawing( sPointData iPointData )
 {
-    uchar* data = iImage->bits();
+    PathAddPoint( iPointData );
+    DrawPathFromLastRenderedPoint();
+
+    return  GetDirtyAreaAndReset();
+}
+
+
+void
+cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
+{
+    uchar* data = mDrawingContext->bits();
     uchar* dataScanline = data;
 
     uchar* dataTip = mTipRendered->bits();
@@ -91,7 +102,7 @@ cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY, float iPressure, floa
     const uchar* alphaData = 0;
     const uchar* alphaScanline = 0;
 
-    unsigned int bytesPerLine = iImage->bytesPerLine();
+    unsigned int bytesPerLine = mDrawingContext->bytesPerLine();
     unsigned int bytesPerLineTip = mTipRendered->bytesPerLine();
 
     int size = mToolSize * iPressure;
@@ -110,19 +121,19 @@ cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY, float iPressure, floa
     int maxY = iY + radius;
 
     // Basic out of bounds elimination
-    if( minX >= iImage->width() || minY >= iImage->height() )
+    if( minX >= mDrawingContext->width() || minY >= mDrawingContext->height() )
         return;
     if( maxX < 0 || maxY < 0 )
         return;
 
     int startingX = minX < 0 ? 0 : minX;
-    int endingX = maxX >= iImage->width() ? iImage->width() - 1 : maxX;
+    int endingX = maxX >= mDrawingContext->width() ? mDrawingContext->width() - 1 : maxX;
     int startingY = minY < 0 ? 0 : minY;
-    int endingY = maxY >= iImage->height() ? iImage->height() - 1 : maxY;
+    int endingY = maxY >= mDrawingContext->height() ? mDrawingContext->height() - 1 : maxY;
 
     mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX, endingY - startingY ) );
 
-    bool useAlphaMask = mAlphaMask && mAlphaMask->width() == iImage->width() && mAlphaMask->height() == iImage->height();
+    bool useAlphaMask = mAlphaMask && mAlphaMask->width() == mDrawingContext->width() && mAlphaMask->height() == mDrawingContext->height();
     if( useAlphaMask )
     {
         alphaData = mAlphaMask->bits();
@@ -133,7 +144,7 @@ cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY, float iPressure, floa
     {
         int offset = y * bytesPerLine + startingX * 4;
         dataScanline = data +  offset;
-        dataTipScanline = dataTip + (y - minY) * bytesPerLineTip;
+        dataTipScanline = dataTip + (y - minY) * bytesPerLineTip + (startingX - minX ) * 4;
 
         if( useAlphaMask )
             alphaScanline = alphaData +  offset + 3;
@@ -144,6 +155,7 @@ cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY, float iPressure, floa
             int srcG = *dataTipScanline; ++dataTipScanline;
             int srcR = *dataTipScanline; ++dataTipScanline;
             int srcA = *dataTipScanline; ++dataTipScanline;
+
 
             if( useAlphaMask )
             {
@@ -168,10 +180,10 @@ cToolSimpleBrush::DrawDot( QImage* iImage, int iX, int iY, float iPressure, floa
 
 
 void
-cToolSimpleBrush::DrawLine( QImage * iImage, int x1, int y1, int x2, int y2 )
+cToolSimpleBrush::DrawLine( int x1, int y1, int x2, int y2 )
 {
-    DrawDot( iImage, x1, y1, 1, 0 );
-    DrawDot( iImage, x2, y2, 1, 0 );
+    DrawDot( x1, y1, 1, 0 );
+    DrawDot( x2, y2, 1, 0 );
 
     // All inbetweens
 }

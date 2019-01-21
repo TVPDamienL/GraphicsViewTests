@@ -133,3 +133,10 @@ cClip::GetSelection()
 }
 
 
+void
+cClip::ExtractSelection()
+{
+    mSelection->ExtractPixelsToBuffer( mCurrentFrameRendering );
+}
+
+

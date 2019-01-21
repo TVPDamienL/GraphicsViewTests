@@ -7,6 +7,7 @@
 #include "Clip.h"
 #include "cGridItem.h"
 #include "cHUDItem.h"
+#include "cHUDView.h"
 
 class cEditableItem;
 
@@ -73,9 +74,13 @@ private:
 
     eState              mState;
 
+    cHUDView*           mHUDView;
     cHUDItem*           mHUDItem;
     cEditableItem*      mEditableItem;
     cGridItem*          mGridItem;
+
+
+
     QPointF             mClickPos;
     QPixmap*            mItemPixmap;
 

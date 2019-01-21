@@ -20,10 +20,13 @@ public:
     void  Clear();
     void  ProcessEdgeDetection();
 
+public:
+    void ExtractPixelsToBuffer( QImage* iImage );
 
 
-
+public:
     QImage* GetSelectionEdgeMask();
+    QRect   GetSelectionBBox() const;
 
 
 private:
@@ -32,6 +35,8 @@ private:
 private:
     QImage*         mMaskImage;
     QImage*         mEdgeDetectedMaskImage;
+    QImage*         mTransformBuffer;
+
     bool            mActive = false;
     QImage*         mSelectedBuffer;
     cConvolution    mEdgeDetectionConvolution;

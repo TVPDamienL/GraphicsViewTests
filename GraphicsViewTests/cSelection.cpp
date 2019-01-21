@@ -52,10 +52,56 @@ cSelection::ProcessEdgeDetection()
 }
 
 
+void
+cSelection::ExtractPixelsToBuffer( QImage * iImage )
+{
+    delete mTransformBuffer;
+    const int imageWidth = iImage->width();
+    const int imageHeight = iImage->height();
+
+    mTransformBuffer = new QImage( imageWidth, imageHeight, QImage::Format_ARGB32_Premultiplied );
+
+    const int bpl = iImage->bytesPerLine();
+    const int bufferBpl = mTransformBuffer->bytesPerLine();
+    const QRect selectionBBox = GetSelectionBBox();
+
+    uchar* sourceData = iImage->bits();
+    uchar* sourceScanline = sourceData;
+
+    uchar* bufferData = mTransformBuffer->bits();
+    uchar* bufferScanline = bufferData;
+
+    for( int y = selectionBBox.top(); y < selectionBBox.bottom(); ++y )
+    {
+        sourceScanline = sourceData + y * bpl + selectionBBox.left() * 4;
+        bufferScanline = bufferData + y * bufferBpl;
+
+        for( int x = selectionBBox.left(); x < selectionBBox.right(); ++x )
+        {
+            *bufferScanline = *sourceScanline; ++bufferScanline;
+            *sourceScanline = 0; ++sourceScanline;
+            *bufferScanline = *sourceScanline; ++bufferScanline;
+            *sourceScanline = 0; ++sourceScanline;
+            *bufferScanline = *sourceScanline; ++bufferScanline;
+            *sourceScanline = 0; ++sourceScanline;
+            *bufferScanline = *sourceScanline; ++bufferScanline;
+            *sourceScanline = 0; ++sourceScanline;
+        }
+    }
+}
+
+
 QImage*
 cSelection::GetSelectionEdgeMask()
 {
     return  mEdgeDetectedMaskImage;
+}
+
+
+QRect
+cSelection::GetSelectionBBox() const
+{
+    return  QRect();
 }
 
 

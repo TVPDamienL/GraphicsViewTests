@@ -1,5 +1,6 @@
 #include "cToolSelectionTest.h"
 
+#include "Blending.h"
 
 cToolSelectionTest::~cToolSelectionTest()
 {
@@ -23,31 +24,74 @@ cToolSelectionTest::flags( const QModelIndex & iIndex ) const
 
 
 void
-cToolSelectionTest::StartDrawing()
+cToolSelectionTest::StartDrawing( QImage* iImage )
 {
-    ToolBase::StartDrawing();
+    ToolBase::StartDrawing( iImage );
     mTheSelection->SetActive( true );
 }
 
 
-void
-cToolSelectionTest::DrawDot( QImage * iImage, int iX, int iY, float iPressure, float iRotation )
+QRect
+cToolSelectionTest::MoveDrawing( sPointData iPointData )
 {
+    PathAddPoint( iPointData );
+    DrawPathFromLastRenderedPoint();
+
+    return  QRect();
+}
+
+
+void
+cToolSelectionTest::DrawDot( int iX, int iY, float iPressure, float iRotation )
+{
+
     uchar* data = mTheSelection->GetSelectionMask()->bits();
-    unsigned int width = iImage->width();
-    unsigned int height = iImage->height();
+    uchar* pixelRow = data;
+    unsigned int width = mTheSelection->GetSelectionMask()->width();
+    unsigned int height = mTheSelection->GetSelectionMask()->height();
+    uint8_t R = mColor.red();
+    uint8_t G = mColor.green();
+    uint8_t B = mColor.blue();
+    uint8_t A = mColor.alpha();
 
-    int r = (mToolSize/2) * iPressure;
-    for( int dy = -r; dy <= r; ++dy)
+    const unsigned int bytesPerLine = mTheSelection->GetSelectionMask()->bytesPerLine();
+
+    const int r = (mToolSize/2) * iPressure;
+    const int r2 = r*r;
+
+    int bboxMinX = iX - r;
+    int bboxMaxX = iX + r;
+    int bboxMinY = iY - r;
+    int bboxMaxY = iY + r;
+
+    const float radiusSq = mToolSize * mToolSize / 4;
+
+    bboxMinX = bboxMinX < 0 ? 0 : bboxMinX;
+    bboxMaxX = bboxMaxX >= width ? width - 1 : bboxMaxX;
+
+    bboxMinY = bboxMinY < 0 ? 0 : bboxMinY;
+    bboxMaxY = bboxMaxY >= height ? height - 1 : bboxMaxY;
+
+    const unsigned int iterationCount = (bboxMaxX - bboxMinX) * (bboxMaxY - bboxMinY);
+
+
+    for( int y = bboxMinY; y <= bboxMaxY ; ++y )
     {
-        for( int dx = -r; dx <= r; ++dx )
-        {
-            if( dx * dx + dy * dy <= r * r )
-            {
-                float mult = 1.0F;
+        pixelRow = data + y * bytesPerLine + bboxMinX * 4;
+        const int dy = y - iY;
 
-                // Color is premultiplied here with Qt, so gotta apply to all colors
-                _DrawPixel( data, width, height, iX + dx, iY + dy, 0, 0, 0, 255 );
+        for( int x = bboxMinX; x <= bboxMaxX ; ++x )
+        {
+            const int dx = x - iX;
+            if( dx * dx + dy * dy <= r2 )
+            {
+                int xpos = x*4;
+
+                BlendPixelNormal( &pixelRow, R, G, B, A );
+            }
+            else
+            {
+                pixelRow += 4;
             }
         }
     }
@@ -55,9 +99,17 @@ cToolSelectionTest::DrawDot( QImage * iImage, int iX, int iY, float iPressure, f
 
 
 void
-cToolSelectionTest::DrawLine( QImage * iImage, int x1, int y1, int x2, int y2 )
+cToolSelectionTest::DrawLine( int x1, int y1, int x2, int y2 )
 {
     // nothing
+}
+
+
+QRect
+cToolSelectionTest::EndDrawing()
+{
+    mTheSelection->ProcessEdgeDetection();
+    return  ToolBase::EndDrawing();
 }
 
 

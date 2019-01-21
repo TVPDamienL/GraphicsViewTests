@@ -39,14 +39,16 @@ public:
 
 
 public:
-    virtual  void   StartDrawing();
+    virtual  void   StartDrawing( QImage* iDC );
 
-    virtual  void   DrawDot( QImage* iImage, int x, int y, float iPressure, float iRotation ) = 0;
-    virtual  void   DrawLine( QImage* iImage, int x1, int y1, int x2, int y2 ) = 0;
-    virtual  void   DrawFullPath( QImage* iImage );
-    virtual  void   DrawPathFromLastRenderedPoint( QImage* iImage );
+    virtual  QRect  MoveDrawing( sPointData iPointData );
 
-    virtual  void   EndDrawing();
+    virtual  void   DrawDot( int x, int y, float iPressure, float iRotation ) = 0;
+    virtual  void   DrawLine( int x1, int y1, int x2, int y2 ) = 0;
+    virtual  void   DrawFullPath();
+    virtual  void   DrawPathFromLastRenderedPoint();
+
+    virtual  QRect  EndDrawing();
 
     void            PathAddPoint( sPointData iPoint );
     QRect           GetDirtyArea() const;
@@ -57,12 +59,8 @@ public:
     void  SetAlphaMask( QImage* iImage );
     void  ClearAlphaMask();
 
-
-protected:
-    void  _DrawPixel( uchar* iData, unsigned int iImageWidth, unsigned int iImageHeight, int iX, int iY, int iR, int iG, int iB, int iA );
-
 private:
-    QPoint  __DrawDotVectorTruc_RequiresAName_( QImage* iImage, const QPoint& iStart, const QPointF& iVector, float iPressure, float iRotation );
+    QPoint  __DrawDotVectorTruc_RequiresAName_( const QPoint& iStart, const QPointF& iVector, float iPressure, float iRotation );
 
 
 protected:
@@ -73,6 +71,8 @@ protected:
 
     const QImage*               mAlphaMask;
     QRect                       mDirtyArea;
+
+    QImage*                     mDrawingContext = 0;
 
 private:
     int                         mLastRenderedPathIndex;

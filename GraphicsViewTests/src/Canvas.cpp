@@ -48,6 +48,11 @@ cCanvas::cCanvas( QWidget *parent ) :
     setStyleSheet( "background-color: #555555");
 
     __DebugAlphaMaskTest__ = new QImage( ":/cMainWindow/Resources/AlphaMask.png" );
+
+    mHUDView = new cHUDView( this );
+    QRect geom( 0, 0, width(), height() );
+    mHUDView->setGeometry( geom );
+    mHUDView->update();
 }
 
 
@@ -69,7 +74,7 @@ cCanvas::tabletEvent( QTabletEvent*  iEvent )
             mState = kDrawing;
             mItemPixmap = mEditableItem->mpixmap;
 
-            mToolModel->StartDrawing();
+            mToolModel->StartDrawing( mClip->LayerAtIndex( 0 )->Image() );
 
             if( mTool == kEraser )
                 mPainter->setCompositionMode( QPainter::CompositionMode_Clear );
@@ -102,10 +107,9 @@ cCanvas::tabletEvent( QTabletEvent*  iEvent )
                     float(iEvent->rotation())
                 };
 
-                mToolModel->PathAddPoint( point );
-                mToolModel->DrawPathFromLastRenderedPoint( mClip->LayerAtIndex( 0 )->Image() );
+                mClip->DirtyArea( mToolModel->MoveDrawing( point ) );
+                SetPixmap( QPixmap::fromImage( *mClip->ComposeLayers() ) );
 
-                SetPixmap( QPixmap::fromImage( *mClip->LayerAtIndex( 0 )->Image() )  );
                 currentFrameGotPainted( *mEditableItem->mpixmap );
             }
 
@@ -218,6 +222,11 @@ cCanvas::keyReleaseEvent( QKeyEvent * iEvent )
     {
         mClip->GetSelection()->Clear();
         mHUDItem->SetImage( 0 );
+        mHUDItem->update();
+    }
+    else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_T )
+    {
+        mClip->ExtractSelection();
     }
 
     QGraphicsView::keyReleaseEvent( iEvent );
@@ -252,7 +261,7 @@ cCanvas::mousePressEvent( QMouseEvent * iEvent )
             mState = kDrawing;
             mItemPixmap = mEditableItem->mpixmap;
 
-            mToolModel->StartDrawing();
+            mToolModel->StartDrawing( mClip->LayerAtIndex( 0 )->Image() );
 
             if( mTool == kEraser )
                 mPainter->setCompositionMode( QPainter::CompositionMode_Clear );
@@ -292,15 +301,16 @@ cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
         point.mPressure = 1.0F;
         point.mRotation = 0.0F;
 
-        mToolModel->PathAddPoint( point );
-        mToolModel->DrawPathFromLastRenderedPoint( mClip->LayerAtIndex( 0 )->Image() );
-
-        mClip->DirtyArea( mToolModel->GetDirtyAreaAndReset() );
-        SetPixmap( QPixmap::fromImage( *mClip->ComposeLayers() ) );
-
-        if( !mSelectionMode )
+        auto dirty = mToolModel->MoveDrawing( point );
+        if( !dirty.isEmpty() )
         {
-            currentFrameGotPainted( *mEditableItem->mpixmap );
+            mClip->DirtyArea( dirty );
+            SetPixmap( QPixmap::fromImage( *mClip->ComposeLayers() ) );
+
+            if( !mSelectionMode )
+            {
+                currentFrameGotPainted( *mEditableItem->mpixmap );
+            }
         }
     }
 
@@ -314,7 +324,17 @@ cCanvas::mouseReleaseEvent( QMouseEvent * iEvent )
 {
     if( mState == kDrawing )
     {
-        mToolModel->EndDrawing();
+        auto dirty = mToolModel->EndDrawing();
+        if( !dirty.isEmpty() )
+        {
+            mClip->DirtyArea( dirty );
+            SetPixmap( QPixmap::fromImage( *mClip->ComposeLayers() ) );
+
+            if( !mSelectionMode )
+            {
+                currentFrameGotPainted( *mEditableItem->mpixmap );
+            }
+        }
 
         if( !mSelectionMode )
         {
@@ -323,7 +343,6 @@ cCanvas::mouseReleaseEvent( QMouseEvent * iEvent )
         }
         else
         {
-            mClip->GetSelection()->ProcessEdgeDetection();
             mHUDItem->SetImage( mClip->GetSelection()->GetSelectionEdgeMask() );
         }
     }

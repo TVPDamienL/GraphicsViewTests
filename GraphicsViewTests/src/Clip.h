@@ -31,6 +31,7 @@ public:
 
 public:
     cSelection* GetSelection();
+    void        ExtractSelection();
 
 
 private:

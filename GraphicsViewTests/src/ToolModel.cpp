@@ -43,9 +43,9 @@ cToolModel::_BuildTool()
 
 
 void
-cToolModel::DrawDot( QImage* iImage, int x, int y, float iPressure, float iRotation )
+cToolModel::DrawDot( int x, int y, float iPressure, float iRotation )
 {
-    uchar* data = iImage->bits();
+    uchar* data = mDrawingContext->bits();
 
     int toolSize = mToolSize * iPressure;
 
@@ -57,10 +57,10 @@ cToolModel::DrawDot( QImage* iImage, int x, int y, float iPressure, float iRotat
     topLeftX = topLeftX < 0 ? 0 : topLeftX;
     topLeftY = topLeftY < 0 ? 0 : topLeftY;
 
-    if( topLeftX + toolSize >= iImage->width() )
-        topLeftX = iImage->width() - toolSize - 1;
-    if( topLeftY + toolSize >= iImage->height() )
-        topLeftY = iImage->height() - toolSize - 1;
+    if( topLeftX + toolSize >= mDrawingContext->width() )
+        topLeftX = mDrawingContext->width() - toolSize - 1;
+    if( topLeftY + toolSize >= mDrawingContext->height() )
+        topLeftY = mDrawingContext->height() - toolSize - 1;
     // ==========
 
 
@@ -69,7 +69,7 @@ cToolModel::DrawDot( QImage* iImage, int x, int y, float iPressure, float iRotat
     {
         for( unsigned int x = topLeftX; x < topLeftX + mToolSize; ++x )
         {
-            index = y * iImage->width()*4 + x*4;
+            index = y * mDrawingContext->width()*4 + x*4;
 
             data[index]     = mColor.blue();    // B
             data[index+1]   = mColor.green();   // G
@@ -81,10 +81,10 @@ cToolModel::DrawDot( QImage* iImage, int x, int y, float iPressure, float iRotat
 
 
 void
-cToolModel::DrawLine( QImage * iImage, int x1, int y1, int x2, int y2 )
+cToolModel::DrawLine( int x1, int y1, int x2, int y2 )
 {
-    DrawDot( iImage, x1, y1, 1, 0 );
-    DrawDot( iImage, x2, y2, 1, 0 );
+    DrawDot( x1, y1, 1, 0 );
+    DrawDot( x2, y2, 1, 0 );
 
     // All inbetweens
 }

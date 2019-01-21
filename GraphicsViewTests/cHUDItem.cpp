@@ -45,7 +45,6 @@ cHUDItem::paint( QPainter * painter, const QStyleOptionGraphicsItem * option, QW
 void
 cHUDItem::SetImage( QImage*  iSelectionImage )
 {
-    delete  mSelectionImage;
     mSelectionImage = iSelectionImage; // iPixmap could be 0
 
     if( mSelectionImage )

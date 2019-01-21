@@ -71,15 +71,23 @@ ToolBase::setStep( float iStep )
 
 
 void
-ToolBase::StartDrawing()
+ToolBase::StartDrawing( QImage* iDC )
 {
     mRequiredStepLength = 0;
     mLastRenderedPathIndex = 0;
+    mDrawingContext = iDC;
+}
+
+
+QRect
+ToolBase::MoveDrawing( sPointData iPointData )
+{
+    return  QRect();
 }
 
 
 void
-ToolBase::DrawFullPath( QImage * iImage )
+ToolBase::DrawFullPath()
 {
     if( mPath.size() <= 0 )
         return;
@@ -87,14 +95,14 @@ ToolBase::DrawFullPath( QImage * iImage )
     mRequiredStepLength = 0;
     mLastRenderedPathIndex = 0;
 
-    DrawPathFromLastRenderedPoint( iImage );
+    DrawPathFromLastRenderedPoint();
 
     mPath.clear(); // We draw the path, we clear it
 }
 
 
 void
-ToolBase::DrawPathFromLastRenderedPoint( QImage * iImage )
+ToolBase::DrawPathFromLastRenderedPoint()
 {
     if( mPath.size() <= 0 )
         return;
@@ -138,7 +146,7 @@ ToolBase::DrawPathFromLastRenderedPoint( QImage * iImage )
         // If spare steps from previous it, we apply it, and then use this point as first
         if( abs( mRequiredStepLength - mStep ) > 0.1F )
         {
-            startingPoint = __DrawDotVectorTruc_RequiresAName_( iImage, p1, stepVectorNormalizedAsPF * mRequiredStepLength, pressure_p1, rotation_p1 );
+            startingPoint = __DrawDotVectorTruc_RequiresAName_( p1, stepVectorNormalizedAsPF * mRequiredStepLength, pressure_p1, rotation_p1 );
             remainingDistance -= mRequiredStepLength;
         }
 
@@ -151,7 +159,7 @@ ToolBase::DrawPathFromLastRenderedPoint( QImage * iImage )
         {
             float pressure = std::abs(pressure_p2 - pressure_p1) * (1.0 - remainingDistance/distance) + std::min(pressure_p1, pressure_p2);
             float rotation = std::abs(rotation_p2 - rotation_p1) * (1.0 - remainingDistance/distance) + std::min(rotation_p1, rotation_p2);
-            __DrawDotVectorTruc_RequiresAName_( iImage, startingPoint, stepVectorNormalizedAsPF * mStep * count, pressure, rotation );
+            __DrawDotVectorTruc_RequiresAName_( startingPoint, stepVectorNormalizedAsPF * mStep * count, pressure, rotation );
             remainingDistance -= mStep;
             ++count;
         }
@@ -163,10 +171,11 @@ ToolBase::DrawPathFromLastRenderedPoint( QImage * iImage )
 }
 
 
-void
+QRect
 ToolBase::EndDrawing()
 {
     mPath.clear();
+    return  QRect();
 }
 
 
@@ -210,55 +219,18 @@ ToolBase::ClearAlphaMask()
 }
 
 
-void
-ToolBase::_DrawPixel( uchar * iData, unsigned int iImageWidth, unsigned int iImageHeight, int iX, int iY, int iR, int iG, int iB, int iA )
-{
-    int x = iX < 0 ? 0 : iX;
-    x = x >= iImageWidth ? iImageWidth - 1 : x;
-
-    int y = iY < 0 ? 0 : iY;
-    y = y >= iImageHeight ? iImageHeight - 1 : y;
-
-    int index = y * iImageWidth * 4 + x * 4;
-    int r = iR;
-    int g = iG;
-    int b = iB;
-    int a = iA;
-
-    if( mAlphaMask && mAlphaMask->width() == iImageWidth && mAlphaMask->height() == mAlphaMask->height() )
-    {
-        float alphaMaskTransparency = float(mAlphaMask->bits()[ index + 3 ]) / 255.F;
-        r *= alphaMaskTransparency;
-        g *= alphaMaskTransparency;
-        b *= alphaMaskTransparency;
-        a *= alphaMaskTransparency;
-    }
-
-    float transparencyAmountInverse = 1.F - ( float( a ) / 255.F );
-
-    // BGRA format and premultiplied alpha
-    // Premultiplied allows this simple equation, basically we do a weighted sum of source and destination, weighted by the src's alpha
-    // So we basically keep as much dst as src is transparent -> the more src is transparent, the more we want dst's color, so -> mult by 1-alpha, alpha between 0 and 1
-    iData[ index ]      = b + iData[ index ]      * transparencyAmountInverse;
-    iData[ index + 1 ]  = g + iData[ index + 1 ]  * transparencyAmountInverse;
-    iData[ index + 2 ]  = r + iData[ index + 2 ]  * transparencyAmountInverse;
-    iData[ index + 3 ]  = a + iData[ index + 3 ]  * transparencyAmountInverse;
-
-}
-
-
 // ===========================
 // ===========================
 
 
 QPoint
-ToolBase::__DrawDotVectorTruc_RequiresAName_( QImage* iImage, const QPoint& iStart, const QPointF& iVector,  float iPressure, float iRotation )
+ToolBase::__DrawDotVectorTruc_RequiresAName_( const QPoint& iStart, const QPointF& iVector,  float iPressure, float iRotation )
 {
     // This takes a starting point, offsets by a vector, draws a dot there and return the offset point's coordinates
     QPoint stepVector = QPoint( std::roundf( iVector.x() ), std::roundf( iVector.y() ) );
     QPoint stepPosition = iStart + stepVector;
 
-    DrawDot( iImage, stepPosition.x(), stepPosition.y(), iPressure, iRotation );
+    DrawDot( stepPosition.x(), stepPosition.y(), iPressure, iRotation );
 
     return  stepPosition;
 }

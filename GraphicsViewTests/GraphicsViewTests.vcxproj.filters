@@ -67,6 +67,9 @@
     <Filter Include="src\Blending">
       <UniqueIdentifier>{ececbc47-2f4f-4229-bcd2-1efa6b4b87ea}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\HUD">
+      <UniqueIdentifier>{80e97fa5-f441-43fa-9da5-3fac6d6a1a4a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -150,6 +153,15 @@
     <ClCompile Include="BenchmarkStuff.cpp">
       <Filter>src\Benchmark</Filter>
     </ClCompile>
+    <ClCompile Include="cHUDView.cpp">
+      <Filter>src\HUD</Filter>
+    </ClCompile>
+    <ClCompile Include="cHUDObject.cpp">
+      <Filter>src\HUD</Filter>
+    </ClCompile>
+    <ClCompile Include="cHUDHandle.cpp">
+      <Filter>src\HUD</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="cMainWindow.h">
@@ -181,6 +193,9 @@
     </QtMoc>
     <QtMoc Include="cToolSelectionTest.h">
       <Filter>src\ToolModel</Filter>
+    </QtMoc>
+    <QtMoc Include="cHUDView.h">
+      <Filter>src\HUD</Filter>
     </QtMoc>
   </ItemGroup>
   <ItemGroup>
@@ -245,6 +260,12 @@
     </ClInclude>
     <ClInclude Include="Blending.h">
       <Filter>src\Blending</Filter>
+    </ClInclude>
+    <ClInclude Include="cHUDObject.h">
+      <Filter>src\HUD</Filter>
+    </ClInclude>
+    <ClInclude Include="cHUDHandle.h">
+      <Filter>src\HUD</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
