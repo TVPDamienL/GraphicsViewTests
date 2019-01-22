@@ -15,6 +15,7 @@
 #include <QMimeData>
 
 #include <QDebug>
+#include <QScrollBar>
 
 
 cCanvas::cCanvas( QWidget *parent ) :
@@ -26,6 +27,9 @@ cCanvas::cCanvas( QWidget *parent ) :
     // Config
     setAcceptDrops( true );
     setAttribute(Qt::WA_TabletTracking);
+
+    setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+    setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 
     // Scene
     QGraphicsScene* scene = new QGraphicsScene( this );
@@ -49,17 +53,10 @@ cCanvas::cCanvas( QWidget *parent ) :
 
     __DebugAlphaMaskTest__ = new QImage( ":/cMainWindow/Resources/AlphaMask.png" );
 
-    mHUDView = new cHUDView( this );
+    mHUDView = new cHUDView( viewport()  );
     QRect geom( 0, 0, width(), height() );
     mHUDView->setGeometry( geom );
     mHUDView->update();
-}
-
-
-void
-cCanvas::paintEvent( QPaintEvent * iEvent )
-{
-    QGraphicsView::paintEvent( iEvent );
 }
 
 
@@ -67,8 +64,8 @@ void
 cCanvas::resizeEvent( QResizeEvent * iEvent )
 {
     QRect geom( 0, 0, width(), height() );
+    setSceneRect( geom );
     mHUDView->setGeometry( geom );
-    mHUDView->update();
 }
 
 
@@ -299,6 +296,7 @@ cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
         mEditableItem->setPos( pos );
         mGridItem->setPos( pos );
         mHUDItem->setPos( pos );
+        mHUDView->ApplyPan( QPoint( offset.x(), offset.y() ) );
     }
     else if( mState == kDrawing )
     {
@@ -371,11 +369,13 @@ cCanvas::wheelEvent( QWheelEvent * iEvent )
         {
             mEditableItem->setScale( mEditableItem->scale() * 1.5 );
             mHUDItem->setScale( mHUDItem->scale() * 1.5 );
+            mHUDView->ApplyZoom( 1.5 );
         }
         else
         {
             mEditableItem->setScale( mEditableItem->scale() / 1.5 );
             mHUDItem->setScale( mHUDItem->scale() / 1.5 );
+            mHUDView->ApplyZoom( 2.F/3.F );
         }
 
         UpCursor();

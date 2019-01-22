@@ -16,7 +16,7 @@ cHUDHandle::Draw( QPainter* iPainter )
     pen.setWidth( 1 );
 
     iPainter->setPen( pen );
-    iPainter->drawRect( mFrame );
+    iPainter->drawRect( mOriginalFrame );
 }
 
 

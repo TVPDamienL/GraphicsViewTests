@@ -49,6 +49,22 @@ cHUDTransform::SetFrame( const QRect & iFrame )
 
 
 void
+cHUDTransform::MoveBy( const QPoint & iOffset )
+{
+    cHUDObject::MoveBy( iOffset );
+    _LayoutChildren();
+}
+
+
+void
+cHUDTransform::ScaleBy( float iScale )
+{
+    cHUDObject::ScaleBy( iScale );
+    _LayoutChildren();
+}
+
+
+void
 cHUDTransform::_LayoutChildren()
 {
     QRect frame( mFrame.left() - mHandleSize/2, mFrame.top()  - mHandleSize/2, mHandleSize, mHandleSize );
