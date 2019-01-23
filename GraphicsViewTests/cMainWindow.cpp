@@ -39,6 +39,8 @@ cMainWindow::cMainWindow(QWidget *parent) :
     connect( ui.graphicsView, &cCustomGraphicsView::currentFrameChanged, this, &cMainWindow::CurrentFrameChanged );
     connect( ui.canvas, &cCanvas::currentFrameGotPainted, ui.graphicsView, &cCustomGraphicsView::CurrentFrameGotPainted );
     connect( ui.canvas, &cCanvas::previousFrameGotPainted, ui.graphicsView, &cCustomGraphicsView::PreviousFrameGotPainted );
+    connect( ui.canvas, &cCanvas::zoomChanged, ui.spinZoomFactor, &QDoubleSpinBox::setValue );
+    connect( ui.spinZoomFactor, SIGNAL(valueChanged(double)), ui.canvas, SLOT(SetZoom(double)) );
 
 
     // Tool controls

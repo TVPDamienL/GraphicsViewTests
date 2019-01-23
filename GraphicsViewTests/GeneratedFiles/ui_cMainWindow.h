@@ -12,6 +12,7 @@
 #include <QtCore/QVariant>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QCheckBox>
+#include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QFormLayout>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
@@ -54,6 +55,9 @@ public:
     QPushButton *buttonToolPaint;
     QPushButton *buttonToolSelect;
     cCanvas *canvas;
+    QHBoxLayout *horizontalLayout_4;
+    QSpacerItem *horizontalSpacer;
+    QDoubleSpinBox *spinZoomFactor;
     QHBoxLayout *horizontalLayout;
     QPushButton *playButton;
     QPushButton *stopButton;
@@ -66,7 +70,7 @@ public:
     {
         if (cMainWindow->objectName().isEmpty())
             cMainWindow->setObjectName(QString::fromUtf8("cMainWindow"));
-        cMainWindow->resize(649, 589);
+        cMainWindow->resize(955, 826);
         centralWidget = new QWidget(cMainWindow);
         centralWidget->setObjectName(QString::fromUtf8("centralWidget"));
         verticalLayout_2 = new QVBoxLayout(centralWidget);
@@ -182,6 +186,21 @@ public:
 
         verticalLayout_2->addLayout(horizontalLayout_2);
 
+        horizontalLayout_4 = new QHBoxLayout();
+        horizontalLayout_4->setSpacing(6);
+        horizontalLayout_4->setObjectName(QString::fromUtf8("horizontalLayout_4"));
+        horizontalSpacer = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+        horizontalLayout_4->addItem(horizontalSpacer);
+
+        spinZoomFactor = new QDoubleSpinBox(centralWidget);
+        spinZoomFactor->setObjectName(QString::fromUtf8("spinZoomFactor"));
+
+        horizontalLayout_4->addWidget(spinZoomFactor);
+
+
+        verticalLayout_2->addLayout(horizontalLayout_4);
+
         horizontalLayout = new QHBoxLayout();
         horizontalLayout->setSpacing(6);
         horizontalLayout->setObjectName(QString::fromUtf8("horizontalLayout"));
@@ -212,7 +231,7 @@ public:
         cMainWindow->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(cMainWindow);
         menuBar->setObjectName(QString::fromUtf8("menuBar"));
-        menuBar->setGeometry(QRect(0, 0, 649, 21));
+        menuBar->setGeometry(QRect(0, 0, 955, 21));
         cMainWindow->setMenuBar(menuBar);
         mainToolBar = new QToolBar(cMainWindow);
         mainToolBar->setObjectName(QString::fromUtf8("mainToolBar"));

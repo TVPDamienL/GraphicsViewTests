@@ -9,16 +9,16 @@ cHUDTransform::~cHUDTransform()
 cHUDTransform::cHUDTransform()
 {
     auto topLeft = new cHUDHandle();
-    mHandles.push_back( topLeft );
+    mChildrenHUDs.push_back( topLeft );
 
     auto topRight = new cHUDHandle();
-    mHandles.push_back( topRight );
+    mChildrenHUDs.push_back( topRight );
 
     auto botRight = new cHUDHandle();
-    mHandles.push_back( botRight );
+    mChildrenHUDs.push_back( botRight );
 
     auto botLeft = new cHUDHandle();
-    mHandles.push_back( botLeft );
+    mChildrenHUDs.push_back( botLeft );
 
     _LayoutChildren();
 }
@@ -27,7 +27,7 @@ cHUDTransform::cHUDTransform()
 void
 cHUDTransform::Draw( QPainter * iPainter )
 {
-    for( auto handle : mHandles )
+    for( auto handle : mChildrenHUDs )
     {
         handle->Draw( iPainter );
     }
@@ -64,24 +64,63 @@ cHUDTransform::ScaleBy( float iScale )
 }
 
 
+bool
+cHUDTransform::ContainsPoint( const QPoint & iPoint ) const
+{
+    for( auto handle : mChildrenHUDs )
+    {
+        if( handle->ContainsPoint( iPoint ) )
+            return  true;
+    }
+
+    return  cHUDObject::ContainsPoint( iPoint );
+}
+
+
+bool
+cHUDTransform::Event( QEvent * iEvent )
+{
+    // Do all event stuff here, so we don't have to then send a message from handle to say handleMoved(), then catch it here, then make the changes, then change handle positions,
+    // then keep tracking the mouse during all that on the handle ......
+    QMouseEvent* eventAsMouse = 0;
+
+    switch( iEvent->type() )
+    {
+        case QEvent::MouseButtonPress :
+        case QEvent::MouseMove :
+        case QEvent::MouseButtonRelease:
+            eventAsMouse = dynamic_cast< QMouseEvent* >( iEvent );
+            if( ContainsPoint( eventAsMouse->pos() ) )
+            {
+                qDebug() << "TransformEvent";
+            }
+
+        default:
+            break;
+    }
+
+    return false;
+}
+
+
 void
 cHUDTransform::_LayoutChildren()
 {
     QRect frame( mFrame.left() - mHandleSize/2, mFrame.top()  - mHandleSize/2, mHandleSize, mHandleSize );
 
-    auto topLeft = mHandles[ 0 ];
+    auto topLeft = mChildrenHUDs[ 0 ];
     topLeft->SetFrame( frame );
 
     frame.translate( QPoint( mFrame.width(), 0 ) );
-    auto topRight = mHandles[ 1 ];
+    auto topRight = mChildrenHUDs[ 1 ];
     topRight->SetFrame( frame );
 
     frame.translate( QPoint( 0, mFrame.height() ) );
-    auto botRight = mHandles[ 2 ];
+    auto botRight = mChildrenHUDs[ 2 ];
     botRight->SetFrame( frame );
 
     frame.translate( QPoint( -mFrame.width(), 0 ) );
-    auto botLeft = mHandles[ 3 ];
+    auto botLeft = mChildrenHUDs[ 3 ];
     botLeft->SetFrame( frame );
 }
 

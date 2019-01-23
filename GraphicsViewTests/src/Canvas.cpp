@@ -378,6 +378,8 @@ cCanvas::wheelEvent( QWheelEvent * iEvent )
             mHUDView->ApplyZoom( 2.F/3.F );
         }
 
+        emit zoomChanged( mEditableItem->scale() );
+
         UpCursor();
         UpdateGridItem();
     }
@@ -466,6 +468,15 @@ cCanvas::toolChanged( const QModelIndex & Left, const QModelIndex & Right, const
 {
     if( Left.row() == 0 )
         DrawCursor();
+}
+
+
+void
+cCanvas::SetZoom( double iZoom )
+{
+    mEditableItem->setScale( iZoom );
+    UpCursor();
+    UpdateGridItem();
 }
 
 

@@ -1,5 +1,6 @@
 #include "cHUDObject.h"
 
+#include <QEvent>
 
 cHUDObject::~cHUDObject()
 {
@@ -16,6 +17,7 @@ void
 cHUDObject::SetFrame( const QRect & iFrame )
 {
     mOriginalFrame = iFrame;
+    mFrame = MappedRect( mOriginalFrame );
 }
 
 
@@ -36,6 +38,33 @@ cHUDObject::ScaleBy( float iScale )
     mTransformation( 1, 1 ) *= iScale;
 
     mFrame = MappedRect( mOriginalFrame );
+}
+
+
+bool
+cHUDObject::Event( QEvent * iEvent )
+{
+    QMouseEvent* eventAsMouse = 0;
+    switch( iEvent->type() )
+    {
+        case QEvent::MouseButtonPress :
+        case QEvent::MouseMove :
+        case QEvent::MouseButtonRelease:
+            eventAsMouse = dynamic_cast< QMouseEvent* >( iEvent );
+            if( ContainsPoint( eventAsMouse->pos() ) )
+            {
+                for( auto child : mChildrenHUDs )
+                {
+                    if( child->Event( iEvent ) ) // If event has been handled, return true, which means handled
+                        return  true;
+                }
+            }
+
+        default:
+            break;
+    }
+
+    return  false;
 }
 
 
@@ -61,5 +90,12 @@ cHUDObject::MappedPoint( const QPoint & iPoint )
 
     auto transfoResult = mTransformation * pointMatrix;
     return  QPoint( transfoResult( 0, 0 ), transfoResult( 1, 0 ) );
+}
+
+
+bool
+cHUDObject::ContainsPoint( const QPoint & iPoint ) const
+{
+    return  mFrame.contains( iPoint );
 }
 

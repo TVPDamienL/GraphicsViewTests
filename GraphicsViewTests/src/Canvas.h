@@ -51,7 +51,10 @@ public:
 signals:
     void  currentFrameGotPainted( const QPixmap& iPixmap );
     void  previousFrameGotPainted( const QPixmap& iPixmap );
+    void  zoomChanged( double iValue );
 
+public slots:
+    void  SetZoom( double iZoom );
 
 private:
     void  _SetImage( const QImage* iImage );

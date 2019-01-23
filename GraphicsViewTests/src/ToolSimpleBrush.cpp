@@ -206,7 +206,7 @@ cToolSimpleBrush::_DrawDot( QImage * iImage, int iX, int iY, float iPressure, fl
     uint8_t finalB = mColor.blue();
     uint8_t finalA = mColor.alpha();
 
-    const unsigned int bytesPerLine = iImage->bytesPerLine();
+    const int bytesPerLine = iImage->bytesPerLine();
 
     const int r = (mToolSize/2) * iPressure;
     const int r2 = r*r;

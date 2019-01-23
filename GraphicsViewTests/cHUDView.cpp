@@ -93,6 +93,12 @@ cHUDView::keyReleaseEvent( QKeyEvent * iEvent )
 void
 cHUDView::mousePressEvent( QMouseEvent * iEvent )
 {
+    for( auto hud : mHUDObjects )
+    {
+        if( hud->Event( iEvent ) )
+            return;
+    }
+
     iEvent->ignore();
     QWidget::mousePressEvent( iEvent );
 }
@@ -101,6 +107,12 @@ cHUDView::mousePressEvent( QMouseEvent * iEvent )
 void
 cHUDView::mouseMoveEvent( QMouseEvent * iEvent )
 {
+    for( auto hud : mHUDObjects )
+    {
+        if( hud->Event( iEvent ) )
+            return;
+    }
+
     iEvent->ignore();
     QWidget::mouseMoveEvent( iEvent );
 }
@@ -109,6 +121,12 @@ cHUDView::mouseMoveEvent( QMouseEvent * iEvent )
 void
 cHUDView::mouseReleaseEvent( QMouseEvent * iEvent )
 {
+    for( auto hud : mHUDObjects )
+    {
+        if( hud->Event( iEvent ) )
+            return;
+    }
+
     iEvent->ignore();
     QWidget::mouseReleaseEvent( iEvent );
 }

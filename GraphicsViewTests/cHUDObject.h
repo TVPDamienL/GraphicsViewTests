@@ -1,10 +1,9 @@
 #pragma once
 
 
-#include <QTransform>
-#include <QPainter>
-
 #include <QGenericMatrix>
+#include <QMouseEvent>
+#include <QPainter>
 
 class cHUDObject
 {
@@ -19,14 +18,19 @@ public:
     virtual  void   MoveBy( const QPoint& iOffset );
     virtual  void   ScaleBy( float iScale );
 
+    virtual  bool  Event( QEvent* iEvent );
 
     QRect   MappedRect( const QRect& iRect );
     QPoint  MappedPoint( const QPoint& iPoint );
+
+    virtual bool ContainsPoint( const QPoint& iPoint ) const;
 
 protected:
     QMatrix3x2  mTransformation;
 
     QRect       mFrame;
     QRect       mOriginalFrame;
+
+    QVector< cHUDObject* > mChildrenHUDs;
 };
 
