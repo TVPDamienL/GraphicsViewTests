@@ -83,6 +83,7 @@ cHUDTransform::Event( QEvent * iEvent )
     // Do all event stuff here, so we don't have to then send a message from handle to say handleMoved(), then catch it here, then make the changes, then change handle positions,
     // then keep tracking the mouse during all that on the handle ......
     QMouseEvent* eventAsMouse = 0;
+    cHUDHandle* targetHandle = 0;
 
     switch( iEvent->type() )
     {
@@ -90,7 +91,12 @@ cHUDTransform::Event( QEvent * iEvent )
         case QEvent::MouseMove :
         case QEvent::MouseButtonRelease:
             eventAsMouse = dynamic_cast< QMouseEvent* >( iEvent );
-            if( ContainsPoint( eventAsMouse->pos() ) )
+            targetHandle = _GetHandleAtPoint( eventAsMouse->pos() );
+            if( targetHandle )
+            {
+                qDebug() << "Handle";
+            }
+            else if( ContainsPoint( eventAsMouse->pos() ) )
             {
                 qDebug() << "TransformEvent";
             }
@@ -122,5 +128,18 @@ cHUDTransform::_LayoutChildren()
     frame.translate( QPoint( -mFrame.width(), 0 ) );
     auto botLeft = mChildrenHUDs[ 3 ];
     botLeft->SetFrame( frame );
+}
+
+
+cHUDHandle*
+cHUDTransform::_GetHandleAtPoint( const QPoint & iPoint )
+{
+    for( auto handle : mChildrenHUDs )
+    {
+        if( handle->ContainsPoint( iPoint ) )
+            return  dynamic_cast< cHUDHandle* >( handle );
+    }
+
+    return  nullptr;
 }
 

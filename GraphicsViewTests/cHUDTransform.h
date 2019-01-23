@@ -23,7 +23,8 @@ public:
 
 
 private:
-    void _LayoutChildren();
+    void            _LayoutChildren();
+    cHUDHandle*     _GetHandleAtPoint( const QPoint& iPoint );
 
 private:
     int                     mHandleSize = 10;
