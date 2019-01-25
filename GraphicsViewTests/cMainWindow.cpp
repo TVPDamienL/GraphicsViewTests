@@ -11,6 +11,7 @@
 
 #include "ColorSwatch.h"
 
+
 cMainWindow::cMainWindow(QWidget *parent) :
     QMainWindow(parent),
     mToolPaint( new cToolSimpleBrush() ),

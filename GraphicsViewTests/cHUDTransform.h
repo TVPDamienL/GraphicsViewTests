@@ -3,13 +3,14 @@
 #include "cHUDObject.h"
 
 #include "cHUDHandle.h"
+#include "cSelection.h"
 
 class cHUDTransform :
     public cHUDObject
 {
 public:
     ~cHUDTransform();
-    cHUDTransform( cHUDView* iParentView, cHUDObject* iParentObject );
+    cHUDTransform( cHUDView* iParentView, cHUDObject* iParentObject, cSelection* iSelection );
 
 public:
     virtual  void   Draw( QPainter* iPainter ) override;
@@ -27,5 +28,6 @@ private:
 private:
     int             mHandleSize = 10;
     cHUDHandle*     mFocusedHandle = 0;
+    cSelection*     mSelection;
 };
 

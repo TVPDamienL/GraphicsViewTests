@@ -72,57 +72,127 @@ cCanvas::resizeEvent( QResizeEvent * iEvent )
 void
 cCanvas::tabletEvent( QTabletEvent*  iEvent )
 {
-    qDebug() << iEvent;
+    bool check = qApp->testAttribute(Qt::AA_SynthesizeMouseForUnhandledTabletEvents);
+
     switch( iEvent->type() )
     {
         case  QEvent::TabletPress:
         {
-            mState = kDrawing;
-            mItemPixmap = mEditableItem->mpixmap;
+            mClickPos = iEvent->pos();
 
-            mToolModel->StartDrawing( mClip->LayerAtIndex( 0 )->Image() );
+            if( iEvent->button() == Qt::LeftButton )
+            {
+                if( QApplication::keyboardModifiers() & Qt::AltModifier )
+                {
+                    mState = kPan;
+                }
+                else
+                {
+                    if( !mSelectionMode )
+                    {
+                        if( mClip->GetSelection()->IsActive() )
+                        {
+                            mToolModel->SetAlphaMask( mClip->GetSelection()->GetSelectionMask() );
+                        }
+                        else
+                        {
+                            mToolModel->SetAlphaMask( 0 );
+                        }
+                    }
 
-            if( mTool == kEraser )
-                mPainter->setCompositionMode( QPainter::CompositionMode_Clear );
-            iEvent->accept();
+                    mState = kDrawing;
+                    mItemPixmap = mEditableItem->mpixmap;
+
+                    mToolModel->StartDrawing( mClip->LayerAtIndex( 0 )->Image() );
+
+                    if( mTool == kEraser )
+                        mPainter->setCompositionMode( QPainter::CompositionMode_Clear );
+                }
+            }
+            else if( iEvent->button() == Qt::RightButton )
+            {
+                if( QApplication::keyboardModifiers() & Qt::ControlModifier )
+                {
+                    //auto test = new colorPickerDialog( mToolModel, this );
+                    //test->openAtPosition( iEvent->screenPos() - QPointF( test->size().width()/2, test->size().height()/2 ) );
+                }
+            }
+
+            QGraphicsView::tabletEvent( iEvent );
             break;
         }
         case  QEvent::TabletRelease:
         {
             if( mState == kDrawing )
             {
-                mToolModel->EndDrawing();
-                mClip->LayerAtIndex( 0 )->WriteUndoHistory();
-                currentFrameGotPainted( *mEditableItem->mpixmap );
+                auto dirty = mToolModel->EndDrawing();
+                if( !dirty.isEmpty() )
+                {
+                    mClip->DirtyArea( dirty );
+                    SetPixmap( QPixmap::fromImage( *mClip->ComposeLayers() ) );
+
+                    if( !mSelectionMode )
+                    {
+                        currentFrameGotPainted( *mEditableItem->mpixmap );
+                    }
+                }
+
+                if( !mSelectionMode )
+                {
+                    mClip->LayerAtIndex( 0 )->WriteUndoHistory();
+                    currentFrameGotPainted( *mEditableItem->mpixmap );
+                }
+                else
+                {
+                    mHUDItem->SetImage( mClip->GetSelection()->GetSelectionEdgeMask() );
+                }
             }
 
             mState = kIdle;
-            iEvent->accept();
+            QGraphicsView::tabletEvent( iEvent );
             break;
         }
         case  QEvent::TabletMove:
         {
-            if( mState == kDrawing )
+            if( mState == kPan )
+            {
+                QPointF offset = iEvent->pos() - mClickPos;
+                QPointF pos = mEditableItem->pos() + offset;
+                mEditableItem->setPos( pos );
+                mGridItem->setPos( pos );
+                mHUDItem->setPos( pos );
+                mHUDView->TranslateBy( QPoint( offset.x(), offset.y() ) );
+            }
+            else if( mState == kDrawing )
             {
                 QPointF originInItemCoordinate = mEditableItem->mapFromScene( mapToScene( mClickPos.x(), mClickPos.y() ) );
                 QPointF newPointInItemCoordinate = mEditableItem->mapFromScene( mapToScene( iEvent->pos().x(), iEvent->pos().y() ) );
 
-                sPointData  point = {
-                    QPoint( newPointInItemCoordinate.x(), newPointInItemCoordinate.y() ),
-                    float(iEvent->pressure()),
-                    float(iEvent->rotation())
-                };
+                sPointData point;
+                point.mPosition = QPoint( newPointInItemCoordinate.x(), newPointInItemCoordinate.y() );
+                point.mPressure = iEvent->pressure();
+                point.mRotation = 0.0F;
 
-                mClip->DirtyArea( mToolModel->MoveDrawing( point ) );
-                SetPixmap( QPixmap::fromImage( *mClip->ComposeLayers() ) );
+                auto dirty = mToolModel->MoveDrawing( point );
+                if( !dirty.isEmpty() )
+                {
+                    mClip->DirtyArea( dirty );
+                    SetPixmap( QPixmap::fromImage( *mClip->ComposeLayers() ) );
 
-                currentFrameGotPainted( *mEditableItem->mpixmap );
+                    if( !mSelectionMode )
+                    {
+                        currentFrameGotPainted( *mEditableItem->mpixmap );
+                    }
+                }
             }
 
             mClickPos = iEvent->pos();
-            iEvent->accept();
+            QGraphicsView::tabletEvent( iEvent );
             break;
         }
+
+        default:
+            qDebug() << iEvent;
     }
 }
 

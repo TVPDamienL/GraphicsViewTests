@@ -7,7 +7,7 @@ cHUDTransform::~cHUDTransform()
 }
 
 
-cHUDTransform::cHUDTransform( cHUDView* iParentView, cHUDObject* iParentObject ) :
+cHUDTransform::cHUDTransform( cHUDView* iParentView, cHUDObject* iParentObject, cSelection* iSelection ) :
     cHUDObject( iParentView, iParentObject )
 {
     auto topLeft = new cHUDHandle( iParentView, this );
@@ -21,6 +21,8 @@ cHUDTransform::cHUDTransform( cHUDView* iParentView, cHUDObject* iParentObject )
 
     auto botLeft = new cHUDHandle( iParentView, this );
     mChildrenHUDs.push_back( botLeft );
+
+    mSelection = iSelection;
 
     _LayoutChildren();
 }

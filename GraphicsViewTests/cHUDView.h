@@ -37,9 +37,11 @@ public:
     void  TranslateBy( const QPoint& iOffset );
     void  ScaleBy( float iScale );
     void  SetDrawingAreaOffset( const QPoint& iOffset );
-
     float Scale() const;
 
+
+public:
+    void  AddHUDObject( cHUDObject* iObject );
     cHUDObject* GetHUDObjectAtPos( const QPoint& iPoint );
 
 

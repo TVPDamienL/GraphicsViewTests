@@ -17,9 +17,9 @@ cHUDView::~cHUDView()
 cHUDView::cHUDView( QWidget* iParent ) :
     QWidget( iParent )
 {
-    auto transform = new cHUDTransform( this, 0 );
-    transform->SetFrame( QRect( 0, 0, 100, 100 ) );
-    mHUDObjects.push_back( transform );
+    //auto transform = new cHUDTransform( this, 0 );
+    //transform->SetFrame( QRect( 0, 0, 100, 100 ) );
+    //mHUDObjects.push_back( transform );
     mGlobalTransformation.reset();
 }
 
@@ -187,6 +187,13 @@ float
 cHUDView::Scale() const
 {
     return  mScale;
+}
+
+
+void
+cHUDView::AddHUDObject( cHUDObject * iObject )
+{
+    mHUDObjects.push_back( iObject );
 }
 
 
