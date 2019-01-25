@@ -30,7 +30,8 @@ cHUDView::paintEvent( QPaintEvent * iEvent )
     QPainter painter( this );
     for( auto hud : mHUDObjects )
     {
-        hud->Draw( &painter );
+        if( hud->Visible() )
+            hud->Draw( &painter );
     }
 }
 
@@ -94,7 +95,7 @@ cHUDView::keyReleaseEvent( QKeyEvent * iEvent )
 void
 cHUDView::mousePressEvent( QMouseEvent * iEvent )
 {
-    mPressedHUD = GetHUDObjectAtPos( iEvent->pos() );
+    mPressedHUD = GetVisibleHUDObjectAtPos( iEvent->pos() );
 
     while( mPressedHUD )
     {
@@ -198,11 +199,11 @@ cHUDView::AddHUDObject( cHUDObject * iObject )
 
 
 cHUDObject*
-cHUDView::GetHUDObjectAtPos( const QPoint & iPoint )
+cHUDView::GetVisibleHUDObjectAtPos( const QPoint & iPoint )
 {
     for( auto hud : mHUDObjects )
     {
-        auto hudObj = hud->GetHUDObjectAtPos( iPoint );
+        auto hudObj = hud->GetVisibleHUDObjectAtPos( iPoint );
             if( hudObj )
                 return  hudObj;
     }

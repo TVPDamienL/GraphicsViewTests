@@ -8,6 +8,7 @@
 #include "cGridItem.h"
 #include "cHUDItem.h"
 #include "cHUDView.h"
+#include "cHUDTransform.h"
 
 class cEditableItem;
 
@@ -77,11 +78,13 @@ private:
 
     eState              mState;
 
-    cHUDView*           mHUDView;
-    cHUDItem*           mHUDItem;
     cEditableItem*      mEditableItem;
     cGridItem*          mGridItem;
 
+    // HUDs
+    cHUDView*           mHUDView;
+    cHUDItem*           mHUDSelection;
+    cHUDTransform*      mHUDTransform;
 
 
     QPointF             mClickPos;

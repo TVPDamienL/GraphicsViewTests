@@ -70,6 +70,9 @@
     <Filter Include="src\HUD">
       <UniqueIdentifier>{80e97fa5-f441-43fa-9da5-3fac6d6a1a4a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Data">
+      <UniqueIdentifier>{63e1922f-999d-4fc2-b0ba-1a7ef981303b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -164,6 +167,9 @@
     </ClCompile>
     <ClCompile Include="cHUDTransform.cpp">
       <Filter>src\HUD</Filter>
+    </ClCompile>
+    <ClCompile Include="cBaseData.cpp">
+      <Filter>src\Data</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -272,6 +278,9 @@
     </ClInclude>
     <ClInclude Include="cHUDTransform.h">
       <Filter>src\HUD</Filter>
+    </ClInclude>
+    <ClInclude Include="cBaseData.h">
+      <Filter>src\Data</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

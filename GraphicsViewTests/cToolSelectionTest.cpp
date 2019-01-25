@@ -72,9 +72,6 @@ cToolSelectionTest::DrawDot( int iX, int iY, float iPressure, float iRotation )
     bboxMinY = bboxMinY < 0 ? 0 : bboxMinY;
     bboxMaxY = bboxMaxY >= height ? height - 1 : bboxMaxY;
 
-    const unsigned int iterationCount = (bboxMaxX - bboxMinX) * (bboxMaxY - bboxMinY);
-
-
     for( int y = bboxMinY; y <= bboxMaxY ; ++y )
     {
         pixelRow = data + y * bytesPerLine + bboxMinX * 4;

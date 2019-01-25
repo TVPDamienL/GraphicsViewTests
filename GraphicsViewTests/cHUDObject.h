@@ -27,9 +27,13 @@ public:
     virtual  void   ScaleBy( float iScale );
     float           Scale() const;
 
-    virtual  bool  Event( QEvent* iEvent );
+    virtual  bool   Event( QEvent* iEvent );
 
-    QTransform*    GetTransform();
+    QTransform*     GetTransform();
+
+public:
+    bool            Visible() const;
+    void            Visible( bool iVisible );
 
 
 public:
@@ -41,17 +45,18 @@ public:
 
     virtual bool ContainsPoint( const QPoint& iPoint ) const;
 
-    virtual  cHUDObject* GetHUDObjectAtPos( const QPoint& iPoint );
+    virtual  cHUDObject* GetVisibleHUDObjectAtPos( const QPoint& iPoint );
 
 protected:
     cHUDView*               mParentView;
     cHUDObject*             mParentObject;
     QVector< cHUDObject* >  mChildrenHUDs;
 
-    QRect       mOriginalFrame;
-    QTransform  mObjectSelfTransformation;
+    QRect                   mOriginalFrame;
+    QTransform              mObjectSelfTransformation;
+    bool                    mVisible = true;
 
-    float mScale = 1.0F;
+    float                   mScale = 1.0F;
 
 };
 

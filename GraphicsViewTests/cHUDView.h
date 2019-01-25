@@ -41,8 +41,8 @@ public:
 
 
 public:
-    void  AddHUDObject( cHUDObject* iObject );
-    cHUDObject* GetHUDObjectAtPos( const QPoint& iPoint );
+    void        AddHUDObject( cHUDObject* iObject );
+    cHUDObject* GetVisibleHUDObjectAtPos( const QPoint& iPoint );
 
 
 public:

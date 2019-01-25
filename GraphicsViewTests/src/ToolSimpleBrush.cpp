@@ -96,14 +96,11 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
     uchar* data = mDrawingContext->bits();
     uchar* dataScanline = data;
 
-    uchar* dataTip = mTipRendered->bits();
-    uchar* dataTipScanline = dataTip;
 
     const uchar* alphaData = 0;
     const uchar* alphaScanline = 0;
 
-    unsigned int bytesPerLine = mDrawingContext->bytesPerLine();
-    unsigned int bytesPerLineTip = mTipRendered->bytesPerLine();
+    int bytesPerLine = mDrawingContext->bytesPerLine();
 
     int size = mToolSize * iPressure;
     QImage* scaledTip = mTipRendered;
@@ -112,8 +109,9 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
         scaledTip = new QImage( mTipRendered->scaled( size, size, Qt::AspectRatioMode::KeepAspectRatio ) );
 
     int radius = scaledTip->width() / 2;
-
-    float maxInverse = 1/255.F;
+    uchar* dataTip = scaledTip->bits();
+    uchar* dataTipScanline = dataTip;
+    int bytesPerLineTip = scaledTip->bytesPerLine();
 
     int minX = iX - radius;
     int maxX = iX + radius;

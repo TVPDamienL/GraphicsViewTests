@@ -89,6 +89,20 @@ cHUDObject::GetTransform()
 }
 
 
+bool
+cHUDObject::Visible() const
+{
+    return  mVisible;
+}
+
+
+void
+cHUDObject::Visible( bool iVisible )
+{
+    mVisible = iVisible;
+}
+
+
 QRect
 cHUDObject::MapToObject( const QRect & iRect )
 {
@@ -129,17 +143,17 @@ cHUDObject::ContainsPoint( const QPoint & iPoint ) const
 
 
 cHUDObject*
-cHUDObject::GetHUDObjectAtPos( const QPoint & iPoint )
+cHUDObject::GetVisibleHUDObjectAtPos( const QPoint & iPoint )
 {
     QPoint mappedPoint = ApplyInvertTransformationComposition( iPoint );
 
     // Deepest child first
     for( auto child : mChildrenHUDs )
-        if( child->mOriginalFrame.contains( mappedPoint ) )
+        if( child->Visible() && child->mOriginalFrame.contains( mappedPoint ) )
             return  child;
 
     // Then, if no child, myself
-    if( mOriginalFrame.contains( mappedPoint ) )
+    if( Visible() && mOriginalFrame.contains( mappedPoint ) )
         return  this;
 
     // If i'm not in, nothing

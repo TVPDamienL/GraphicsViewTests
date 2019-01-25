@@ -1,5 +1,7 @@
 #include "cHUDTransform.h"
 
+#include "cSelection.h"
+
 #include "cHUDView.h"
 
 cHUDTransform::~cHUDTransform()
@@ -7,7 +9,7 @@ cHUDTransform::~cHUDTransform()
 }
 
 
-cHUDTransform::cHUDTransform( cHUDView* iParentView, cHUDObject* iParentObject, cSelection* iSelection ) :
+cHUDTransform::cHUDTransform( cHUDView* iParentView, cHUDObject* iParentObject ) :
     cHUDObject( iParentView, iParentObject )
 {
     auto topLeft = new cHUDHandle( iParentView, this );
@@ -22,7 +24,7 @@ cHUDTransform::cHUDTransform( cHUDView* iParentView, cHUDObject* iParentObject, 
     auto botLeft = new cHUDHandle( iParentView, this );
     mChildrenHUDs.push_back( botLeft );
 
-    mSelection = iSelection;
+    mVisible = false;
 
     _LayoutChildren();
 }
@@ -118,9 +120,33 @@ cHUDTransform::Event( QEvent * iEvent )
 
 
 void
+cHUDTransform::SetSelection( cSelection * iSelection )
+{
+    mSelection = iSelection;
+    mSelection->RegisterEditionCallback( [ this ]( cBaseData* iSender, int iArg ){
+        this->SelectionChangedEvent( iSender, iArg );
+    });
+}
+
+
+void
+cHUDTransform::SelectionChangedEvent( cBaseData * iSender, int iArg )
+{
+    if( iArg == cSelection::eMessageSelection::kActiveChanged )
+    {
+        Visible( mSelection->IsActive() );
+    }
+    else if( iArg == cSelection::eMessageSelection::kBoundsChanged )
+    {
+        SetFrame( mSelection->GetSelectionBBox() );
+    }
+}
+
+
+void
 cHUDTransform::_LayoutChildren()
 {
-    QRect frame( -mHandleSize/2, -mHandleSize/2, mHandleSize, mHandleSize );
+    QRect frame( mOriginalFrame.left() -mHandleSize/2, mOriginalFrame.top() -mHandleSize/2, mHandleSize, mHandleSize );
 
     auto topLeft = mChildrenHUDs[ 0 ];
     topLeft->SetFrame( frame );

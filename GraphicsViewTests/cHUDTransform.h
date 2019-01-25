@@ -10,7 +10,7 @@ class cHUDTransform :
 {
 public:
     ~cHUDTransform();
-    cHUDTransform( cHUDView* iParentView, cHUDObject* iParentObject, cSelection* iSelection );
+    cHUDTransform( cHUDView* iParentView, cHUDObject* iParentObject );
 
 public:
     virtual  void   Draw( QPainter* iPainter ) override;
@@ -20,6 +20,9 @@ public:
 
     virtual  bool  Event( QEvent* iEvent ) override;
 
+public:
+    void                SetSelection( cSelection* iSelection );
+    void                SelectionChangedEvent( cBaseData* iSender, int iArg );
 
 private:
     void            _LayoutChildren();

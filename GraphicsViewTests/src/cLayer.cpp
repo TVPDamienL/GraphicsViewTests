@@ -30,7 +30,6 @@ cLayer::cLayer( unsigned int iWidth, unsigned int iHeight ) :
     //}
 
     WriteUndoHistory(); // First undo state, the empty image
-
 }
 
 

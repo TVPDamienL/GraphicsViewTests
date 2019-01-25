@@ -36,9 +36,9 @@ cCanvas::cCanvas( QWidget *parent ) :
     setScene( scene );
     setAlignment( Qt::AlignCenter );
 
-    mHUDItem = new cHUDItem();
-    scene->addItem( mHUDItem );
-    mHUDItem->setZValue( 10 );
+    mHUDSelection = new cHUDItem();
+    scene->addItem( mHUDSelection );
+    mHUDSelection->setZValue( 10 );
 
     mEditableItem = new cEditableItem();
     scene->addItem( mEditableItem );
@@ -57,6 +57,10 @@ cCanvas::cCanvas( QWidget *parent ) :
     QRect geom( 0, 0, width(), height() );
     mHUDView->setGeometry( geom );
     mHUDView->update();
+
+    // HUDS
+    mHUDTransform = new cHUDTransform( mHUDView, 0 );
+    mHUDView->AddHUDObject( mHUDTransform );
 }
 
 
@@ -144,7 +148,7 @@ cCanvas::tabletEvent( QTabletEvent*  iEvent )
                 }
                 else
                 {
-                    mHUDItem->SetImage( mClip->GetSelection()->GetSelectionEdgeMask() );
+                    mHUDSelection->SetImage( mClip->GetSelection()->GetSelectionEdgeMask() );
                 }
             }
 
@@ -160,7 +164,7 @@ cCanvas::tabletEvent( QTabletEvent*  iEvent )
                 QPointF pos = mEditableItem->pos() + offset;
                 mEditableItem->setPos( pos );
                 mGridItem->setPos( pos );
-                mHUDItem->setPos( pos );
+                mHUDSelection->setPos( pos );
                 mHUDView->TranslateBy( QPoint( offset.x(), offset.y() ) );
             }
             else if( mState == kDrawing )
@@ -297,8 +301,8 @@ cCanvas::keyReleaseEvent( QKeyEvent * iEvent )
     else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_D )
     {
         mClip->GetSelection()->Clear();
-        mHUDItem->SetImage( 0 );
-        mHUDItem->update();
+        mHUDSelection->SetImage( 0 );
+        mHUDSelection->update();
     }
     else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_T )
     {
@@ -365,7 +369,7 @@ cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
         QPointF pos = mEditableItem->pos() + offset;
         mEditableItem->setPos( pos );
         mGridItem->setPos( pos );
-        mHUDItem->setPos( pos );
+        mHUDSelection->setPos( pos );
         mHUDView->TranslateBy( QPoint( offset.x(), offset.y() ) );
     }
     else if( mState == kDrawing )
@@ -420,7 +424,7 @@ cCanvas::mouseReleaseEvent( QMouseEvent * iEvent )
         }
         else
         {
-            mHUDItem->SetImage( mClip->GetSelection()->GetSelectionEdgeMask() );
+            mHUDSelection->SetImage( mClip->GetSelection()->GetSelectionEdgeMask() );
         }
     }
 
@@ -438,13 +442,13 @@ cCanvas::wheelEvent( QWheelEvent * iEvent )
         if( delta > 0 )
         {
             mEditableItem->setScale( mEditableItem->scale() * 1.5 );
-            mHUDItem->setScale( mHUDItem->scale() * 1.5 );
+            mHUDSelection->setScale( mHUDSelection->scale() * 1.5 );
             mHUDView->ScaleBy( 1.5 );
         }
         else
         {
             mEditableItem->setScale( mEditableItem->scale() / 1.5 );
-            mHUDItem->setScale( mHUDItem->scale() / 1.5 );
+            mHUDSelection->setScale( mHUDSelection->scale() / 1.5 );
             mHUDView->ScaleBy( 2.F/3.F );
         }
 
@@ -482,6 +486,7 @@ void
 cCanvas::SetClip( cClip * iClip )
 {
     mClip = iClip;
+    mHUDTransform->SetSelection( mClip->GetSelection() );
     _SetImage( mClip->LayerAtIndex( 0 )->Image() );
 }
 

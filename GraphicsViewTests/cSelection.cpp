@@ -33,6 +33,7 @@ void
 cSelection::SetActive( bool iActive )
 {
     mActive = iActive;
+    EmitValueChanged( kActiveChanged );
 }
 
 
@@ -49,6 +50,7 @@ cSelection::ProcessEdgeDetection()
 {
     _FilterAlpha();
     mEdgeDetectedMaskImage = mEdgeDetectionConvolution.GetEdgeDectionFromImage( mEdgeDetectedMaskImage );
+    EmitValueChanged( kBoundsChanged );
 }
 
 
@@ -101,7 +103,7 @@ cSelection::GetSelectionEdgeMask()
 QRect
 cSelection::GetSelectionBBox() const
 {
-    return  QRect();
+    return  mSelectionBBox;
 }
 
 
@@ -112,9 +114,17 @@ cSelection::_FilterAlpha()
     uchar* data = mMaskImage->bits();
     uchar* finalData = mEdgeDetectedMaskImage->bits();
 
-    for( unsigned int y = 0; y < mMaskImage->height() ; ++y )
+    int minX = -1;
+    int maxX = -1;
+    int minY = -1;
+    int maxY = -1;
+
+    int width = mMaskImage->width();
+    int height = mMaskImage->height();
+
+    for( unsigned int y = 0; y < height ; ++y )
     {
-        for( unsigned int x = 0; x < mMaskImage->width(); ++x )
+        for( unsigned int x = 0; x < width; ++x )
         {
             index = y * mMaskImage->bytesPerLine() + x * 4;
 
@@ -125,6 +135,18 @@ cSelection::_FilterAlpha()
                 finalData[ index+1 ] = 0;
                 finalData[ index+2 ] = 0;
                 finalData[ index+3 ] = 255;
+
+                if( x < minX || minX == -1 )
+                    minX = x;
+
+                if( x > maxX || maxX == -1 )
+                    maxX = x;
+
+                if( y < minY || minY == -1 )
+                    minY = y;
+
+                if( y > maxY || maxY == -1 )
+                    maxY = y;
             }
             else
             {
@@ -135,6 +157,9 @@ cSelection::_FilterAlpha()
             }
         }
     }
+
+    mSelectionBBox.setTopLeft( QPoint( minX, minY ) );
+    mSelectionBBox.setBottomRight( QPoint( maxX, maxY ) ) ;
 }
 
 

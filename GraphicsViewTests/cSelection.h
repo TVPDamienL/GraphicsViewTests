@@ -4,8 +4,18 @@
 
 #include "cConvolution.h"
 
-class cSelection
+#include "cBaseData.h"
+
+class cSelection :
+    public cBaseData
 {
+public:
+    enum eMessageSelection : int
+    {
+        kActiveChanged = 0,
+        kBoundsChanged = 1
+    };
+
 public:
     ~cSelection();
     cSelection( int iWidth, int iHeight );
@@ -35,6 +45,7 @@ private:
 private:
     QImage*         mMaskImage;
     QImage*         mEdgeDetectedMaskImage;
+    QRect           mSelectionBBox;
     QImage*         mTransformBuffer;
 
     bool            mActive = false;
