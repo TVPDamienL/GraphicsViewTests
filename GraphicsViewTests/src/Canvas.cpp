@@ -439,18 +439,26 @@ cCanvas::wheelEvent( QWheelEvent * iEvent )
     int delta = iEvent->delta();
     if( QApplication::keyboardModifiers() & Qt::AltModifier )
     {
+        double baseScale = mEditableItem->scale();
+
+        double newScale = baseScale * 1.5;
+
         if( delta > 0 )
         {
-            mEditableItem->setScale( mEditableItem->scale() * 1.5 );
-            mHUDSelection->setScale( mHUDSelection->scale() * 1.5 );
             mHUDView->ScaleBy( 1.5 );
         }
         else
         {
-            mEditableItem->setScale( mEditableItem->scale() / 1.5 );
-            mHUDSelection->setScale( mHUDSelection->scale() / 1.5 );
+            newScale = baseScale / 1.5;
             mHUDView->ScaleBy( 2.F/3.F );
         }
+
+        mEditableItem->setScale( newScale );
+        mHUDSelection->setScale( newScale );
+
+        qDebug() << mEditableItem->boundingRect();
+        qDebug() << mHUDSelection->boundingRect();
+        qDebug() << mHUDView->Scale();
 
         emit zoomChanged( mEditableItem->scale() );
 

@@ -24,8 +24,8 @@ public:
     virtual  QRect  GetFrame() const;
 
     virtual  void   MoveBy( const QPoint& iOffset );
-    virtual  void   ScaleBy( float iScale );
-    float           Scale() const;
+    virtual  void   ScaleBy( double iScale );
+    double           Scale() const;
 
     virtual  bool   Event( QEvent* iEvent );
 
@@ -56,7 +56,7 @@ protected:
     QTransform              mObjectSelfTransformation;
     bool                    mVisible = true;
 
-    float                   mScale = 1.0F;
+    double                  mScale = 1.0F;
 
 };
 

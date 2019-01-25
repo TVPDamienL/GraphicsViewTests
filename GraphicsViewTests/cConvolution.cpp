@@ -42,12 +42,14 @@ cConvolution::GetEdgeDectionFromImage( const QImage* iImage )
     QGenericMatrix< 3, 3, int > vKernel( verticalValues );
     QGenericMatrix< 3, 3, int > hKernel( horizontalValues );
 
-
     for( unsigned int y = 1; y < iImage->height() - 1 ; ++y )
     {
         for( unsigned int x = 1; x < iImage->width() - 1; ++x )
         {
             index = y * iImage->bytesPerLine() + x * 4;
+
+            if( originData[ index + 3 ] == 0 )
+                continue;
 
             int tl = index - iImage->bytesPerLine() - 4;
             int top = index - iImage->bytesPerLine();

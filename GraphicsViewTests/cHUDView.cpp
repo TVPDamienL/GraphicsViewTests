@@ -164,7 +164,7 @@ cHUDView::TranslateBy( const QPoint & iOffset )
 
 
 void
-cHUDView::ScaleBy( float iScale )
+cHUDView::ScaleBy( double iScale )
 {
     mScale *= iScale;
 
@@ -184,7 +184,7 @@ cHUDView::SetDrawingAreaOffset( const QPoint & iOffset )
 }
 
 
-float
+double
 cHUDView::Scale() const
 {
     return  mScale;

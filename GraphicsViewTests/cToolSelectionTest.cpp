@@ -54,7 +54,7 @@ cToolSelectionTest::DrawDot( int iX, int iY, float iPressure, float iRotation )
     uint8_t B = mColor.blue();
     uint8_t A = mColor.alpha();
 
-    const unsigned int bytesPerLine = mTheSelection->GetSelectionMask()->bytesPerLine();
+    const int bytesPerLine = mTheSelection->GetSelectionMask()->bytesPerLine();
 
     const int r = (mToolSize/2) * iPressure;
     const int r2 = r*r;
@@ -63,8 +63,6 @@ cToolSelectionTest::DrawDot( int iX, int iY, float iPressure, float iRotation )
     int bboxMaxX = iX + r;
     int bboxMinY = iY - r;
     int bboxMaxY = iY + r;
-
-    const float radiusSq = mToolSize * mToolSize / 4;
 
     bboxMinX = bboxMinX < 0 ? 0 : bboxMinX;
     bboxMaxX = bboxMaxX >= width ? width - 1 : bboxMaxX;
@@ -76,14 +74,13 @@ cToolSelectionTest::DrawDot( int iX, int iY, float iPressure, float iRotation )
     {
         pixelRow = data + y * bytesPerLine + bboxMinX * 4;
         const int dy = y - iY;
+        const int dy2 = dy * dy;
 
         for( int x = bboxMinX; x <= bboxMaxX ; ++x )
         {
             const int dx = x - iX;
-            if( dx * dx + dy * dy <= r2 )
+            if( dx * dx + dy2 <= r2 )
             {
-                int xpos = x*4;
-
                 BlendPixelNormal( &pixelRow, R, G, B, A );
             }
             else

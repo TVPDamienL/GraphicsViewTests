@@ -35,9 +35,9 @@ public:
 public:
     QTransform& GetTransform();
     void  TranslateBy( const QPoint& iOffset );
-    void  ScaleBy( float iScale );
+    void  ScaleBy( double iScale );
     void  SetDrawingAreaOffset( const QPoint& iOffset );
-    float Scale() const;
+    double Scale() const;
 
 
 public:
@@ -57,6 +57,6 @@ private:
     QTransform              mGlobalTransformation;
 
     QPoint  mDrawingAreaOffset;
-    float   mScale = 1.0F;
+    double  mScale = 1.0F;
 };
 

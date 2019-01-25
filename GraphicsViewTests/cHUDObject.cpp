@@ -40,7 +40,7 @@ cHUDObject::GetFrame() const
 void
 cHUDObject::MoveBy( const QPoint & iOffset )
 {
-    const float scaleInverse = 1/mScale;
+    const double scaleInverse = 1/mScale;
 
     mObjectSelfTransformation.scale( scaleInverse, scaleInverse );      // Unscale
     // Probably needs a Unrotate as well
@@ -53,7 +53,7 @@ cHUDObject::MoveBy( const QPoint & iOffset )
 
 
 void
-cHUDObject::ScaleBy( float iScale )
+cHUDObject::ScaleBy( double iScale )
 {
     mScale *= iScale;
     mObjectSelfTransformation.scale( iScale, iScale );
@@ -62,7 +62,7 @@ cHUDObject::ScaleBy( float iScale )
 }
 
 
-float
+double
 cHUDObject::Scale() const
 {
     return  mScale;
