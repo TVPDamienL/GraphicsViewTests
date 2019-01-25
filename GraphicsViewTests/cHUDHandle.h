@@ -7,9 +7,10 @@ class cHUDHandle :
 {
 public:
     ~cHUDHandle();
-    cHUDHandle();
+    cHUDHandle( cHUDView* iParentView, cHUDObject* iParentObject );
 
 public:
     virtual  void Draw( QPainter* iPainter ) override;
+    virtual  bool  Event( QEvent* iEvent ) override;
 };
 

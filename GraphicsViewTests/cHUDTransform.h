@@ -9,13 +9,11 @@ class cHUDTransform :
 {
 public:
     ~cHUDTransform();
-    cHUDTransform();
+    cHUDTransform( cHUDView* iParentView, cHUDObject* iParentObject );
 
 public:
     virtual  void   Draw( QPainter* iPainter ) override;
     virtual  void   SetFrame( const QRect& iFrame ) override;
-    virtual  void   MoveBy( const QPoint& iOffset ) override;
-    virtual  void   ScaleBy( float iScale ) override;
 
     virtual  bool   ContainsPoint( const QPoint& iPoint ) const override;
 
@@ -27,6 +25,7 @@ private:
     cHUDHandle*     _GetHandleAtPoint( const QPoint& iPoint );
 
 private:
-    int                     mHandleSize = 10;
+    int             mHandleSize = 10;
+    cHUDHandle*     mFocusedHandle = 0;
 };
 

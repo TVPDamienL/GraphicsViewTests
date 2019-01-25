@@ -1,5 +1,7 @@
 #include "cHUDObject.h"
 
+#include "cHUDView.h"
+
 #include <QEvent>
 
 cHUDObject::~cHUDObject()
@@ -7,9 +9,17 @@ cHUDObject::~cHUDObject()
 }
 
 
-cHUDObject::cHUDObject()
+cHUDObject::cHUDObject( cHUDView* iParentView, cHUDObject* iParentObject )
 {
-    mTransformation.setToIdentity();
+    mParentView = iParentView;
+    mParentObject = iParentObject;
+}
+
+
+cHUDObject*
+cHUDObject::ParentObject()
+{
+    return  mParentObject;
 }
 
 
@@ -17,85 +27,122 @@ void
 cHUDObject::SetFrame( const QRect & iFrame )
 {
     mOriginalFrame = iFrame;
-    mFrame = MappedRect( mOriginalFrame );
+}
+
+
+QRect
+cHUDObject::GetFrame() const
+{
+    return  mOriginalFrame;
 }
 
 
 void
 cHUDObject::MoveBy( const QPoint & iOffset )
 {
-    mTransformation( 0, 2 ) += iOffset.x();
-    mTransformation( 1, 2 ) += iOffset.y();
+    const float scaleInverse = 1/mScale;
 
-    mFrame = MappedRect( mOriginalFrame );
+    mObjectSelfTransformation.scale( scaleInverse, scaleInverse );      // Unscale
+    // Probably needs a Unrotate as well
+    mObjectSelfTransformation.translate( iOffset.x(), iOffset.y() );    // Translate
+    // Probably needs a Rerotate as well
+    mObjectSelfTransformation.scale( mScale, mScale );                  // Rescale
+
+    mParentView->update();
 }
 
 
 void
 cHUDObject::ScaleBy( float iScale )
 {
-    mTransformation( 0, 0 ) *= iScale;
-    mTransformation( 1, 1 ) *= iScale;
+    mScale *= iScale;
+    mObjectSelfTransformation.scale( iScale, iScale );
 
-    mFrame = MappedRect( mOriginalFrame );
+    mParentView->update();
+}
+
+
+float
+cHUDObject::Scale() const
+{
+    return  mScale;
 }
 
 
 bool
 cHUDObject::Event( QEvent * iEvent )
 {
-    QMouseEvent* eventAsMouse = 0;
-    switch( iEvent->type() )
+    for( auto child : mChildrenHUDs )
     {
-        case QEvent::MouseButtonPress :
-        case QEvent::MouseMove :
-        case QEvent::MouseButtonRelease:
-            eventAsMouse = dynamic_cast< QMouseEvent* >( iEvent );
-            if( ContainsPoint( eventAsMouse->pos() ) )
-            {
-                for( auto child : mChildrenHUDs )
-                {
-                    if( child->Event( iEvent ) ) // If event has been handled, return true, which means handled
-                        return  true;
-                }
-            }
-
-        default:
-            break;
+        if( child->Event( iEvent ) ) // If event has been handled, return true, which means handled
+            return  true;
     }
 
     return  false;
 }
 
 
-QRect
-cHUDObject::MappedRect( const QRect & iRect )
+QTransform*
+cHUDObject::GetTransform()
 {
-    QRect output;
+    return  &mObjectSelfTransformation;
+}
 
-    output.setTopLeft( MappedPoint( iRect.topLeft() ) );
-    output.setBottomRight( MappedPoint( iRect.bottomRight() ) );
 
-    return  output;
+QRect
+cHUDObject::MapToObject( const QRect & iRect )
+{
+    return  mObjectSelfTransformation.mapRect( iRect );
 }
 
 
 QPoint
-cHUDObject::MappedPoint( const QPoint & iPoint )
+cHUDObject::MapToObject( const QPoint & iPoint )
 {
-    QGenericMatrix< 1, 3, float > pointMatrix;
-    pointMatrix( 0, 0 ) = iPoint.x();
-    pointMatrix( 1, 0 ) = iPoint.y();
-    pointMatrix( 2, 0 ) = 1;
+    return  mObjectSelfTransformation.map( iPoint );
+}
 
-    auto transfoResult = mTransformation * pointMatrix;
-    return  QPoint( transfoResult( 0, 0 ), transfoResult( 1, 0 ) );
+
+QPoint
+cHUDObject::ApplyInvertTransformationComposition( const QPoint& iPoint ) const
+{
+    QTransform composedTransformationInverse = mParentView->GetTransform() * mObjectSelfTransformation;
+    composedTransformationInverse = composedTransformationInverse.inverted();
+    return  composedTransformationInverse.map( iPoint );
+}
+
+
+QPoint
+cHUDObject::ApplyTransformationComposition( const QPoint & iPoint ) const
+{
+    QTransform composedTransformation = mParentView->GetTransform() * mObjectSelfTransformation;
+    return  composedTransformation.map( iPoint );
 }
 
 
 bool
 cHUDObject::ContainsPoint( const QPoint & iPoint ) const
 {
-    return  mFrame.contains( iPoint );
+    QPoint mappedPoint = ApplyInvertTransformationComposition(  iPoint );
+    return  mOriginalFrame.contains( iPoint );
+}
+
+
+cHUDObject*
+cHUDObject::GetHUDObjectAtPos( const QPoint & iPoint )
+{
+    QPoint mappedPoint = ApplyInvertTransformationComposition( iPoint );
+
+    // Deepest child first
+    for( auto child : mChildrenHUDs )
+        if( child->mOriginalFrame.contains( mappedPoint ) )
+            return  child;
+
+    // Then, if no child, myself
+    if( mOriginalFrame.contains( mappedPoint ) )
+        return  this;
+
+    // If i'm not in, nothing
+    return  0;
 }
 

@@ -17,9 +17,10 @@ cHUDView::~cHUDView()
 cHUDView::cHUDView( QWidget* iParent ) :
     QWidget( iParent )
 {
-    auto transform = new cHUDTransform();
+    auto transform = new cHUDTransform( this, 0 );
     transform->SetFrame( QRect( 0, 0, 100, 100 ) );
     mHUDObjects.push_back( transform );
+    mGlobalTransformation.reset();
 }
 
 
@@ -93,10 +94,14 @@ cHUDView::keyReleaseEvent( QKeyEvent * iEvent )
 void
 cHUDView::mousePressEvent( QMouseEvent * iEvent )
 {
-    for( auto hud : mHUDObjects )
+    mPressedHUD = GetHUDObjectAtPos( iEvent->pos() );
+
+    while( mPressedHUD )
     {
-        if( hud->Event( iEvent ) )
+        if( mPressedHUD->Event( iEvent ) )
             return;
+
+        mPressedHUD = mPressedHUD->ParentObject();
     }
 
     iEvent->ignore();
@@ -107,11 +112,8 @@ cHUDView::mousePressEvent( QMouseEvent * iEvent )
 void
 cHUDView::mouseMoveEvent( QMouseEvent * iEvent )
 {
-    for( auto hud : mHUDObjects )
-    {
-        if( hud->Event( iEvent ) )
-            return;
-    }
+    if( mPressedHUD && mPressedHUD->Event( iEvent ) )
+        return;
 
     iEvent->ignore();
     QWidget::mouseMoveEvent( iEvent );
@@ -121,11 +123,8 @@ cHUDView::mouseMoveEvent( QMouseEvent * iEvent )
 void
 cHUDView::mouseReleaseEvent( QMouseEvent * iEvent )
 {
-    for( auto hud : mHUDObjects )
-    {
-        if( hud->Event( iEvent ) )
-            return;
-    }
+    if( mPressedHUD && mPressedHUD->Event( iEvent ) )
+        return;
 
     iEvent->ignore();
     QWidget::mouseReleaseEvent( iEvent );
@@ -140,27 +139,36 @@ cHUDView::wheelEvent( QWheelEvent * iEvent )
 }
 
 
-void
-cHUDView::ApplyPan( const QPoint & iOffset )
+QTransform&
+cHUDView::GetTransform()
 {
-    for( auto hud : mHUDObjects )
-    {
-        hud->MoveBy( iOffset );
-    }
+    return  mGlobalTransformation;
+}
+
+
+void
+cHUDView::TranslateBy( const QPoint & iOffset )
+{
+    const float scaleInverse = 1/mScale;
+
+    // Transformation goes from latest to first ( reverse order )
+    mGlobalTransformation.scale( scaleInverse, scaleInverse );      // Then we unscale, so that offset is scaled properly
+    // Probably needs a Unrotate as well
+    mGlobalTransformation.translate( iOffset.x(), iOffset.y() );    // Then we translate
+    // Probably needs a Rerotate as well
+    mGlobalTransformation.scale( mScale, mScale );                  // First we scale
 
     update();
 }
 
 
 void
-cHUDView::ApplyZoom( float iScale )
+cHUDView::ScaleBy( float iScale )
 {
-    mScale = iScale;
+    mScale *= iScale;
 
-    for( auto hud : mHUDObjects )
-    {
-        hud->ScaleBy( iScale );
-    }
+    // This will put scale in first place, which is fine, as scaling is usually the first thing to be done
+    mGlobalTransformation.scale( iScale, iScale );
 
     update();
 }
@@ -169,10 +177,7 @@ cHUDView::ApplyZoom( float iScale )
 void
 cHUDView::SetDrawingAreaOffset( const QPoint & iOffset )
 {
-    for( auto hud : mHUDObjects )
-    {
-        hud->MoveBy( -mDrawingAreaOffset + iOffset ); // Remove old offset, add new one, to update the drawingarea offset
-    }
+    mGlobalTransformation.translate( iOffset.x(), iOffset.y() );
 
     mDrawingAreaOffset = iOffset;
 }
@@ -185,3 +190,29 @@ cHUDView::Scale() const
 }
 
 
+cHUDObject*
+cHUDView::GetHUDObjectAtPos( const QPoint & iPoint )
+{
+    for( auto hud : mHUDObjects )
+    {
+        auto hudObj = hud->GetHUDObjectAtPos( iPoint );
+            if( hudObj )
+                return  hudObj;
+    }
+
+    return  0;
+}
+
+
+QPoint
+cHUDView::MapToView( const QPoint & iPoint )
+{
+    return  mGlobalTransformation.map( iPoint );
+}
+
+
+QRect
+cHUDView::MapToView( const QRect & iRect )
+{
+    return  mGlobalTransformation.mapRect( iRect );
+}

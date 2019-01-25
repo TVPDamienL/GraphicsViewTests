@@ -33,15 +33,27 @@ public:
     void  wheelEvent( QWheelEvent* iEvent )         override;
 
 public:
-    void  ApplyPan( const QPoint& iOffset );
-    void  ApplyZoom( float iScale );
+    QTransform& GetTransform();
+    void  TranslateBy( const QPoint& iOffset );
+    void  ScaleBy( float iScale );
     void  SetDrawingAreaOffset( const QPoint& iOffset );
 
     float Scale() const;
 
+    cHUDObject* GetHUDObjectAtPos( const QPoint& iPoint );
+
+
+public:
+    QPoint  MapToView( const QPoint& iPoint );
+    QRect   MapToView( const QRect& iRect );
+
 
 private:
-    QVector< cHUDObject* > mHUDObjects;
+    QVector< cHUDObject* >  mHUDObjects;
+    cHUDObject*             mPressedHUD = 0;
+
+    QTransform              mGlobalTransformation;
+
     QPoint  mDrawingAreaOffset;
     float   mScale = 1.0F;
 };

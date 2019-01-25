@@ -296,7 +296,7 @@ cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
         mEditableItem->setPos( pos );
         mGridItem->setPos( pos );
         mHUDItem->setPos( pos );
-        mHUDView->ApplyPan( QPoint( offset.x(), offset.y() ) );
+        mHUDView->TranslateBy( QPoint( offset.x(), offset.y() ) );
     }
     else if( mState == kDrawing )
     {
@@ -369,13 +369,13 @@ cCanvas::wheelEvent( QWheelEvent * iEvent )
         {
             mEditableItem->setScale( mEditableItem->scale() * 1.5 );
             mHUDItem->setScale( mHUDItem->scale() * 1.5 );
-            mHUDView->ApplyZoom( 1.5 );
+            mHUDView->ScaleBy( 1.5 );
         }
         else
         {
             mEditableItem->setScale( mEditableItem->scale() / 1.5 );
             mHUDItem->setScale( mHUDItem->scale() / 1.5 );
-            mHUDView->ApplyZoom( 2.F/3.F );
+            mHUDView->ScaleBy( 2.F/3.F );
         }
 
         emit zoomChanged( mEditableItem->scale() );

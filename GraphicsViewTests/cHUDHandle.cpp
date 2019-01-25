@@ -1,10 +1,17 @@
 #include "cHUDHandle.h"
 
+#include "cHUDView.h"
+
 #include <QPainter>
 
 
+cHUDHandle::~cHUDHandle()
+{
+}
 
-cHUDHandle::cHUDHandle()
+
+cHUDHandle::cHUDHandle( cHUDView* iParentView, cHUDObject* iParentObject ) :
+    cHUDObject( iParentView, iParentObject )
 {
 }
 
@@ -16,10 +23,25 @@ cHUDHandle::Draw( QPainter* iPainter )
     pen.setWidth( 1 );
 
     iPainter->setPen( pen );
-    iPainter->drawRect( mOriginalFrame );
+
+
+    QRect drawingFrame = mParentView->MapToView( mOriginalFrame );
+    const float inv = 1/mParentView->Scale();
+
+    // Center scale that cancels the parentView's scale, so handles are always the same size
+    mObjectSelfTransformation.reset();
+    mObjectSelfTransformation.translate( drawingFrame.center().x(), drawingFrame.center().y() );
+    mObjectSelfTransformation.scale( inv, inv );
+    mObjectSelfTransformation.translate( -drawingFrame.center().x(), -drawingFrame.center().y() );
+
+    iPainter->drawRect(  mObjectSelfTransformation.mapRect( drawingFrame ) );
 }
 
 
-cHUDHandle::~cHUDHandle()
+bool
+cHUDHandle::Event( QEvent * iEvent )
 {
+    // Let parent handle it
+    return  false;
 }
+
