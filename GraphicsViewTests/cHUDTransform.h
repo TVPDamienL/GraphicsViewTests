@@ -14,9 +14,9 @@ public:
 
 public:
     virtual  void   Draw( QPainter* iPainter ) override;
-    virtual  void   SetFrame( const QRect& iFrame ) override;
+    virtual  void   SetFrame( const QRectF& iFrame ) override;
 
-    virtual  bool   ContainsPoint( const QPoint& iPoint ) const override;
+    virtual  bool   ContainsPoint( const QPointF& iPoint ) const override;
 
     virtual  bool  Event( QEvent* iEvent ) override;
 
@@ -26,11 +26,12 @@ public:
 
 private:
     void            _LayoutChildren();
-    cHUDHandle*     _GetHandleAtPoint( const QPoint& iPoint );
+    cHUDHandle*     _GetHandleAtPoint( const QPointF& iPoint );
 
 private:
     int             mHandleSize = 10;
     cHUDHandle*     mFocusedHandle = 0;
     cSelection*     mSelection;
+    QPoint          mClickOrigin;
 };
 

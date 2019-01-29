@@ -20,43 +20,45 @@ public:
 public:
     virtual  void   Draw( QPainter* iPainter ) = 0;
 
-    virtual  void   SetFrame( const QRect& iFrame );
-    virtual  QRect  GetFrame() const;
+    virtual  void   SetFrame( const QRectF& iFrame );
+    virtual  QRectF GetFrame() const;
 
-    virtual  void   MoveBy( const QPoint& iOffset );
+    void            ResetTransformation();
+    virtual  void   MoveBy( const QPointF& iOffset );
     virtual  void   ScaleBy( double iScale );
-    double           Scale() const;
+    virtual  void   CenterScale( const QPointF& iCenter, double iScale );
+    double          Scale() const;
 
     virtual  bool   Event( QEvent* iEvent );
-
-    QTransform*     GetTransform();
 
 public:
     bool            Visible() const;
     void            Visible( bool iVisible );
 
-
 public:
-    QRect   MapToObject( const QRect& iRect );
-    QPoint  MapToObject( const QPoint& iPoint );
+    QRectF   ToHUDCoords( const QRectF& iRect );
+    QPointF  ToHUDCoords( const QPointF& iRect );
+    QPointF  FromHUDCoords( const QPointF& iPoint ) const;
 
-    QPoint  ApplyInvertTransformationComposition( const QPoint& iPoint ) const;
-    QPoint  ApplyTransformationComposition( const QPoint& iPoint ) const;
+    QTransform GetFinalTransform() const;
+    QTransform GetLocalTransform() const;
 
-    virtual bool ContainsPoint( const QPoint& iPoint ) const;
 
-    virtual  cHUDObject* GetVisibleHUDObjectAtPos( const QPoint& iPoint );
+    virtual bool ContainsPoint( const QPointF& iPoint ) const;
+
+    virtual  cHUDObject* GetVisibleHUDObjectAtPos( const QPointF& iPoint );
 
 protected:
     cHUDView*               mParentView;
     cHUDObject*             mParentObject;
     QVector< cHUDObject* >  mChildrenHUDs;
 
-    QRect                   mOriginalFrame;
+    QRectF                  mOriginalFrame;
     QTransform              mObjectSelfTransformation;
     bool                    mVisible = true;
 
-    double                  mScale = 1.0F;
-
+    QPointF                 mTranslation = QPointF( 0, 0 );
+    double                  mScale = 1.0;
+    double                  mRotationAngle = 0.0;
 };
 

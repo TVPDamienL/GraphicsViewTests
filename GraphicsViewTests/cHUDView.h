@@ -33,30 +33,27 @@ public:
     void  wheelEvent( QWheelEvent* iEvent )         override;
 
 public:
-    QTransform& GetTransform();
-    void  TranslateBy( const QPoint& iOffset );
-    void  ScaleBy( double iScale );
-    void  SetDrawingAreaOffset( const QPoint& iOffset );
-    double Scale() const;
+    QTransform      GetTransform();
+    void            TranslateBy( const QPointF& iOffset );
+    void            ScaleBy( double iScale );
 
+    const QPointF&  Translation() const;
+    double          Scale() const;
+    double          RotationAngle() const;
 
 public:
     void        AddHUDObject( cHUDObject* iObject );
-    cHUDObject* GetVisibleHUDObjectAtPos( const QPoint& iPoint );
-
-
-public:
-    QPoint  MapToView( const QPoint& iPoint );
-    QRect   MapToView( const QRect& iRect );
-
+    cHUDObject* GetVisibleHUDObjectAtPos( const QPointF& iPoint );
 
 private:
     QVector< cHUDObject* >  mHUDObjects;
     cHUDObject*             mPressedHUD = 0;
 
-    QTransform              mGlobalTransformation;
-
-    QPoint  mDrawingAreaOffset;
+public:
+    // Transform
+    QPointF mTranslation = QPointF( 0, 0 );
+    double  mRotationAngle = 0.0F;
     double  mScale = 1.0F;
+
 };
 

@@ -2,6 +2,8 @@
 
 #include "cHUDObject.h"
 
+#define HANDLESIZE 10
+
 class cHUDHandle :
     public cHUDObject
 {

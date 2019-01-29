@@ -367,10 +367,15 @@ cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
     {
         QPointF offset = iEvent->pos() - mClickPos;
         QPointF pos = mEditableItem->pos() + offset;
-        mEditableItem->setPos( pos );
-        mGridItem->setPos( pos );
-        mHUDSelection->setPos( pos );
-        mHUDView->TranslateBy( QPoint( offset.x(), offset.y() ) );
+        mTranslation += pos;
+
+        mTransform *= QTransform::fromTranslate( pos.x(), pos.y() );
+
+        mEditableItem->setTransform( mTransform );
+        mGridItem->setTransform( mTransform );
+        mHUDSelection->setTransform( mTransform );
+
+        mHUDView->mTranslation = mTranslation;
     }
     else if( mState == kDrawing )
     {
@@ -440,27 +445,25 @@ cCanvas::wheelEvent( QWheelEvent * iEvent )
     if( QApplication::keyboardModifiers() & Qt::AltModifier )
     {
         double baseScale = mEditableItem->scale();
+        QPoint center = mTransform.inverted().map( iEvent->pos() );
 
         double newScale = baseScale * 1.5;
 
-        if( delta > 0 )
-        {
-            mHUDView->ScaleBy( 1.5 );
-        }
-        else
+        if( delta < 0 )
         {
             newScale = baseScale / 1.5;
-            mHUDView->ScaleBy( 2.F/3.F );
         }
 
-        mEditableItem->setScale( newScale );
-        mHUDSelection->setScale( newScale );
+        ScaleFromCenter( center, newScale );
 
-        qDebug() << mEditableItem->boundingRect();
-        qDebug() << mHUDSelection->boundingRect();
-        qDebug() << mHUDView->Scale();
+        mEditableItem->setTransform( mTransform );
+        mHUDSelection->setTransform( mTransform );
 
-        emit zoomChanged( mEditableItem->scale() );
+        mHUDView->mScale = mScale;
+        mHUDView->mTranslation = mTranslation;
+
+
+        emit zoomChanged( mScale );
 
         UpCursor();
         UpdateGridItem();
@@ -555,9 +558,32 @@ cCanvas::toolChanged( const QModelIndex & Left, const QModelIndex & Right, const
 
 
 void
+cCanvas::ScaleFromCenter( const QPoint & iCenter, double iScale )
+{
+    mTransform.translate( iCenter.x(), iCenter.y() );
+    mTransform.scale( iScale, iScale );
+    mTransform.translate( -iCenter.x(), -iCenter.y() );
+
+    // NO QT
+    mTranslation.setX( mScale * ( iCenter.x() - iScale * iCenter.x() ) + mTranslation.x() );
+    mTranslation.setY( mScale * ( iCenter.y() - iScale * iCenter.y() ) + mTranslation.y() );
+    mScale *= iScale;
+}
+
+
+void
 cCanvas::SetZoom( double iZoom )
 {
-    mEditableItem->setScale( iZoom );
+    const double scalus = iZoom/mScale;
+    mTransform.scale( scalus, scalus );
+
+    mScale = iZoom;
+
+    mEditableItem->setTransform( mTransform );
+    mHUDSelection->setTransform( mTransform );
+    mHUDView->mScale = mScale;
+    mHUDView->mTranslation = mTranslation;
+
     UpCursor();
     UpdateGridItem();
 }

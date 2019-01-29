@@ -21,20 +21,16 @@ cHUDHandle::Draw( QPainter* iPainter )
 {
     QPen pen( Qt::red );
     pen.setWidth( 1 );
-
     iPainter->setPen( pen );
 
+    ResetTransformation();
 
-    QRect drawingFrame = mParentView->MapToView( mOriginalFrame );
-    const float inv = 1/mParentView->Scale();
+    iPainter->drawRect( ToHUDCoords( mOriginalFrame ) );
 
-    // Center scale that cancels the parentView's scale, so handles are always the same size
-    mObjectSelfTransformation.reset();
-    mObjectSelfTransformation.translate( drawingFrame.center().x(), drawingFrame.center().y() );
-    mObjectSelfTransformation.scale( inv, inv );
-    mObjectSelfTransformation.translate( -drawingFrame.center().x(), -drawingFrame.center().y() );
+    CenterScale( mOriginalFrame.center(), 1/mParentView->Scale() );
 
-    iPainter->drawRect(  mObjectSelfTransformation.mapRect( drawingFrame ) );
+    iPainter->setPen( Qt::blue );
+    iPainter->drawRect( ToHUDCoords( mOriginalFrame ) );
 }
 
 

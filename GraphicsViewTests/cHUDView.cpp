@@ -17,10 +17,6 @@ cHUDView::~cHUDView()
 cHUDView::cHUDView( QWidget* iParent ) :
     QWidget( iParent )
 {
-    //auto transform = new cHUDTransform( this, 0 );
-    //transform->SetFrame( QRect( 0, 0, 100, 100 ) );
-    //mHUDObjects.push_back( transform );
-    mGlobalTransformation.reset();
 }
 
 
@@ -140,25 +136,17 @@ cHUDView::wheelEvent( QWheelEvent * iEvent )
 }
 
 
-QTransform&
+QTransform
 cHUDView::GetTransform()
 {
-    return  mGlobalTransformation;
+    return  QTransform::fromScale( mScale, mScale ) * QTransform::fromTranslate( mTranslation.x(), mTranslation.y() );
 }
 
 
 void
-cHUDView::TranslateBy( const QPoint & iOffset )
+cHUDView::TranslateBy( const QPointF & iOffset )
 {
-    const float scaleInverse = 1/mScale;
-
-    // Transformation goes from latest to first ( reverse order )
-    mGlobalTransformation.scale( scaleInverse, scaleInverse );      // Then we unscale, so that offset is scaled properly
-    // Probably needs a Unrotate as well
-    mGlobalTransformation.translate( iOffset.x(), iOffset.y() );    // Then we translate
-    // Probably needs a Rerotate as well
-    mGlobalTransformation.scale( mScale, mScale );                  // First we scale
-
+    mTranslation += iOffset;
     update();
 }
 
@@ -167,27 +155,28 @@ void
 cHUDView::ScaleBy( double iScale )
 {
     mScale *= iScale;
-
-    // This will put scale in first place, which is fine, as scaling is usually the first thing to be done
-    mGlobalTransformation.scale( iScale, iScale );
-
     update();
 }
 
 
-void
-cHUDView::SetDrawingAreaOffset( const QPoint & iOffset )
+
+const QPointF&
+cHUDView::Translation() const
 {
-    mGlobalTransformation.translate( iOffset.x(), iOffset.y() );
-
-    mDrawingAreaOffset = iOffset;
+    return  mTranslation;
 }
-
 
 double
 cHUDView::Scale() const
 {
     return  mScale;
+}
+
+
+double
+cHUDView::RotationAngle() const
+{
+    return  mRotationAngle;
 }
 
 
@@ -199,7 +188,7 @@ cHUDView::AddHUDObject( cHUDObject * iObject )
 
 
 cHUDObject*
-cHUDView::GetVisibleHUDObjectAtPos( const QPoint & iPoint )
+cHUDView::GetVisibleHUDObjectAtPos( const QPointF & iPoint )
 {
     for( auto hud : mHUDObjects )
     {
@@ -209,18 +198,4 @@ cHUDView::GetVisibleHUDObjectAtPos( const QPoint & iPoint )
     }
 
     return  0;
-}
-
-
-QPoint
-cHUDView::MapToView( const QPoint & iPoint )
-{
-    return  mGlobalTransformation.map( iPoint );
-}
-
-
-QRect
-cHUDView::MapToView( const QRect & iRect )
-{
-    return  mGlobalTransformation.mapRect( iRect );
 }

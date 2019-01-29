@@ -24,13 +24,13 @@ cHUDObject::ParentObject()
 
 
 void
-cHUDObject::SetFrame( const QRect & iFrame )
+cHUDObject::SetFrame( const QRectF & iFrame )
 {
     mOriginalFrame = iFrame;
 }
 
 
-QRect
+QRectF
 cHUDObject::GetFrame() const
 {
     return  mOriginalFrame;
@@ -38,16 +38,18 @@ cHUDObject::GetFrame() const
 
 
 void
-cHUDObject::MoveBy( const QPoint & iOffset )
+cHUDObject::ResetTransformation()
 {
-    const double scaleInverse = 1/mScale;
+    mTranslation = QPointF( 0, 0 );
+    mScale = 1.0;
+    mRotationAngle = 0.0;
+}
 
-    mObjectSelfTransformation.scale( scaleInverse, scaleInverse );      // Unscale
-    // Probably needs a Unrotate as well
-    mObjectSelfTransformation.translate( iOffset.x(), iOffset.y() );    // Translate
-    // Probably needs a Rerotate as well
-    mObjectSelfTransformation.scale( mScale, mScale );                  // Rescale
 
+void
+cHUDObject::MoveBy( const QPointF & iOffset )
+{
+    mTranslation += iOffset;
     mParentView->update();
 }
 
@@ -56,9 +58,16 @@ void
 cHUDObject::ScaleBy( double iScale )
 {
     mScale *= iScale;
-    mObjectSelfTransformation.scale( iScale, iScale );
-
     mParentView->update();
+}
+
+
+void
+cHUDObject::CenterScale( const QPointF & iCenter, double iScale )
+{
+    mTranslation.setX( mScale * ( iCenter.x() - iScale * iCenter.x() ) + mTranslation.x() );
+    mTranslation.setY( mScale * ( iCenter.y() - iScale * iCenter.y() ) + mTranslation.y() );
+    mScale *= iScale;
 }
 
 
@@ -82,13 +91,6 @@ cHUDObject::Event( QEvent * iEvent )
 }
 
 
-QTransform*
-cHUDObject::GetTransform()
-{
-    return  &mObjectSelfTransformation;
-}
-
-
 bool
 cHUDObject::Visible() const
 {
@@ -103,57 +105,64 @@ cHUDObject::Visible( bool iVisible )
 }
 
 
-QRect
-cHUDObject::MapToObject( const QRect & iRect )
+QRectF
+cHUDObject::ToHUDCoords( const QRectF & iRect )
 {
-    return  mObjectSelfTransformation.mapRect( iRect );
+    return  GetFinalTransform().mapRect( iRect );
 }
 
 
-QPoint
-cHUDObject::MapToObject( const QPoint & iPoint )
+QPointF
+cHUDObject::ToHUDCoords( const QPointF & iPoint )
 {
-    return  mObjectSelfTransformation.map( iPoint );
+    return  GetFinalTransform().map( iPoint );
 }
 
 
-QPoint
-cHUDObject::ApplyInvertTransformationComposition( const QPoint& iPoint ) const
+QPointF
+cHUDObject::FromHUDCoords( const QPointF& iPoint ) const
 {
-    QTransform composedTransformationInverse = mParentView->GetTransform() * mObjectSelfTransformation;
-    composedTransformationInverse = composedTransformationInverse.inverted();
-    return  composedTransformationInverse.map( iPoint );
+    return  GetFinalTransform().inverted().map( iPoint );
 }
 
 
-QPoint
-cHUDObject::ApplyTransformationComposition( const QPoint & iPoint ) const
+QTransform
+cHUDObject::GetFinalTransform() const
 {
-    QTransform composedTransformation = mParentView->GetTransform() * mObjectSelfTransformation;
-    return  composedTransformation.map( iPoint );
+    QTransform parentsTransforms = mParentView->GetTransform();
+
+    if( mParentObject )
+        parentsTransforms = mParentObject->GetFinalTransform();
+
+    return  GetLocalTransform() * parentsTransforms;
+}
+
+
+QTransform
+cHUDObject::GetLocalTransform() const
+{
+    return QTransform::fromScale( mScale, mScale ) * QTransform::fromTranslate( mTranslation.x(), mTranslation.y() );
 }
 
 
 bool
-cHUDObject::ContainsPoint( const QPoint & iPoint ) const
+cHUDObject::ContainsPoint( const QPointF & iPoint ) const
 {
-    QPoint mappedPoint = ApplyInvertTransformationComposition(  iPoint );
-    return  mOriginalFrame.contains( iPoint );
+    QPointF mappedPoint = FromHUDCoords( iPoint );
+    return  mOriginalFrame.contains( mappedPoint );
 }
 
 
 cHUDObject*
-cHUDObject::GetVisibleHUDObjectAtPos( const QPoint & iPoint )
+cHUDObject::GetVisibleHUDObjectAtPos( const QPointF & iPoint )
 {
-    QPoint mappedPoint = ApplyInvertTransformationComposition( iPoint );
-
     // Deepest child first
     for( auto child : mChildrenHUDs )
-        if( child->Visible() && child->mOriginalFrame.contains( mappedPoint ) )
+        if( child->Visible() && child->ContainsPoint( iPoint ) )
             return  child;
 
     // Then, if no child, myself
-    if( Visible() && mOriginalFrame.contains( mappedPoint ) )
+    if( Visible() && mOriginalFrame.contains( FromHUDCoords( iPoint ) ) )
         return  this;
 
     // If i'm not in, nothing

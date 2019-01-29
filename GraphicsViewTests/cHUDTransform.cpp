@@ -41,12 +41,12 @@ cHUDTransform::Draw( QPainter * iPainter )
     QPen pen( Qt::red );
     pen.setWidth( 1 );
     iPainter->setPen( pen );
-    iPainter->drawRect( mParentView->MapToView( mOriginalFrame ) );
+    iPainter->drawRect( ToHUDCoords( mOriginalFrame ) );
 }
 
 
 void
-cHUDTransform::SetFrame( const QRect & iFrame )
+cHUDTransform::SetFrame( const QRectF & iFrame )
 {
     cHUDObject::SetFrame( iFrame );
     _LayoutChildren();
@@ -55,7 +55,7 @@ cHUDTransform::SetFrame( const QRect & iFrame )
 
 
 bool
-cHUDTransform::ContainsPoint( const QPoint & iPoint ) const
+cHUDTransform::ContainsPoint( const QPointF & iPoint ) const
 {
     for( auto handle : mChildrenHUDs )
     {
@@ -78,13 +78,15 @@ cHUDTransform::Event( QEvent * iEvent )
     {
         case QEvent::MouseButtonPress :
             eventAsMouse = dynamic_cast< QMouseEvent* >( iEvent );
-            mFocusedHandle = _GetHandleAtPoint( ApplyInvertTransformationComposition( eventAsMouse->pos() ) );
+            mFocusedHandle = _GetHandleAtPoint( eventAsMouse->pos() );
             if( mFocusedHandle )
             {
                 qDebug() << "HandlePress";
             }
             else
             {
+                auto mouseEvent = dynamic_cast< QMouseEvent* >( iEvent );
+                mClickOrigin = mouseEvent->pos();
                 qDebug() << "TransformPress";
             }
             return  true;
@@ -96,6 +98,10 @@ cHUDTransform::Event( QEvent * iEvent )
             }
             else
             {
+                auto mouseEvent = dynamic_cast< QMouseEvent* >( iEvent );
+                QPoint offset = mouseEvent->pos() - mClickOrigin;
+                MoveBy( offset / mParentView->Scale() );
+                mClickOrigin = mouseEvent->pos();
                 qDebug() << "TransformMove";
             }
             return  true;
@@ -146,7 +152,7 @@ cHUDTransform::SelectionChangedEvent( cBaseData * iSender, int iArg )
 void
 cHUDTransform::_LayoutChildren()
 {
-    QRect frame( mOriginalFrame.left() -mHandleSize/2, mOriginalFrame.top() -mHandleSize/2, mHandleSize, mHandleSize );
+    QRect frame( mOriginalFrame.left() -HANDLESIZE/2, mOriginalFrame.top() -HANDLESIZE/2, HANDLESIZE, HANDLESIZE );
 
     auto topLeft = mChildrenHUDs[ 0 ];
     topLeft->SetFrame( frame );
@@ -166,7 +172,7 @@ cHUDTransform::_LayoutChildren()
 
 
 cHUDHandle*
-cHUDTransform::_GetHandleAtPoint( const QPoint & iPoint )
+cHUDTransform::_GetHandleAtPoint( const QPointF & iPoint )
 {
     for( auto handle : mChildrenHUDs )
     {

@@ -49,6 +49,9 @@ public:
     void  DrawCursor();
     void  toolChanged( const QModelIndex& Left, const QModelIndex& Right, const QVector< int >& Roles );
 
+public:
+    void  ScaleFromCenter( const QPoint& iCenter, double iScale );
+
 signals:
     void  currentFrameGotPainted( const QPixmap& iPixmap );
     void  previousFrameGotPainted( const QPixmap& iPixmap );
@@ -85,6 +88,12 @@ private:
     cHUDView*           mHUDView;
     cHUDItem*           mHUDSelection;
     cHUDTransform*      mHUDTransform;
+
+    // Transform
+    QPointF             mTranslation = QPointF( 0, 0 );
+    double              mRotationAngle = 0.0F;
+    double              mScale = 1.0F;
+    QTransform          mTransform;
 
 
     QPointF             mClickPos;
