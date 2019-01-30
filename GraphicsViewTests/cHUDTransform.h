@@ -26,12 +26,20 @@ public:
 
 private:
     void            _LayoutChildren();
-    cHUDHandle*     _GetHandleAtPoint( const QPointF& iPoint );
+    cHUDHandle*     _GetHandleAtPoint( int* oIndex, const QPointF& iPoint );
+    cHUDHandle*     _GetOppositeHandle( int iIndex );
 
 private:
     int             mHandleSize = 10;
     cHUDHandle*     mFocusedHandle = 0;
+    cHUDHandle*     mFocusedHandleOpposite = 0;
     cSelection*     mSelection;
+
     QPoint          mClickOrigin;
+    QPointF         mOriginHandleVector;
+    QPointF         mOriginTranslation;
+    double          mOriginXScale;
+    double          mOriginYScale;
+    double          mOriginRotation;
 };
 

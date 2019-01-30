@@ -41,7 +41,8 @@ void
 cHUDObject::ResetTransformation()
 {
     mTranslation = QPointF( 0, 0 );
-    mScale = 1.0;
+    mXScale = 1.0;
+    mYScale = 1.0;
     mRotationAngle = 0.0;
 }
 
@@ -55,26 +56,67 @@ cHUDObject::MoveBy( const QPointF & iOffset )
 
 
 void
-cHUDObject::ScaleBy( double iScale )
+cHUDObject::ScaleBy( double iXScale, double iYScale )
 {
-    mScale *= iScale;
+    mXScale *= iXScale;
+    mYScale *= iYScale;
     mParentView->update();
 }
 
 
 void
-cHUDObject::CenterScale( const QPointF & iCenter, double iScale )
+cHUDObject::CenterScale( const QPointF & iCenter, double iXScale, double iYScale )
 {
-    mTranslation.setX( mScale * ( iCenter.x() - iScale * iCenter.x() ) + mTranslation.x() );
-    mTranslation.setY( mScale * ( iCenter.y() - iScale * iCenter.y() ) + mTranslation.y() );
-    mScale *= iScale;
+    mTranslation.setX( mXScale * ( iCenter.x() - iXScale * iCenter.x() ) + mTranslation.x() );
+    mTranslation.setY( mYScale * ( iCenter.y() - iYScale * iCenter.y() ) + mTranslation.y() );
+    ScaleBy( iXScale, iYScale );
 }
 
 
 double
-cHUDObject::Scale() const
+cHUDObject::LocalXScale() const
 {
-    return  mScale;
+    return  mXScale;
+}
+
+
+double
+cHUDObject::LocalYScale() const
+{
+    return  mYScale;
+}
+
+
+double
+cHUDObject::GlobalXScale() const
+{
+    double scale = mParentView->Scale();
+    if( mParentObject )
+        scale = mParentObject->GlobalXScale();
+
+    return  mXScale * scale;
+}
+
+
+double
+cHUDObject::GlobalYScale() const
+{
+    double scale = mParentView->Scale();
+    if( mParentObject )
+        scale = mParentObject->GlobalYScale();
+
+    return  mYScale * scale;
+}
+
+
+QPointF
+cHUDObject::GlobalTranslation() const
+{
+    QPointF trans = mParentView->Translation();
+    if( mParentObject )
+        trans = mParentObject->GlobalTranslation();
+
+    return  QPointF( mXScale * trans.x() + mTranslation.x(), mYScale * trans.y() + mTranslation.y() );
 }
 
 
@@ -135,13 +177,21 @@ cHUDObject::GetFinalTransform() const
         parentsTransforms = mParentObject->GetFinalTransform();
 
     return  GetLocalTransform() * parentsTransforms;
+
+
+    // QTransform probably is optimized enough to not need to do that
+    //auto finalTranslation = GlobalTranslation();
+    //auto finalScale = GlobalScale();
+    //// auto finalRotation = GlobalAngle();
+    //
+    //return  QTransform::fromScale( finalScale, finalScale ) * QTransform::fromTranslate( finalTranslation.x(), finalTranslation.y() );
 }
 
 
 QTransform
 cHUDObject::GetLocalTransform() const
 {
-    return QTransform::fromScale( mScale, mScale ) * QTransform::fromTranslate( mTranslation.x(), mTranslation.y() );
+    return QTransform::fromScale( mXScale, mYScale ) * QTransform::fromTranslate( mTranslation.x(), mTranslation.y() );
 }
 
 

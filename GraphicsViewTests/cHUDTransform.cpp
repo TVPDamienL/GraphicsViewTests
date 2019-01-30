@@ -78,32 +78,48 @@ cHUDTransform::Event( QEvent * iEvent )
     {
         case QEvent::MouseButtonPress :
             eventAsMouse = dynamic_cast< QMouseEvent* >( iEvent );
-            mFocusedHandle = _GetHandleAtPoint( eventAsMouse->pos() );
-            if( mFocusedHandle )
+            mClickOrigin = eventAsMouse->pos();
+            mOriginTranslation = mTranslation;
+            mOriginXScale = mXScale;
+            mOriginYScale = mYScale;
+
+            int index;
+            mFocusedHandle          = _GetHandleAtPoint( &index, eventAsMouse->pos() );
+            mFocusedHandleOpposite  = _GetOppositeHandle( index );
+
+            if( mFocusedHandle && mFocusedHandleOpposite )
             {
-                qDebug() << "HandlePress";
+                mOriginHandleVector = mFocusedHandle->GetFrame().topLeft() - mFocusedHandleOpposite->GetFrame().topLeft();
             }
-            else
-            {
-                auto mouseEvent = dynamic_cast< QMouseEvent* >( iEvent );
-                mClickOrigin = mouseEvent->pos();
-                qDebug() << "TransformPress";
-            }
+
             return  true;
 
         case QEvent::MouseMove :
+            eventAsMouse = dynamic_cast< QMouseEvent* >( iEvent );
+
             if( mFocusedHandle )
             {
-                qDebug() << "HandleMove";
+                QPointF offset = (eventAsMouse->pos() - mClickOrigin);
+                offset.setX( offset.x() / mOriginXScale );
+                offset.setY( offset.y() / mOriginYScale );
+
+                auto currentHandleVector = mFocusedHandle->GetFrame().topLeft() + offset - mFocusedHandleOpposite->GetFrame().topLeft();
+
+                double xScale = currentHandleVector.x() / mOriginHandleVector.x();
+                double yScale = currentHandleVector.y() / mOriginHandleVector.y();
+
+                mTranslation = mOriginTranslation;
+                mXScale = mOriginXScale;
+                mYScale = mOriginYScale;
+
+                CenterScale( mFocusedHandleOpposite->GetFrame().center(), xScale, yScale );
             }
             else
             {
-                auto mouseEvent = dynamic_cast< QMouseEvent* >( iEvent );
-                QPoint offset = mouseEvent->pos() - mClickOrigin;
-                MoveBy( offset / mParentView->Scale() );
-                mClickOrigin = mouseEvent->pos();
-                qDebug() << "TransformMove";
+                QPointF offset = eventAsMouse->pos() - mClickOrigin;
+                mTranslation = mOriginTranslation + offset / mParentView->Scale();
             }
+
             return  true;
 
         case QEvent::MouseButtonRelease:
@@ -172,14 +188,28 @@ cHUDTransform::_LayoutChildren()
 
 
 cHUDHandle*
-cHUDTransform::_GetHandleAtPoint( const QPointF & iPoint )
+cHUDTransform::_GetHandleAtPoint( int* oIndex, const QPointF & iPoint )
 {
+    *oIndex = -1;
     for( auto handle : mChildrenHUDs )
     {
+        ++(*oIndex);
         if( handle->ContainsPoint( iPoint ) )
             return  dynamic_cast< cHUDHandle* >( handle );
     }
 
+    *oIndex = -1;
     return  nullptr;
 }
+
+
+cHUDHandle*
+cHUDTransform::_GetOppositeHandle( int iIndex )
+{
+    if( iIndex < 0 )
+        return  0;
+
+    return  dynamic_cast< cHUDHandle* >( mChildrenHUDs[ (iIndex + 2) % 4 ] );
+}
+
 

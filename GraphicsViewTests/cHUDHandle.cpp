@@ -24,12 +24,8 @@ cHUDHandle::Draw( QPainter* iPainter )
     iPainter->setPen( pen );
 
     ResetTransformation();
+    CenterScale( mOriginalFrame.center(), 1/GlobalXScale(), 1/GlobalYScale() );
 
-    iPainter->drawRect( ToHUDCoords( mOriginalFrame ) );
-
-    CenterScale( mOriginalFrame.center(), 1/mParentView->Scale() );
-
-    iPainter->setPen( Qt::blue );
     iPainter->drawRect( ToHUDCoords( mOriginalFrame ) );
 }
 

@@ -25,9 +25,13 @@ public:
 
     void            ResetTransformation();
     virtual  void   MoveBy( const QPointF& iOffset );
-    virtual  void   ScaleBy( double iScale );
-    virtual  void   CenterScale( const QPointF& iCenter, double iScale );
-    double          Scale() const;
+    virtual  void   ScaleBy( double iXScale, double iYScale );
+    virtual  void   CenterScale( const QPointF& iCenter, double iXScale, double iYScale );
+    double          LocalXScale() const;
+    double          LocalYScale() const;
+    double          GlobalXScale() const;
+    double          GlobalYScale() const;
+    QPointF         GlobalTranslation() const;
 
     virtual  bool   Event( QEvent* iEvent );
 
@@ -58,7 +62,8 @@ protected:
     bool                    mVisible = true;
 
     QPointF                 mTranslation = QPointF( 0, 0 );
-    double                  mScale = 1.0;
+    double                  mXScale = 1.0;
+    double                  mYScale = 1.0;
     double                  mRotationAngle = 0.0;
 };
 
