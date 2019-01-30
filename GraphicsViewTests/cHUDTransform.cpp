@@ -82,6 +82,8 @@ cHUDTransform::Event( QEvent * iEvent )
             mOriginTranslation = mTranslation;
             mOriginXScale = mXScale;
             mOriginYScale = mYScale;
+            mOriginGlobalXScale = GlobalXScale();
+            mOriginGlobalYScale = GlobalYScale();
 
             int index;
             mFocusedHandle          = _GetHandleAtPoint( &index, eventAsMouse->pos() );
@@ -100,8 +102,8 @@ cHUDTransform::Event( QEvent * iEvent )
             if( mFocusedHandle )
             {
                 QPointF offset = (eventAsMouse->pos() - mClickOrigin);
-                offset.setX( offset.x() / mOriginXScale );
-                offset.setY( offset.y() / mOriginYScale );
+                offset.setX( offset.x() / mOriginGlobalXScale );
+                offset.setY( offset.y() / mOriginGlobalYScale );
 
                 auto currentHandleVector = mFocusedHandle->GetFrame().topLeft() + offset - mFocusedHandleOpposite->GetFrame().topLeft();
 

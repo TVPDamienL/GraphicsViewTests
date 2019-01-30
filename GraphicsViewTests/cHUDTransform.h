@@ -40,6 +40,8 @@ private:
     QPointF         mOriginTranslation;
     double          mOriginXScale;
     double          mOriginYScale;
+    double          mOriginGlobalXScale;
+    double          mOriginGlobalYScale;
     double          mOriginRotation;
 };
 
