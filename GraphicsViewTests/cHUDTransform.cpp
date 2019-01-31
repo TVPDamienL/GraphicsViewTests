@@ -122,6 +122,8 @@ cHUDTransform::Event( QEvent * iEvent )
                 mTranslation = mOriginTranslation + offset / mParentView->Scale();
             }
 
+            mSelection->TransformSelection( _GetLocalTransformWithTopLeftOriginNoScale(), mXScale, mYScale );
+
             return  true;
 
         case QEvent::MouseButtonRelease:
@@ -159,6 +161,8 @@ cHUDTransform::SelectionChangedEvent( cBaseData * iSender, int iArg )
     if( iArg == cSelection::eMessageSelection::kActiveChanged )
     {
         Visible( mSelection->IsActive() );
+        SetFrame( mSelection->GetSelectionBBox() );
+        ResetTransformation();
     }
     else if( iArg == cSelection::eMessageSelection::kBoundsChanged )
     {
@@ -212,6 +216,21 @@ cHUDTransform::_GetOppositeHandle( int iIndex )
         return  0;
 
     return  dynamic_cast< cHUDHandle* >( mChildrenHUDs[ (iIndex + 2) % 4 ] );
+}
+
+
+QTransform
+cHUDTransform::_GetLocalTransformWithTopLeftOriginNoScale() const
+{
+    auto localTransfor = GetLocalTransform();
+    QPointF topLeft = mOriginalFrame.topLeft();
+    QPointF topLeftLocalMap = localTransfor.map( topLeft );
+    QPointF diff = topLeftLocalMap - topLeft;
+    double cosAngle = 1; // cos( mAngle )
+    double sinAngle = 0; // sin( mAngle )
+
+    localTransfor.setMatrix( cosAngle, sinAngle, 0, -sinAngle, cosAngle, 0, diff.x(), diff.y(), 1 );
+    return  localTransfor;
 }
 
 

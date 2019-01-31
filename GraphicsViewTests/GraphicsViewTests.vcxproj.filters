@@ -73,6 +73,9 @@
     <Filter Include="src\Data">
       <UniqueIdentifier>{63e1922f-999d-4fc2-b0ba-1a7ef981303b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Image">
+      <UniqueIdentifier>{b0c7a1d6-7523-4989-a136-9b7f5c1ce42b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -281,6 +284,9 @@
     </ClInclude>
     <ClInclude Include="cBaseData.h">
       <Filter>src\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Image.Utilities.h">
+      <Filter>src\Image</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -14,7 +14,7 @@ cHUDItem::cHUDItem( QGraphicsItem* iParent ) :
     QGraphicsPixmapItem( iParent )
 {
     mBGOffset = 0;
-    mSelectionImage = 0;
+    mSelectionOutline = 0;
     mSelectionDrawingTimer = new QTimer();
     mSelectionDrawingTimer->setInterval( 100 );
     mSelectionDrawingTimer->connect( mSelectionDrawingTimer, &QTimer::timeout, [ this ]{ this->_RenderSelection(); } );
@@ -24,8 +24,8 @@ cHUDItem::cHUDItem( QGraphicsItem* iParent ) :
 QRectF
 cHUDItem::boundingRect() const
 {
-    if( mSelectionImage )
-        return QRectF( 0, 0, mSelectionImage->width(), mSelectionImage->height() );
+    if( mSelectionOutline )
+        return QRectF( 0, 0, mSelectionOutline->width(), mSelectionOutline->height() );
 
     return  QRectF( 0, 0, 0, 0 );
 }
@@ -34,20 +34,24 @@ cHUDItem::boundingRect() const
 void
 cHUDItem::paint( QPainter * painter, const QStyleOptionGraphicsItem * option, QWidget * widget )
 {
-    if( mSelectionImage )
+    if( mSelectionOutline )
     {
-        painter->setRenderHint( QPainter::SmoothPixmapTransform, ( transformationMode() == Qt::SmoothTransformation ) );
-        painter->drawPixmap( offset(), QPixmap::fromImage( *mSelectionImage ) );
+        painter->setRenderHint( QPainter::NonCosmeticDefaultPen, ( transformationMode() == Qt::FastTransformation ) );
+
+        if( mSelectionInside )
+            painter->drawImage( offset(), *mSelectionInside );
+
+        painter->drawImage( offset(), *mSelectionOutline );
     }
 }
 
 
 void
-cHUDItem::SetImage( QImage*  iSelectionImage )
+cHUDItem::SetSelectionOutlineImage( QImage*  iSelectionImage )
 {
-    mSelectionImage = iSelectionImage; // iPixmap could be 0
+    mSelectionOutline = iSelectionImage; // iPixmap could be 0
 
-    if( mSelectionImage )
+    if( mSelectionOutline )
     {
         _RenderSelection();
         mSelectionDrawingTimer->start();
@@ -62,14 +66,21 @@ cHUDItem::SetImage( QImage*  iSelectionImage )
 
 
 void
+cHUDItem::SetSelectionInsideImage( QImage * iInsideImage )
+{
+    mSelectionInside = iInsideImage;
+}
+
+
+void
 cHUDItem::_RenderSelection()
 {
-    uchar* data = mSelectionImage->bits();
+    uchar* data = mSelectionOutline->bits();
     uchar* dataScanline = data;
 
-    unsigned int bytesPerLine = mSelectionImage->bytesPerLine();
-    unsigned int width = mSelectionImage->width();
-    unsigned int height = mSelectionImage->height();
+    unsigned int bytesPerLine = mSelectionOutline->bytesPerLine();
+    unsigned int width = mSelectionOutline->width();
+    unsigned int height = mSelectionOutline->height();
 
     mBGOffset = (mBGOffset + 1) % 20;
 

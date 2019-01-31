@@ -58,7 +58,6 @@ protected:
     QVector< cHUDObject* >  mChildrenHUDs;
 
     QRectF                  mOriginalFrame;
-    QTransform              mObjectSelfTransformation;
     bool                    mVisible = true;
 
     QPointF                 mTranslation = QPointF( 0, 0 );

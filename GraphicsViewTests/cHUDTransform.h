@@ -21,13 +21,20 @@ public:
     virtual  bool  Event( QEvent* iEvent ) override;
 
 public:
-    void                SetSelection( cSelection* iSelection );
-    void                SelectionChangedEvent( cBaseData* iSender, int iArg );
+    void           SetSelection( cSelection* iSelection );
+    void           SelectionChangedEvent( cBaseData* iSender, int iArg );
 
 private:
     void            _LayoutChildren();
     cHUDHandle*     _GetHandleAtPoint( int* oIndex, const QPointF& iPoint );
     cHUDHandle*     _GetOppositeHandle( int iIndex );
+
+    // Returns the transformation that transforms this object, having the top left corner as origin
+    // So this represents the transformation this hud had from his original position
+    // It removes scale so we can apply it aside
+    // Because we wanna use QT's rescale method, and then apply rotation + translation ourselves
+    // So we pass scale aside, and get a scale free matrix
+    QTransform      _GetLocalTransformWithTopLeftOriginNoScale() const;
 
 private:
     int             mHandleSize = 10;

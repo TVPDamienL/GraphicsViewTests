@@ -148,7 +148,7 @@ cCanvas::tabletEvent( QTabletEvent*  iEvent )
                 }
                 else
                 {
-                    mHUDSelection->SetImage( mClip->GetSelection()->GetSelectionEdgeMask() );
+                    mHUDSelection->SetSelectionOutlineImage( mClip->GetSelection()->GetSelectionEdgeMask() );
                 }
             }
 
@@ -301,7 +301,7 @@ cCanvas::keyReleaseEvent( QKeyEvent * iEvent )
     else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_D )
     {
         mClip->GetSelection()->Clear();
-        mHUDSelection->SetImage( 0 );
+        mHUDSelection->SetSelectionOutlineImage( 0 );
         mHUDSelection->update();
     }
     else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_T )
@@ -429,7 +429,8 @@ cCanvas::mouseReleaseEvent( QMouseEvent * iEvent )
         }
         else
         {
-            mHUDSelection->SetImage( mClip->GetSelection()->GetSelectionEdgeMask() );
+            mHUDSelection->SetSelectionOutlineImage( mClip->GetSelection()->GetSelectionEdgeMask() );
+            mHUDSelection->SetSelectionInsideImage( mClip->GetSelection()->GetSelectionContentImage() );
         }
     }
 

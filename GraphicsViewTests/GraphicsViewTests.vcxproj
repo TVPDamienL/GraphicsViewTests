@@ -181,6 +181,7 @@
     <ClInclude Include="cHUDObject.h" />
     <ClInclude Include="cHUDTransform.h" />
     <ClInclude Include="cSelection.h" />
+    <ClInclude Include="Image.Utilities.h" />
     <ClInclude Include="Math.Fast.h" />
     <ClInclude Include="src\cLayer.h" />
     <ClInclude Include="src\Clip.h" />

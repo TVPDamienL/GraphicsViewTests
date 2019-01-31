@@ -41,6 +41,8 @@ void
 cClip::AddLayer()
 {
     mLayers.push_back( new cLayer( mWidth, mHeight ) );
+    if( !mCurrentLayer )
+        mCurrentLayer = mLayers.back();
 }
 
 
@@ -80,20 +82,16 @@ cClip::ComposeLayers()
                     continue;
                 }
 
-                // Longer from 1.71 sec benchmark to 1.76 sec average
                 BlendPixelNormal( &pixelRow, *(originPixelRow+2), *(originPixelRow+1), *(originPixelRow), *(originPixelRow+3) ); originPixelRow += 4;
-
-
-                //int transparencyAmountInverse = 255 - sourceAlpha;
-
-                //*pixelRow  = *originPixelRow + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow; ++originPixelRow;
-                //*pixelRow  = *originPixelRow + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow; ++originPixelRow;
-                //*pixelRow  = *originPixelRow + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow; ++originPixelRow;
-                //*pixelRow  = *originPixelRow + BlinnMult( *pixelRow, transparencyAmountInverse ); ++pixelRow; ++originPixelRow;
             }
         }
         // /BLENDIMAGE
 
+        //if( layer == mCurrentLayer )
+        //{
+        //    // TODO: blend this where it should be
+        //    mSelection->TransformedImage();
+        //}
     }
 
 
@@ -136,7 +134,7 @@ cClip::GetSelection()
 void
 cClip::ExtractSelection()
 {
-    mSelection->ExtractPixelsToBuffer( mCurrentFrameRendering );
+    mSelection->ExtractPixelsFromImageToBuffer( mCurrentFrameRendering );
 }
 
 

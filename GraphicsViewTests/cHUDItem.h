@@ -16,7 +16,8 @@ public:
     void    paint( QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget ) override;
 
 public:
-    void SetImage( QImage*  iSelectionImage );
+    void SetSelectionOutlineImage( QImage*  iSelectionImage );
+    void SetSelectionInsideImage( QImage*  iInsideImage );
 
 private:
     void _RenderSelection();
@@ -25,7 +26,8 @@ private slots:
     void selectionTimerTimeout();
 
 private:
-    QImage*     mSelectionImage;
+    QImage*     mSelectionOutline = 0;
+    QImage*     mSelectionInside = 0;
     QTimer*     mSelectionDrawingTimer;
     int         mBGOffset;
 };

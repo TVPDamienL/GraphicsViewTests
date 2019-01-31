@@ -4,6 +4,24 @@
 
 #include <QtCore>
 
+
+
+
+// Raw pixel transfert
+static
+inline
+void
+BlendPixelNone( uchar** pixelDestination, quint8 r, quint8 g, quint8 b, quint8 a )
+{
+    **pixelDestination = b; ++*pixelDestination;
+    **pixelDestination = g; ++*pixelDestination;
+    **pixelDestination = r; ++*pixelDestination;
+    **pixelDestination = a; ++*pixelDestination;
+}
+
+
+
+// Standard alpha blending
 static
 inline
 void

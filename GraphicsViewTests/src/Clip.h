@@ -40,6 +40,7 @@ private:
     unsigned int            mHeight;
 
     std::vector< cLayer* >  mLayers;
+    cLayer*                 mCurrentLayer = 0;
 
     cSelection*             mSelection;
     QImage*                 mCurrentFrameRendering;

@@ -27,7 +27,6 @@ void
 cToolSelectionTest::StartDrawing( QImage* iImage )
 {
     ToolBase::StartDrawing( iImage );
-    mTheSelection->SetActive( true );
 }
 
 
@@ -103,6 +102,9 @@ QRect
 cToolSelectionTest::EndDrawing()
 {
     mTheSelection->ProcessEdgeDetection();
+    mTheSelection->ExtractPixelsFromImageToBuffer( mDrawingContext );
+    mTheSelection->SetActive( true );
+    mTheSelection->EmitPainted();
     return  ToolBase::EndDrawing();
 }
 
