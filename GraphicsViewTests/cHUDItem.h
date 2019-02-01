@@ -17,7 +17,6 @@ public:
 
 public:
     void SetSelectionOutlineImage( QImage*  iSelectionImage );
-    void SetSelectionInsideImage( QImage*  iInsideImage );
 
 private:
     void _RenderSelection();

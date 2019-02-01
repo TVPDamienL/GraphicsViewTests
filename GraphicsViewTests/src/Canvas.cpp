@@ -88,38 +88,13 @@ cCanvas::tabletEvent( QTabletEvent*  iEvent )
             {
                 if( QApplication::keyboardModifiers() & Qt::AltModifier )
                 {
-                    mState = kPan;
                 }
                 else
                 {
-                    if( !mSelectionMode )
-                    {
-                        if( mClip->GetSelection()->IsActive() )
-                        {
-                            mToolModel->SetAlphaMask( mClip->GetSelection()->GetSelectionMask() );
-                        }
-                        else
-                        {
-                            mToolModel->SetAlphaMask( 0 );
-                        }
-                    }
-
-                    mState = kDrawing;
-                    mItemPixmap = mEditableItem->mpixmap;
-
-                    mToolModel->StartDrawing( mClip->LayerAtIndex( 0 )->Image() );
-
-                    if( mTool == kEraser )
-                        mPainter->setCompositionMode( QPainter::CompositionMode_Clear );
                 }
             }
             else if( iEvent->button() == Qt::RightButton )
             {
-                if( QApplication::keyboardModifiers() & Qt::ControlModifier )
-                {
-                    //auto test = new colorPickerDialog( mToolModel, this );
-                    //test->openAtPosition( iEvent->screenPos() - QPointF( test->size().width()/2, test->size().height()/2 ) );
-                }
             }
 
             QGraphicsView::tabletEvent( iEvent );
@@ -129,27 +104,6 @@ cCanvas::tabletEvent( QTabletEvent*  iEvent )
         {
             if( mState == kDrawing )
             {
-                auto dirty = mToolModel->EndDrawing();
-                if( !dirty.isEmpty() )
-                {
-                    mClip->DirtyArea( dirty );
-                    SetPixmap( QPixmap::fromImage( *mClip->ComposeLayers() ) );
-
-                    if( !mSelectionMode )
-                    {
-                        currentFrameGotPainted( *mEditableItem->mpixmap );
-                    }
-                }
-
-                if( !mSelectionMode )
-                {
-                    mClip->LayerAtIndex( 0 )->WriteUndoHistory();
-                    currentFrameGotPainted( *mEditableItem->mpixmap );
-                }
-                else
-                {
-                    mHUDSelection->SetSelectionOutlineImage( mClip->GetSelection()->GetSelectionEdgeMask() );
-                }
             }
 
             mState = kIdle;
@@ -160,34 +114,9 @@ cCanvas::tabletEvent( QTabletEvent*  iEvent )
         {
             if( mState == kPan )
             {
-                QPointF offset = iEvent->pos() - mClickPos;
-                QPointF pos = mEditableItem->pos() + offset;
-                mEditableItem->setPos( pos );
-                mGridItem->setPos( pos );
-                mHUDSelection->setPos( pos );
-                mHUDView->TranslateBy( QPoint( offset.x(), offset.y() ) );
             }
             else if( mState == kDrawing )
             {
-                QPointF originInItemCoordinate = mEditableItem->mapFromScene( mapToScene( mClickPos.x(), mClickPos.y() ) );
-                QPointF newPointInItemCoordinate = mEditableItem->mapFromScene( mapToScene( iEvent->pos().x(), iEvent->pos().y() ) );
-
-                sPointData point;
-                point.mPosition = QPoint( newPointInItemCoordinate.x(), newPointInItemCoordinate.y() );
-                point.mPressure = iEvent->pressure();
-                point.mRotation = 0.0F;
-
-                auto dirty = mToolModel->MoveDrawing( point );
-                if( !dirty.isEmpty() )
-                {
-                    mClip->DirtyArea( dirty );
-                    SetPixmap( QPixmap::fromImage( *mClip->ComposeLayers() ) );
-
-                    if( !mSelectionMode )
-                    {
-                        currentFrameGotPainted( *mEditableItem->mpixmap );
-                    }
-                }
             }
 
             mClickPos = iEvent->pos();
@@ -256,15 +185,15 @@ cCanvas::keyPressEvent( QKeyEvent * iEvent )
     else if( iEvent->key() == Qt::Key_C )
     {
         QClipboard* clipboard = QApplication::clipboard();
-        clipboard->setPixmap( *mItemPixmap );
+        clipboard->setImage( *mCurrentEditedImage );
     }
     else if( iEvent->key() == Qt::Key_V )
     {
-        QPainter pp( mItemPixmap );
+        QPainter pp( mCurrentEditedImage );
         QClipboard* clipboard = QApplication::clipboard();
-        auto px = clipboard->pixmap();
+        auto px = clipboard->image();
 
-        pp.drawPixmap( 0, 0, px );
+        pp.drawImage( 0, 0, px );
         mEditableItem->update();
     }
 
@@ -281,22 +210,18 @@ cCanvas::keyReleaseEvent( QKeyEvent * iEvent )
     }
     else if( iEvent->key() == Qt::Key_Delete )
     {
-        mItemPixmap = mEditableItem->mpixmap;
-        mItemPixmap->fill( Qt::transparent );
-        currentFrameGotPainted( *mItemPixmap );
-        mEditableItem->update();
     }
     else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_Z )
     {
         mClip->LayerAtIndex( 0 )->Undo();
-        _SetImage( mClip->LayerAtIndex( 0 )->Image() );
-        currentFrameGotPainted( *mEditableItem->mpixmap );
+        SetImage( mClip->ComposeLayers() );
+        //currentFrameGotPainted( *mEditableItem->mpixmap );
     }
     else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_Y )
     {
         mClip->LayerAtIndex( 0 )->Redo();
-        _SetImage( mClip->LayerAtIndex( 0 )->Image() );
-        currentFrameGotPainted( *mEditableItem->mpixmap );
+        SetImage( mClip->ComposeLayers() );
+        //currentFrameGotPainted( *mEditableItem->mpixmap );
     }
     else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_D )
     {
@@ -306,7 +231,7 @@ cCanvas::keyReleaseEvent( QKeyEvent * iEvent )
     }
     else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_T )
     {
-        mClip->ExtractSelection();
+        mClip->DirtyArea( QRect( 0, 0, mClip->Width(), mClip->Height() ) );
     }
 
     QGraphicsView::keyReleaseEvent( iEvent );
@@ -339,9 +264,8 @@ cCanvas::mousePressEvent( QMouseEvent * iEvent )
             }
 
             mState = kDrawing;
-            mItemPixmap = mEditableItem->mpixmap;
 
-            mToolModel->StartDrawing( mClip->LayerAtIndex( 0 )->Image() );
+            mToolModel->StartDrawing( mClip->CurrentLayer()->Image() );
 
             if( mTool == kEraser )
                 mPainter->setCompositionMode( QPainter::CompositionMode_Clear );
@@ -389,15 +313,7 @@ cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
 
         auto dirty = mToolModel->MoveDrawing( point );
         if( !dirty.isEmpty() )
-        {
             mClip->DirtyArea( dirty );
-            SetPixmap( QPixmap::fromImage( *mClip->ComposeLayers() ) );
-
-            if( !mSelectionMode )
-            {
-                currentFrameGotPainted( *mEditableItem->mpixmap );
-            }
-        }
     }
 
     mClickPos = iEvent->pos();
@@ -412,25 +328,16 @@ cCanvas::mouseReleaseEvent( QMouseEvent * iEvent )
     {
         auto dirty = mToolModel->EndDrawing();
         if( !dirty.isEmpty() )
-        {
             mClip->DirtyArea( dirty );
-            SetPixmap( QPixmap::fromImage( *mClip->ComposeLayers() ) );
-
-            if( !mSelectionMode )
-            {
-                currentFrameGotPainted( *mEditableItem->mpixmap );
-            }
-        }
 
         if( !mSelectionMode )
         {
-            mClip->LayerAtIndex( 0 )->WriteUndoHistory();
-            currentFrameGotPainted( *mEditableItem->mpixmap );
+            mClip->CurrentLayer()->WriteUndoHistory();
+            //currentFrameGotPainted( *mEditableItem->mpixmap );
         }
         else
         {
             mHUDSelection->SetSelectionOutlineImage( mClip->GetSelection()->GetSelectionEdgeMask() );
-            mHUDSelection->SetSelectionInsideImage( mClip->GetSelection()->GetSelectionContentImage() );
         }
     }
 
@@ -475,7 +382,7 @@ cCanvas::wheelEvent( QWheelEvent * iEvent )
 
 
 void
-cCanvas::SetPixmap( const QPixmap & iPixmap )
+cCanvas::SetImage( QImage* iImage )
 {
     if( mState == kDrawing )
     {
@@ -483,14 +390,9 @@ cCanvas::SetPixmap( const QPixmap & iPixmap )
         //previousFrameGotPainted( *mItemPixmap );
     }
 
-    delete  mEditableItem->mpixmap;
-    mEditableItem->mpixmap = new QPixmap( iPixmap );
+    mCurrentEditedImage = iImage;
+    mEditableItem->mImage = iImage;
     mEditableItem->update();
-
-    if( mState == kDrawing )
-    {
-        mItemPixmap = mEditableItem->mpixmap;
-    }
 }
 
 
@@ -499,7 +401,14 @@ cCanvas::SetClip( cClip * iClip )
 {
     mClip = iClip;
     mHUDTransform->SetSelection( mClip->GetSelection() );
-    _SetImage( mClip->LayerAtIndex( 0 )->Image() );
+
+    mClip->RegisterEditionCallback( [this]( cBaseData* sender, int arg ) {
+
+        if( arg == cClip::eMessageClip::kDirty )
+            SetImage( mClip->ComposeLayers() );
+
+        });
+
 }
 
 
@@ -588,19 +497,3 @@ cCanvas::SetZoom( double iZoom )
     UpCursor();
     UpdateGridItem();
 }
-
-
-void
-cCanvas::_SetImage( const QImage* iImage )
-{
-    delete  mEditableItem->mpixmap;
-
-    mEditableItem->mpixmap = new QPixmap( QPixmap::fromImage( *iImage ) );
-    mEditableItem->update();
-
-    if( mState == kDrawing )
-    {
-        mItemPixmap = mEditableItem->mpixmap;
-    }
-}
-

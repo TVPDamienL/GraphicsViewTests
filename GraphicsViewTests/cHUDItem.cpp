@@ -37,10 +37,6 @@ cHUDItem::paint( QPainter * painter, const QStyleOptionGraphicsItem * option, QW
     if( mSelectionOutline )
     {
         painter->setRenderHint( QPainter::NonCosmeticDefaultPen, ( transformationMode() == Qt::FastTransformation ) );
-
-        if( mSelectionInside )
-            painter->drawImage( offset(), *mSelectionInside );
-
         painter->drawImage( offset(), *mSelectionOutline );
     }
 }
@@ -62,13 +58,6 @@ cHUDItem::SetSelectionOutlineImage( QImage*  iSelectionImage )
     }
 
     update();
-}
-
-
-void
-cHUDItem::SetSelectionInsideImage( QImage * iInsideImage )
-{
-    mSelectionInside = iInsideImage;
 }
 
 

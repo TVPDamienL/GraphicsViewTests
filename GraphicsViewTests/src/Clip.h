@@ -5,11 +5,20 @@
 
 #include <qpixmap.h>
 #include "cSelection.h"
+#include "cBaseData.h"
 
 class cLayer;
 
-class cClip
+class cClip :
+    public cBaseData
 {
+public:
+    enum eMessageClip : int
+    {
+        kDirty = 0,
+        kRenderedDirtyArea,
+    };
+
 public:
     virtual ~cClip();
     cClip( unsigned int iWidth, unsigned int iHeight );
@@ -20,14 +29,15 @@ public:
     //Layers
 public:
     cLayer* LayerAtIndex( int iIndex );
+    cLayer* CurrentLayer();
     void    AddLayer();
     QImage* ComposeLayers();
     QImage* GetOutputImage();
 
     //GetSet
 public:
-    unsigned int Width() const;
-    unsigned int Height() const;
+    int Width() const;
+    int Height() const;
 
 public:
     cSelection* GetSelection();
@@ -36,8 +46,8 @@ public:
 
 private:
     std::string             mName;
-    unsigned int            mWidth;
-    unsigned int            mHeight;
+    int                     mWidth;
+    int                     mHeight;
 
     std::vector< cLayer* >  mLayers;
     cLayer*                 mCurrentLayer = 0;

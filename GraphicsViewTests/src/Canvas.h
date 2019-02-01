@@ -39,7 +39,7 @@ public:
     void  wheelEvent( QWheelEvent* iEvent )         override;
 
 public:
-    void  SetPixmap( const QPixmap& iPixmap );
+    void  SetImage( QImage* iImage );
     void  SetClip( cClip* iClip );
     void  SetToolModel( ToolBase* iToolModel );
     void  SetSelectionMode( bool iMode );
@@ -59,9 +59,6 @@ signals:
 
 public slots:
     void  SetZoom( double iZoom );
-
-private:
-    void  _SetImage( const QImage* iImage );
 
 
 private:
@@ -97,7 +94,7 @@ private:
 
 
     QPointF             mClickPos;
-    QPixmap*            mItemPixmap;
+    QImage*             mCurrentEditedImage;
 
     bool                mSelectionMode = false;
 

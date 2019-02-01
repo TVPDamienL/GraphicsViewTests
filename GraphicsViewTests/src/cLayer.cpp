@@ -14,7 +14,8 @@ cLayer::cLayer( unsigned int iWidth, unsigned int iHeight ) :
 {
     mImage = new QImage( iWidth, iHeight, QImage::Format_ARGB32_Premultiplied );
 
-    mImage->fill( 0xFF333333 );
+    //mImage->fill( 0xFF333333 );
+    mImage->fill( 0x00000000 ); // Clear with transparent
 
 
     // Manual version

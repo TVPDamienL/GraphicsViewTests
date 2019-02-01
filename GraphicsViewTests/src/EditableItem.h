@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QGraphicsPixmapItem>
+#include <QImage>
 #include <QTabletEvent>
 
 #include <filesystem>
@@ -28,7 +29,7 @@ protected:
     void    contextMenuEvent( QGraphicsSceneContextMenuEvent* iEvent ) override;
 
 public:
-    QPixmap*    mpixmap;
+    QImage*     mImage;
 
 private:
     std::filesystem::path  mFileToEdit;

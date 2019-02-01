@@ -1,18 +1,20 @@
 #include "cSelection.h"
 
 #include "Image.Utilities.h"
+#include "Clip.h"
 
 cSelection::~cSelection()
 {
 }
 
 
-cSelection::cSelection( int iWidth, int iHeight )
+cSelection::cSelection( int iWidth, int iHeight, cClip* iClip )
 {
+    mAssociatedClip         = iClip;
     mMaskImage              = new QImage( iWidth, iHeight, QImage::Format_RGBA8888_Premultiplied );
     mTransformationBuffer   = new QImage( iWidth, iHeight, QImage::Format_RGBA8888_Premultiplied );
     mEdgeDetectedMaskImage  = new QImage( iWidth, iHeight, QImage::Format_RGBA8888_Premultiplied );
-    mOriginalImage         = 0;
+    mOriginalImage          = 0;
     Clear();
 }
 
@@ -102,13 +104,14 @@ cSelection::ExtractPixelsFromImageToBuffer( QImage * iImage )
 
         for( int x = minX; x <= maxX; ++x )
         {
-            *bufferScanline = *sourceScanline; ++bufferScanline;
-            *sourceScanline = 0; ++sourceScanline;
-            *bufferScanline = *sourceScanline; ++bufferScanline;
-            *sourceScanline = 0; ++sourceScanline;
-            *bufferScanline = *sourceScanline; ++bufferScanline;
-            *sourceScanline = 0; ++sourceScanline;
-            *bufferScanline = *sourceScanline; ++bufferScanline;
+            // Extract pixels to buffer, and clears them from original image
+            *bufferScanline = *sourceScanline;      ++bufferScanline;
+            *sourceScanline = 0;++sourceScanline;
+            *bufferScanline = *sourceScanline;      ++bufferScanline;
+            *sourceScanline = 0;++sourceScanline;
+            *bufferScanline = *sourceScanline;      ++bufferScanline;
+            *sourceScanline = 0;++sourceScanline;
+            *bufferScanline = *sourceScanline;      ++bufferScanline;
             *sourceScanline = 0; ++sourceScanline;
         }
     }
@@ -118,14 +121,21 @@ cSelection::ExtractPixelsFromImageToBuffer( QImage * iImage )
 
 void cSelection::TransformSelection( const QTransform& iTransfo, double iXScale, double iYScale )
 {
-    const int scaledWidth = mExtratedBuffer->width() * iXScale;
-    const int scaledHeight = mExtratedBuffer->height() * iYScale;
-    const int bufferOffsetX = mSelectionBBox.left() + iTransfo.dx();
-    const int bufferOffsetY = mSelectionBBox.top()  + iTransfo.dy();
+    if( !mExtratedBuffer )
+        return;
 
-    QImage scaledBuffer = mExtratedBuffer->scaled( scaledWidth, scaledHeight, Qt::AspectRatioMode::IgnoreAspectRatio, Qt::TransformationMode::FastTransformation );
+    QRect dirtyArea = GetTransformationBBox();
 
-    CopyImage( &scaledBuffer, mTransformationBuffer, QPoint( bufferOffsetX, bufferOffsetY ) );
+    mTransfoWidth = mExtratedBuffer->width() * iXScale;
+    mTransfoHeight = mExtratedBuffer->height() * iYScale;
+    mTransfoOffset = mSelectionBBox.topLeft() + QPointF( iTransfo.dx(), iTransfo.dy() );
+
+    QImage scaledBuffer = mExtratedBuffer->scaled( mTransfoWidth, mTransfoHeight, Qt::AspectRatioMode::IgnoreAspectRatio, Qt::TransformationMode::FastTransformation );
+
+    dirtyArea.united( GetTransformationBBox() );
+
+    CopyImage( &scaledBuffer, mTransformationBuffer, QPoint( mTransfoOffset.x(), mTransfoOffset.y() ) );
+    mAssociatedClip->DirtyArea( dirtyArea );
 }
 
 

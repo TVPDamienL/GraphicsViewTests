@@ -93,6 +93,8 @@ cToolSimpleBrush::MoveDrawing( sPointData iPointData )
 void
 cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
 {
+    //BENCHSTART
+
     uchar* data = mDrawingContext->bits();
     uchar* dataScanline = data;
 
@@ -129,7 +131,7 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
     int startingY = minY < 0 ? 0 : minY;
     int endingY = maxY >= mDrawingContext->height() ? mDrawingContext->height() - 1 : maxY;
 
-    mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX, endingY - startingY ) );
+    mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX + 1, endingY - startingY + 1 ) );
 
     bool useAlphaMask = mAlphaMask && mAlphaMask->width() == mDrawingContext->width() && mAlphaMask->height() == mDrawingContext->height();
     if( useAlphaMask )
@@ -174,6 +176,8 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
             }
         }
     }
+
+    //BENCHEND
 }
 
 
