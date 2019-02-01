@@ -49,8 +49,8 @@ public:
     QRect   GetSelectionBBox() const;
     inline QRect   GetTransformationBBox() const
     {
-        return  QRect( mTransfoOffset.x(),
-                       mTransfoOffset.y(),
+        return  QRect( mOriginalSelectionBBox.left() + mTransfoOffset.x(),
+                       mOriginalSelectionBBox.top() + mTransfoOffset.y(),
                        mTransfoWidth,
                        mTransfoHeight );
     }

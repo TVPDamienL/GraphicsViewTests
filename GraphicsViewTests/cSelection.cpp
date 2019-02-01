@@ -60,6 +60,9 @@ cSelection::Clear()
 {
     mMaskImage->fill( Qt::transparent );
     SetActive( false );
+    mTransfoWidth = 0;
+    mTransfoHeight = 0;
+    mTransfoOffset = QPointF( 0, 0 );
 }
 
 
@@ -154,13 +157,13 @@ void cSelection::TransformSelection( const QTransform& iTransfo, double iXScale,
 
     mTransfoWidth = mExtratedBuffer->width() * iXScale;
     mTransfoHeight = mExtratedBuffer->height() * iYScale;
-    mTransfoOffset = mOriginalSelectionBBox.topLeft() + QPointF( iTransfo.dx(), iTransfo.dy() );
+    mTransfoOffset = QPointF( iTransfo.dx(), iTransfo.dy() );
 
     QImage scaledBuffer = mExtratedBuffer->scaled( mTransfoWidth, mTransfoHeight, Qt::AspectRatioMode::IgnoreAspectRatio, Qt::TransformationMode::FastTransformation );
 
     //dirtyArea = dirtyArea.united( GetTransformationBBox() );
 
-    CopyImage( &scaledBuffer, mTransformationBuffer, QPoint( mTransfoOffset.x(), mTransfoOffset.y() ) );
+    CopyImage( &scaledBuffer, mTransformationBuffer, GetTransformationBBox().topLeft() );
     mAssociatedClip->DirtyArea( dirtyArea );
 }
 
@@ -171,17 +174,19 @@ cSelection::CancelTransformation()
     QRect dirtyArea = GetTransformationBBox();
     BlendImageNormal( mExtratedBuffer, mOriginalImage, mOriginalSelectionBBox.topLeft() );
     dirtyArea = dirtyArea.united( mOriginalSelectionBBox );
-    mAssociatedClip->DirtyArea( dirtyArea );
+
     Clear();
+    mAssociatedClip->DirtyArea( dirtyArea );
 }
 
 
 void
 cSelection::ApplyTransformation()
 {
-    BlendImageNormal( mExtratedBuffer, mOriginalImage, GetTransformationBBox().topLeft() );
-    mAssociatedClip->DirtyArea( GetTransformationBBox() );
+    BlendImageNormalSameSizes( mTransformationBuffer, mOriginalImage, GetTransformationBBox() );
+
     Clear();
+    mAssociatedClip->DirtyArea( GetTransformationBBox() );
 }
 
 
@@ -249,6 +254,11 @@ cSelection::_FilterAlpha()
             }
         }
     }
+
+    minX = minX == -1 ? 0 : minX;
+    minY = minY == -1 ? 0 : minY;
+    maxX = maxX == -1 ? 0 : maxX;
+    maxY = maxY == -1 ? 0 : maxY;
 
     mOriginalSelectionBBox.setTopLeft( QPoint( minX, minY ) );
     mOriginalSelectionBBox.setBottomRight( QPoint( maxX, maxY ) ) ;
