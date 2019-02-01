@@ -214,13 +214,13 @@ cCanvas::keyReleaseEvent( QKeyEvent * iEvent )
     else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_Z )
     {
         mClip->LayerAtIndex( 0 )->Undo();
-        SetImage( mClip->ComposeLayers() );
+        mClip->DirtyAll();
         //currentFrameGotPainted( *mEditableItem->mpixmap );
     }
     else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_Y )
     {
         mClip->LayerAtIndex( 0 )->Redo();
-        SetImage( mClip->ComposeLayers() );
+        mClip->DirtyAll();
         //currentFrameGotPainted( *mEditableItem->mpixmap );
     }
     else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_D )
@@ -232,6 +232,14 @@ cCanvas::keyReleaseEvent( QKeyEvent * iEvent )
     else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_T )
     {
         mClip->DirtyArea( QRect( 0, 0, mClip->Width(), mClip->Height() ) );
+    }
+    else if( iEvent->key() == Qt::Key_Escape )
+    {
+        mClip->GetSelection()->CancelTransformation();
+    }
+    else if( iEvent->key() == Qt::Key_Enter || iEvent->key() == Qt::Key_Return  )
+    {
+        mClip->GetSelection()->ApplyTransformation();
     }
 
     QGraphicsView::keyReleaseEvent( iEvent );

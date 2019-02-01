@@ -21,7 +21,6 @@ cClip::cClip( unsigned int iWidth, unsigned int iHeight ) :
     mCurrentFrameRendering = new QImage( mWidth, mHeight, QImage::Format_ARGB32_Premultiplied );
     mCurrentFrameRendering->fill( Qt::transparent );
     mDirtyArea = QRect( 0, 0, mWidth, mHeight );
-    mDirtyArea = QRect( 0, 0, 0, 0 );
 }
 
 
@@ -29,6 +28,13 @@ void
 cClip::DirtyArea( const QRect & iArea )
 {
     mDirtyArea = mDirtyArea.united( iArea );
+
+    if( mDirtyArea.right() <= 0 || mDirtyArea.bottom() <= 0
+        || mDirtyArea.left() >= mWidth || mDirtyArea.top() >= mHeight )
+    {
+        mDirtyArea = QRect( 0, 0, 0, 0 );
+        return;
+    }
 
     // Clipping to clip
     if( mDirtyArea.left() < 0 )
@@ -43,6 +49,14 @@ cClip::DirtyArea( const QRect & iArea )
     if( mDirtyArea.bottom() >= mHeight )
         mDirtyArea.setBottom( mHeight - 1 );
 
+    EmitValueChanged( kDirty );
+}
+
+
+void
+cClip::DirtyAll()
+{
+    mDirtyArea = QRect( 0, 0, mWidth, mHeight );
     EmitValueChanged( kDirty );
 }
 
@@ -94,12 +108,14 @@ cClip::ComposeLayers()
 
         for( unsigned int y = minY; y < maxY ; ++y )
         {
-            pixelRow        = renderData + y * bpr + minX * 4;
-            originPixelRow  = originData + y * bpr + minX * 4;
+            const int index = y * bpr + minX * 4;
+            pixelRow        = renderData + index;
+            originPixelRow  = originData + index;
 
             for( unsigned int x = minX; x < maxX; ++x )
             {
-                uchar sourceAlpha = originPixelRow[ 3 ];
+                const uint8_t alpha = originPixelRow[ 3 ];
+                uchar sourceAlpha = alpha;
                 if( sourceAlpha == 0 )
                 {
                     originPixelRow += 4;
@@ -107,7 +123,8 @@ cClip::ComposeLayers()
                     continue;
                 }
 
-                BlendPixelNormal( &pixelRow, *(originPixelRow+2), *(originPixelRow+1), *(originPixelRow), *(originPixelRow+3) ); originPixelRow += 4;
+                BlendPixelNormal( &pixelRow, *(originPixelRow+2), *(originPixelRow+1), *(originPixelRow), alpha );
+                originPixelRow += 4;
             }
         }
         // /BLENDIMAGE

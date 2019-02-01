@@ -70,7 +70,7 @@ CopyImage( QImage* source, QImage* destination, const QPoint& point )
 
         for( int x = startingX; x <= endingX; ++x )
         {
-            BlendPixelNone( &destScanline, *sourceScanline, *(sourceScanline+1), *(sourceScanline+2), *(sourceScanline+3) );
+            BlendPixelNone( &destScanline, *(sourceScanline+2), *(sourceScanline+1), *(sourceScanline), *(sourceScanline+3) );
             sourceScanline += 4;
         }
     }
@@ -116,7 +116,7 @@ BlendImageNormal( QImage* source, QImage* destination, const QPoint& point )
                 continue;
             }
 
-            BlendPixelNormal( &destScanline, *sourceScanline, *(sourceScanline+1), *(sourceScanline+2), alpha );
+            BlendPixelNormal( &destScanline, *(sourceScanline+2), *(sourceScanline+1), *(sourceScanline), alpha );
             sourceScanline += 4;
         }
     }
@@ -167,7 +167,7 @@ BlendImageNormalSameSizes( QImage* source, QImage* destination, const QRect& are
                 continue;
             }
 
-            BlendPixelNormal( &destScanline, *sourceScanline, *(sourceScanline+1), *(sourceScanline+2), alpha );
+            BlendPixelNormal( &destScanline, *(sourceScanline+2), *(sourceScanline+1), *(sourceScanline), alpha );
             sourceScanline += 4;
         }
     }

@@ -76,8 +76,8 @@ cSelection::ExtractPixelsFromImageToBuffer( QImage * iImage )
 {
     mOriginalImage = iImage;
     const QRect selectionBBox = GetSelectionBBox();
-    const int bboxWidth = mSelectionBBox.width();
-    const int bboxHeight = mSelectionBBox.height();
+    const int bboxWidth = mOriginalSelectionBBox.width();
+    const int bboxHeight = mOriginalSelectionBBox.height();
     mTransformationBuffer->fill( Qt::transparent );
 
     delete mExtratedBuffer;
@@ -86,9 +86,15 @@ cSelection::ExtractPixelsFromImageToBuffer( QImage * iImage )
     const int bpl = mOriginalImage->bytesPerLine();
     const int bufferBpl = mExtratedBuffer->bytesPerLine();
 
+    // Source we extract from
     uchar* sourceData = mOriginalImage->bits();
     uchar* sourceScanline = sourceData;
 
+    // The selection mask to know if we extract pixel or not
+    uchar* maskData = mMaskImage->bits();
+    uchar* maskScanline = maskData;
+
+    // The output extracted buffer image
     uchar* bufferData = mExtratedBuffer->bits();
     uchar* bufferScanline = bufferData;
 
@@ -99,11 +105,26 @@ cSelection::ExtractPixelsFromImageToBuffer( QImage * iImage )
 
     for( int y = minY; y <= maxY; ++y )
     {
-        sourceScanline = sourceData + y * bpl + minX * 4;
+        const int sourceAndAlphaIndex = y * bpl + minX * 4;
+        sourceScanline = sourceData + sourceAndAlphaIndex;
+        maskScanline = maskData + sourceAndAlphaIndex + 3; // +3 to read alpha
         bufferScanline = bufferData + (y - minY) * bufferBpl;
 
         for( int x = minX; x <= maxX; ++x )
         {
+            if( *maskScanline == 0 )
+            {
+                sourceScanline += 4;
+                maskScanline += 4;
+
+                *bufferScanline = 0; ++bufferScanline;
+                *bufferScanline = 0; ++bufferScanline;
+                *bufferScanline = 0; ++bufferScanline;
+                *bufferScanline = 0; ++bufferScanline;
+
+                continue;
+            }
+
             // Extract pixels to buffer, and clears them from original image
             *bufferScanline = *sourceScanline;      ++bufferScanline;
             *sourceScanline = 0;++sourceScanline;
@@ -113,6 +134,8 @@ cSelection::ExtractPixelsFromImageToBuffer( QImage * iImage )
             *sourceScanline = 0;++sourceScanline;
             *bufferScanline = *sourceScanline;      ++bufferScanline;
             *sourceScanline = 0; ++sourceScanline;
+
+            maskScanline += 4;
         }
     }
 }
@@ -126,13 +149,16 @@ void cSelection::TransformSelection( const QTransform& iTransfo, double iXScale,
 
     QRect dirtyArea = GetTransformationBBox();
 
+    const int newWidth = mExtratedBuffer->width() * iXScale;
+    const int newHeight = mExtratedBuffer->height() * iYScale;
+
     mTransfoWidth = mExtratedBuffer->width() * iXScale;
     mTransfoHeight = mExtratedBuffer->height() * iYScale;
-    mTransfoOffset = mSelectionBBox.topLeft() + QPointF( iTransfo.dx(), iTransfo.dy() );
+    mTransfoOffset = mOriginalSelectionBBox.topLeft() + QPointF( iTransfo.dx(), iTransfo.dy() );
 
     QImage scaledBuffer = mExtratedBuffer->scaled( mTransfoWidth, mTransfoHeight, Qt::AspectRatioMode::IgnoreAspectRatio, Qt::TransformationMode::FastTransformation );
 
-    dirtyArea.united( GetTransformationBBox() );
+    //dirtyArea = dirtyArea.united( GetTransformationBBox() );
 
     CopyImage( &scaledBuffer, mTransformationBuffer, QPoint( mTransfoOffset.x(), mTransfoOffset.y() ) );
     mAssociatedClip->DirtyArea( dirtyArea );
@@ -142,14 +168,20 @@ void cSelection::TransformSelection( const QTransform& iTransfo, double iXScale,
 void
 cSelection::CancelTransformation()
 {
-    CopyImage( mExtratedBuffer, mOriginalImage, mSelectionBBox.topLeft() );
+    QRect dirtyArea = GetTransformationBBox();
+    BlendImageNormal( mExtratedBuffer, mOriginalImage, mOriginalSelectionBBox.topLeft() );
+    dirtyArea = dirtyArea.united( mOriginalSelectionBBox );
+    mAssociatedClip->DirtyArea( dirtyArea );
+    Clear();
 }
 
 
 void
 cSelection::ApplyTransformation()
 {
-    CopyImage( mExtratedBuffer, mOriginalImage, mSelectionBBox.topLeft() );//TODO: need transfo for that (at least the translation i guess)
+    BlendImageNormal( mExtratedBuffer, mOriginalImage, GetTransformationBBox().topLeft() );
+    mAssociatedClip->DirtyArea( GetTransformationBBox() );
+    Clear();
 }
 
 
@@ -163,7 +195,7 @@ cSelection::GetSelectionEdgeMask()
 QRect
 cSelection::GetSelectionBBox() const
 {
-    return  mSelectionBBox;
+    return  mOriginalSelectionBBox;
 }
 
 
@@ -218,8 +250,8 @@ cSelection::_FilterAlpha()
         }
     }
 
-    mSelectionBBox.setTopLeft( QPoint( minX, minY ) );
-    mSelectionBBox.setBottomRight( QPoint( maxX, maxY ) ) ;
+    mOriginalSelectionBBox.setTopLeft( QPoint( minX, minY ) );
+    mOriginalSelectionBBox.setBottomRight( QPoint( maxX, maxY ) ) ;
 }
 
 

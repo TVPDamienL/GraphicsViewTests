@@ -66,7 +66,7 @@ private:
     cClip*          mAssociatedClip = 0;
     QImage*         mMaskImage = 0;
     QImage*         mEdgeDetectedMaskImage = 0;
-    QRect           mSelectionBBox;
+    QRect           mOriginalSelectionBBox;
 
     bool            mActive = false;
     QImage*         mOriginalImage = 0;         // The original image the selection is working on
