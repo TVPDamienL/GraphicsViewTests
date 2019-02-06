@@ -26,7 +26,7 @@ cHUDHandle::Draw( QPainter* iPainter )
     ResetTransformation();
     CenterScale( mOriginalFrame.center(), 1/GlobalXScale(), 1/GlobalYScale() );
 
-    iPainter->drawRect( ToHUDCoords( mOriginalFrame ) );
+    iPainter->drawRect( GetFinalTransform().mapRect( mOriginalFrame ) );
 }
 
 

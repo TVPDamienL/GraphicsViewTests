@@ -102,7 +102,7 @@ QRect
 cToolSelectionTest::EndDrawing()
 {
     mTheSelection->ProcessEdgeDetection();
-    mTheSelection->ExtractPixelsFromImageToBuffer( mDrawingContext );
+    mTheSelection->ExtractPixelsFromImageToBuffer();
     mTheSelection->SetActive( true );
     mTheSelection->EmitPainted();
     return  ToolBase::EndDrawing();

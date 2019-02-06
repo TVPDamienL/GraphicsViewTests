@@ -4,6 +4,7 @@
 
 #include "cHUDView.h"
 
+
 cHUDTransform::~cHUDTransform()
 {
 }
@@ -12,17 +13,12 @@ cHUDTransform::~cHUDTransform()
 cHUDTransform::cHUDTransform( cHUDView* iParentView, cHUDObject* iParentObject ) :
     cHUDObject( iParentView, iParentObject )
 {
-    auto topLeft = new cHUDHandle( iParentView, this );
-    mChildrenHUDs.push_back( topLeft );
-
-    auto topRight = new cHUDHandle( iParentView, this );
-    mChildrenHUDs.push_back( topRight );
-
-    auto botRight = new cHUDHandle( iParentView, this );
-    mChildrenHUDs.push_back( botRight );
-
-    auto botLeft = new cHUDHandle( iParentView, this );
-    mChildrenHUDs.push_back( botLeft );
+    mChildrenHUDs.push_back( new cHUDHandle( iParentView, this ) );
+    mChildrenHUDs.push_back( new cHUDHandle( iParentView, this ) );
+    mChildrenHUDs.push_back( new cHUDHandle( iParentView, this ) );
+    mChildrenHUDs.push_back( new cHUDHandle( iParentView, this ) );
+    mPivot = new cHUDHandle( iParentView, this );
+    mChildrenHUDs.push_back( mPivot );
 
     mVisible = false;
 
@@ -41,7 +37,7 @@ cHUDTransform::Draw( QPainter * iPainter )
     QPen pen( Qt::red );
     pen.setWidth( 1 );
     iPainter->setPen( pen );
-    iPainter->drawRect( ToHUDCoords( mOriginalFrame ) );
+    iPainter->drawPolygon( ToHUDCoords( mOriginalFrame ) );
 }
 
 
@@ -82,8 +78,9 @@ cHUDTransform::Event( QEvent * iEvent )
             mOriginTranslation = mTranslation;
             mOriginXScale = mXScale;
             mOriginYScale = mYScale;
-            mOriginGlobalXScale = GlobalXScale();
-            mOriginGlobalYScale = GlobalYScale();
+            mOriginRotation = mRotationAngle;
+            mOriginTransformInverse = GetFinalTransform().inverted();
+            mOriginLocalTransform = GetLocalTransform();
 
             int index;
             mFocusedHandle          = _GetHandleAtPoint( &index, eventAsMouse->pos() );
@@ -99,11 +96,9 @@ cHUDTransform::Event( QEvent * iEvent )
         case QEvent::MouseMove :
             eventAsMouse = dynamic_cast< QMouseEvent* >( iEvent );
 
-            if( mFocusedHandle )
+            if( mFocusedHandle && mFocusedHandle != mPivot )
             {
-                QPointF offset = (eventAsMouse->pos() - mClickOrigin);
-                offset.setX( offset.x() / mOriginGlobalXScale );
-                offset.setY( offset.y() / mOriginGlobalYScale );
+                QPointF offset = ( mOriginTransformInverse.map( eventAsMouse->pos() ) - mOriginTransformInverse.map( mClickOrigin) );
 
                 auto currentHandleVector = mFocusedHandle->GetFrame().topLeft() + offset - mFocusedHandleOpposite->GetFrame().topLeft();
 
@@ -115,6 +110,34 @@ cHUDTransform::Event( QEvent * iEvent )
                 mYScale = mOriginYScale;
 
                 CenterScale( mFocusedHandleOpposite->GetFrame().center(), xScale, yScale );
+            }
+            else if( mFocusedHandle == mPivot )
+            {
+                auto clickMapped    = mOriginTransformInverse.map( mClickOrigin );
+                auto centerMapper   = mOriginalFrame.center();
+                auto currentMapped  = mOriginTransformInverse.map( eventAsMouse->pos() );
+
+                QPointF originVector = clickMapped - centerMapper;
+                QPointF newVector = currentMapped - centerMapper;
+
+                double firstAngle = atan2( originVector.y(), originVector.x() );
+                double secondAngle = atan2( newVector.y(), newVector.x() );
+
+                double theAngle = secondAngle - firstAngle;
+
+                mTranslation = mOriginTranslation;
+                mRotationAngle = mOriginRotation;
+                _mCosAngle = cos( mOriginRotation );
+                _mSinAngle = sin( mOriginRotation );
+
+                //CenterRotation( mOriginalFrame.center(), 20 * PI/180 );
+                CenterRotationPostTransform( mOriginLocalTransform.map( mOriginalFrame.center() ), theAngle );
+                //const auto point = mOriginalFrame.center();
+                //const auto point = QPointF( 250, 250 );
+                //CenterRotation( point, theAngle );
+
+                //qDebug() << "Angle : " << theAngle * 180/PI;
+                //qDebug() << "Pt : " << point;
             }
             else
             {
@@ -179,7 +202,10 @@ cHUDTransform::_LayoutChildren()
     auto topLeft = mChildrenHUDs[ 0 ];
     topLeft->SetFrame( frame );
 
-    frame.translate( QPoint( mOriginalFrame.width(), 0 ) );
+    frame.translate( mOriginalFrame.width() / 2, 0 );
+    mPivot->SetFrame( frame );
+
+    frame.translate( mOriginalFrame.width() / 2, 0 );
     auto topRight = mChildrenHUDs[ 1 ];
     topRight->SetFrame( frame );
 
@@ -190,6 +216,14 @@ cHUDTransform::_LayoutChildren()
     frame.translate( QPoint( -mOriginalFrame.width(), 0 ) );
     auto botLeft = mChildrenHUDs[ 3 ];
     botLeft->SetFrame( frame );
+
+
+    mPolygon.clear();
+    mPolygon.append( QPointF( 0, 0 ) );
+    mPolygon.append( QPointF( 10, 0 ) );
+    mPolygon.append( QPointF( 10, 10 ) );
+    mPolygon.append( QPointF( 0, 10 ) );
+    mPolygon.translate( mOriginalFrame.center() );
 }
 
 

@@ -75,9 +75,8 @@ cSelection::ProcessEdgeDetection()
 
 
 void
-cSelection::ExtractPixelsFromImageToBuffer( QImage * iImage )
+cSelection::ExtractPixelsFromImageToBuffer()
 {
-    mOriginalImage = iImage;
     const QRect selectionBBox = GetSelectionBBox();
     const int bboxWidth = mOriginalSelectionBBox.width();
     const int bboxHeight = mOriginalSelectionBBox.height();
@@ -158,8 +157,9 @@ void cSelection::TransformSelection( const QTransform& iTransfo, double iXScale,
     mTransfoWidth = mExtratedBuffer->width() * iXScale;
     mTransfoHeight = mExtratedBuffer->height() * iYScale;
     mTransfoOffset = QPointF( iTransfo.dx(), iTransfo.dy() );
+    QTransform transfinal = QTransform() * QTransform::fromScale( iXScale, iYScale );
 
-    QImage scaledBuffer = mExtratedBuffer->scaled( mTransfoWidth, mTransfoHeight, Qt::AspectRatioMode::IgnoreAspectRatio, Qt::TransformationMode::FastTransformation );
+    QImage scaledBuffer = mExtratedBuffer->transformed( transfinal );
 
     //dirtyArea = dirtyArea.united( GetTransformationBBox() );
 

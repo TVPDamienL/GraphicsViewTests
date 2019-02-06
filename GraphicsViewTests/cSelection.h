@@ -27,6 +27,7 @@ public:
 public:
     QImage* GetSelectionMask();
     QImage* GetSelectionContentImage();
+    void    SetOriginalImage( QImage* iImage ) { mOriginalImage = iImage; }
 
     bool    IsActive() const;
     void    SetActive( bool iActive );
@@ -38,16 +39,16 @@ public:
     void  ProcessEdgeDetection();
 
 public:
-    void ExtractPixelsFromImageToBuffer( QImage* iImage );
+    void ExtractPixelsFromImageToBuffer();
     void TransformSelection( const QTransform& iTransfo, double iXScale, double iYScale ); // Dirties the clip
     void CancelTransformation(); // Dirties the clip
-    void ApplyTransformation();
+    void ApplyTransformation(); // Dirties the clip
 
 
 public:
-    QImage* GetSelectionEdgeMask();
-    QRect   GetSelectionBBox() const;
-    inline QRect   GetTransformationBBox() const
+    QImage*         GetSelectionEdgeMask();
+    QRect           GetSelectionBBox() const;
+    inline QRect    GetTransformationBBox() const
     {
         return  QRect( mOriginalSelectionBBox.left() + mTransfoOffset.x(),
                        mOriginalSelectionBBox.top() + mTransfoOffset.y(),
@@ -75,9 +76,9 @@ private:
     cConvolution    mEdgeDetectionConvolution;
 
     // Transformations
-    QPointF         mTransfoOffset = QPoint( 0, 0 );
-    double          mTransfoWidth = 0.0;
-    double          mTransfoHeight = 0.0;
-    double          mTransfoRotation = 0.0;
+    QPointF         mTransfoOffset      = QPoint( 0, 0 );
+    double          mTransfoWidth       = 0.0;
+    double          mTransfoHeight      = 0.0;
+    double          mTransfoRotation    = 0.0;
 };
 

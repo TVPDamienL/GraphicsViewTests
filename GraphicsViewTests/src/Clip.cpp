@@ -80,7 +80,10 @@ cClip::AddLayer()
 {
     mLayers.push_back( new cLayer( mWidth, mHeight ) );
     if( !mCurrentLayer )
+    {
         mCurrentLayer = mLayers.back();
+        mSelection->SetOriginalImage( mCurrentLayer->Image() );
+    }
 }
 
 
@@ -176,7 +179,7 @@ cClip::GetSelection()
 void
 cClip::ExtractSelection()
 {
-    mSelection->ExtractPixelsFromImageToBuffer( mCurrentFrameRendering );
+    mSelection->ExtractPixelsFromImageToBuffer();
 }
 
 

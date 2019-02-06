@@ -44,6 +44,8 @@ cHUDObject::ResetTransformation()
     mXScale = 1.0;
     mYScale = 1.0;
     mRotationAngle = 0.0;
+    _mCosAngle = 1;
+    _mSinAngle = 0;
 }
 
 
@@ -65,11 +67,66 @@ cHUDObject::ScaleBy( double iXScale, double iYScale )
 
 
 void
+cHUDObject::RotateBy( double iAngle )
+{
+    mRotationAngle += iAngle;
+    _mCosAngle = cos( mRotationAngle );
+    _mSinAngle = sin( mRotationAngle );
+}
+
+
+void
 cHUDObject::CenterScale( const QPointF & iCenter, double iXScale, double iYScale )
 {
-    mTranslation.setX( mXScale * ( iCenter.x() - iXScale * iCenter.x() ) + mTranslation.x() );
-    mTranslation.setY( mYScale * ( iCenter.y() - iYScale * iCenter.y() ) + mTranslation.y() );
+    const double xPart = mXScale * (iCenter.x() - iXScale * iCenter.x());
+    const double yPart = mYScale * (iCenter.y() - iYScale * iCenter.y());
+
+    mTranslation.setX( _mCosAngle * xPart - _mSinAngle * yPart + mTranslation.x() );
+    mTranslation.setY( _mSinAngle * xPart + _mCosAngle * yPart + mTranslation.y() );
+
     ScaleBy( iXScale, iYScale );
+}
+
+
+void
+cHUDObject::CenterRotation( const QPointF & iCenter, double iAngle )
+{
+    const double cosAngle = cos( iAngle );
+    const double sinAngle = sin( iAngle );
+
+    //const double xPart = (sinAngle * iCenter.y() - cosAngle * iCenter.x() + iCenter.x()) * mXScale;
+    //const double yPart =  (-cosAngle * iCenter.y() + iCenter.y() - sinAngle * iCenter.x()) * mYScale;
+
+    //mTranslation.setX( _mCosAngle * xPart - _mSinAngle * yPart + mTranslation.x() );
+    //mTranslation.setY( _mSinAngle * xPart + _mCosAngle * yPart + mTranslation.y() );
+
+    // C.iS.T.R.iT.S TODO: explain why
+
+    const double xPart = sinAngle * iCenter.y() - cosAngle * iCenter.x() + iCenter.x();
+    const double yPart = -cosAngle * iCenter.y() + iCenter.y() - sinAngle * iCenter.x();
+
+    mTranslation.setX( _mCosAngle * xPart - _mSinAngle * yPart / mYScale + mTranslation.x() );
+    mTranslation.setY( _mSinAngle * xPart / mXScale + _mCosAngle * yPart + mTranslation.y() );
+
+
+    RotateBy( iAngle );
+}
+
+
+void
+cHUDObject::CenterRotationPostTransform( const QPointF & iCenter, double iAngle )
+{
+    const double cosAngle = cos( iAngle );
+    const double sinAngle = sin( iAngle );
+
+    const double xPart = mTranslation.x() - iCenter.x();
+    const double yPart = mTranslation.y() - iCenter.y();
+
+    mTranslation.setX( cosAngle * xPart - sinAngle * yPart + iCenter.x() );
+    mTranslation.setY( sinAngle * xPart + cosAngle * yPart + iCenter.y() );
+
+
+    RotateBy( iAngle );
 }
 
 
@@ -147,10 +204,10 @@ cHUDObject::Visible( bool iVisible )
 }
 
 
-QRectF
+QPolygonF
 cHUDObject::ToHUDCoords( const QRectF & iRect )
 {
-    return  GetFinalTransform().mapRect( iRect );
+    return  GetFinalTransform().mapToPolygon( QRect( iRect.x(), iRect.y(), iRect.width(), iRect.height() ) );
 }
 
 
@@ -191,7 +248,8 @@ cHUDObject::GetFinalTransform() const
 QTransform
 cHUDObject::GetLocalTransform() const
 {
-    return QTransform::fromScale( mXScale, mYScale ) * QTransform::fromTranslate( mTranslation.x(), mTranslation.y() );
+    QTransform rotate = QTransform().rotate( mRotationAngle * 180 / PI );
+    return QTransform::fromScale( mXScale, mYScale ) * rotate * QTransform::fromTranslate( mTranslation.x(), mTranslation.y() );
 }
 
 

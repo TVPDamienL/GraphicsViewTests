@@ -6,7 +6,8 @@
 
 
 
-
+// Sets area with color
+// This is like a memset
 static
 void
 HardFill( QImage* dest, const QRect& area, const QColor& color )
@@ -121,6 +122,11 @@ BlendImageNormal( QImage* source, QImage* destination, const QPoint& point )
         }
     }
 }
+
+
+//================================================================
+//================================================================
+//================================================================
 
 
 // Assumes source && dest have same size

@@ -38,6 +38,8 @@ private:
 
 private:
     int             mHandleSize = 10;
+    cHUDHandle*     mPivot;
+
     cHUDHandle*     mFocusedHandle = 0;
     cHUDHandle*     mFocusedHandleOpposite = 0;
     cSelection*     mSelection;
@@ -47,8 +49,8 @@ private:
     QPointF         mOriginTranslation;
     double          mOriginXScale;
     double          mOriginYScale;
-    double          mOriginGlobalXScale;
-    double          mOriginGlobalYScale;
     double          mOriginRotation;
+    QTransform      mOriginTransformInverse;
+    QTransform      mOriginLocalTransform;
 };
 
