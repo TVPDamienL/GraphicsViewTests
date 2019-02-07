@@ -69,7 +69,6 @@ protected:
     QVector< cHUDObject* >  mChildrenHUDs;
 
     QRectF                  mOriginalFrame;
-    QPolygonF               mPolygon;
     bool                    mVisible = true;
 
     QPointF                 mTranslation = QPointF( 0, 0 );

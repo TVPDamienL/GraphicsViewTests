@@ -60,9 +60,7 @@ cSelection::Clear()
 {
     mMaskImage->fill( Qt::transparent );
     SetActive( false );
-    mTransfoWidth = 0;
-    mTransfoHeight = 0;
-    mTransfoOffset = QPointF( 0, 0 );
+    mTransformationBBox = QRectF( 0, 0, 0, 0 );
 }
 
 
@@ -144,22 +142,20 @@ cSelection::ExtractPixelsFromImageToBuffer()
 
 
 
-void cSelection::TransformSelection( const QTransform& iTransfo, double iXScale, double iYScale )
+void cSelection::TransformSelection( const QTransform& iTransfo, const QRectF& iTransformedBBox )
 {
     if( !mExtratedBuffer )
         return;
 
     QRect dirtyArea = GetTransformationBBox();
 
-    const int newWidth = mExtratedBuffer->width() * iXScale;
-    const int newHeight = mExtratedBuffer->height() * iYScale;
+    mTransformationBBox = iTransformedBBox;
+    mTransformationBBox.setTopLeft( mOriginalSelectionBBox.topLeft() + QPointF( iTransfo.dx(), iTransfo.dy() ) );
 
-    mTransfoWidth = mExtratedBuffer->width() * iXScale;
-    mTransfoHeight = mExtratedBuffer->height() * iYScale;
-    mTransfoOffset = QPointF( iTransfo.dx(), iTransfo.dy() );
-    QTransform transfinal = QTransform() * QTransform::fromScale( iXScale, iYScale );
+    auto transfoWithoutTranslatioon = QTransform();
+    transfoWithoutTranslatioon.setMatrix( iTransfo.m11(), iTransfo.m12(), iTransfo.m13(), iTransfo.m21(), iTransfo.m22(), iTransfo.m23(), 0, 0, 1 );
 
-    QImage scaledBuffer = mExtratedBuffer->transformed( transfinal );
+    QImage scaledBuffer = mExtratedBuffer->transformed( transfoWithoutTranslatioon );
 
     //dirtyArea = dirtyArea.united( GetTransformationBBox() );
 

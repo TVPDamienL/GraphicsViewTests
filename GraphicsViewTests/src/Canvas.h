@@ -50,7 +50,10 @@ public:
     void  toolChanged( const QModelIndex& Left, const QModelIndex& Right, const QVector< int >& Roles );
 
 public:
+    void  TranslateBy( const QPoint& iOffset );
     void  ScaleFromCenter( const QPoint& iCenter, double iScale );
+    void  RotateFromCenterPost( const QPoint& iCenter, double iAngle ); // Post transform = happens at the end of the pipeline = center in Transformed coordinates
+    void  _RecomputeMatrix();
 
 signals:
     void  currentFrameGotPainted( const QPixmap& iPixmap );
@@ -67,6 +70,7 @@ private:
         kIdle,
         kPan,
         kZoom,
+        kRotate,
         kDrawing
     };
 
@@ -89,8 +93,16 @@ private:
     // Transform
     QPointF             mTranslation = QPointF( 0, 0 );
     double              mRotationAngle = 0.0F;
+    double              _mCosAngle = 1;
+    double              _mSinAngle = 0;
     double              mScale = 1.0F;
     QTransform          mTransform;
+
+     QPointF            mOriginTranslation;
+     double             mOriginScale;
+     double             mOriginRotation;
+     QTransform         mOriginTransformInverse;
+
 
 
     QPointF             mClickPos;

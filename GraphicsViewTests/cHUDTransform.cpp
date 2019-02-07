@@ -81,6 +81,7 @@ cHUDTransform::Event( QEvent * iEvent )
             mOriginRotation = mRotationAngle;
             mOriginTransformInverse = GetFinalTransform().inverted();
             mOriginLocalTransform = GetLocalTransform();
+            mOriginViewportTransformInverse = mParentView->GetTransform().inverted();
 
             int index;
             mFocusedHandle          = _GetHandleAtPoint( &index, eventAsMouse->pos() );
@@ -130,22 +131,15 @@ cHUDTransform::Event( QEvent * iEvent )
                 _mCosAngle = cos( mOriginRotation );
                 _mSinAngle = sin( mOriginRotation );
 
-                //CenterRotation( mOriginalFrame.center(), 20 * PI/180 );
                 CenterRotationPostTransform( mOriginLocalTransform.map( mOriginalFrame.center() ), theAngle );
-                //const auto point = mOriginalFrame.center();
-                //const auto point = QPointF( 250, 250 );
-                //CenterRotation( point, theAngle );
-
-                //qDebug() << "Angle : " << theAngle * 180/PI;
-                //qDebug() << "Pt : " << point;
             }
             else
             {
-                QPointF offset = eventAsMouse->pos() - mClickOrigin;
-                mTranslation = mOriginTranslation + offset / mParentView->Scale();
+                QPointF offset = mOriginViewportTransformInverse.map( eventAsMouse->pos() ) - mOriginViewportTransformInverse .map( mClickOrigin );
+                mTranslation = mOriginTranslation + offset ;
             }
 
-            mSelection->TransformSelection( _GetLocalTransformWithTopLeftOriginNoScale(), mXScale, mYScale );
+            TransformImage();
 
             return  true;
 
@@ -216,14 +210,6 @@ cHUDTransform::_LayoutChildren()
     frame.translate( QPoint( -mOriginalFrame.width(), 0 ) );
     auto botLeft = mChildrenHUDs[ 3 ];
     botLeft->SetFrame( frame );
-
-
-    mPolygon.clear();
-    mPolygon.append( QPointF( 0, 0 ) );
-    mPolygon.append( QPointF( 10, 0 ) );
-    mPolygon.append( QPointF( 10, 10 ) );
-    mPolygon.append( QPointF( 0, 10 ) );
-    mPolygon.translate( mOriginalFrame.center() );
 }
 
 
@@ -253,18 +239,34 @@ cHUDTransform::_GetOppositeHandle( int iIndex )
 }
 
 
-QTransform
-cHUDTransform::_GetLocalTransformWithTopLeftOriginNoScale() const
+void
+cHUDTransform::TransformImage() const
 {
     auto localTransfor = GetLocalTransform();
-    QPointF topLeft = mOriginalFrame.topLeft();
-    QPointF topLeftLocalMap = localTransfor.map( topLeft );
-    QPointF diff = topLeftLocalMap - topLeft;
-    double cosAngle = 1; // cos( mAngle )
-    double sinAngle = 0; // sin( mAngle )
 
-    localTransfor.setMatrix( cosAngle, sinAngle, 0, -sinAngle, cosAngle, 0, diff.x(), diff.y(), 1 );
-    return  localTransfor;
+    QPolygon transfo =  localTransfor.mapToPolygon( QRect( mOriginalFrame.x(), mOriginalFrame.y(), mOriginalFrame.width(), mOriginalFrame.height() ) );
+
+    int minX = 99999;
+    int minY = 99999;
+    int maxX = -1;
+    int maxY = -1;
+
+    for( auto point : transfo )
+    {
+        minX = point.x() < minX ? point.x() : minX;
+        minY = point.y() < minY ? point.y() : minY;
+        maxX = point.x() > maxX ? point.x() : maxX;
+        maxY = point.y() > maxY ? point.y() : maxY;
+    }
+    QRect transfoBBox( minX, minY, maxX - minX, maxY - minY );
+
+    QPointF topLeft = mOriginalFrame.topLeft();
+    QPointF diff = transfoBBox.topLeft() - topLeft;
+    double cosAngle = _mCosAngle;
+    double sinAngle = _mSinAngle;
+
+    localTransfor.setMatrix( cosAngle*mXScale, sinAngle*mXScale, 0, -sinAngle*mYScale, cosAngle*mYScale, 0, diff.x(), diff.y(), 1 );
+    mSelection->TransformSelection( localTransfor, transfoBBox );
 }
 
 

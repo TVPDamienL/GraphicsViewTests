@@ -253,9 +253,17 @@ cCanvas::mousePressEvent( QMouseEvent * iEvent )
 
     if( iEvent->button() == Qt::LeftButton )
     {
-        if( QApplication::keyboardModifiers() & Qt::AltModifier )
+        if( QApplication::keyboardModifiers() == Qt::AltModifier )
         {
             mState = kPan;
+            mOriginTranslation = mTranslation;
+        }
+        else if( QApplication::keyboardModifiers() == ( Qt::AltModifier | Qt::ShiftModifier ) )
+        {
+            mState = kRotate;
+
+            mOriginTranslation = mTranslation;
+            mOriginRotation = mRotationAngle;
         }
         else
         {
@@ -298,20 +306,45 @@ cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
     if( mState == kPan )
     {
         QPointF offset = iEvent->pos() - mClickPos;
-        QPointF pos = mEditableItem->pos() + offset;
-        mTranslation += pos;
 
-        mTransform *= QTransform::fromTranslate( pos.x(), pos.y() );
+        mTranslation = mOriginTranslation;
+        TranslateBy( QPoint( offset.x(), offset.y() ) );
 
         mEditableItem->setTransform( mTransform );
         mGridItem->setTransform( mTransform );
         mHUDSelection->setTransform( mTransform );
 
-        mHUDView->mTranslation = mTranslation;
+        mHUDView->SetTranslation( mTranslation );
+    }
+    else if( mState == kRotate )
+    {
+        auto canvasCenter   = QPoint( width()/2, height()/2 );
+        auto currentClick  = iEvent->pos();
+
+        QPointF originVector = mClickPos - canvasCenter;
+        QPointF newVector = currentClick - canvasCenter;
+
+        double firstAngle = atan2( originVector.y(), originVector.x() );
+        double secondAngle = atan2( newVector.y(), newVector.x() );
+
+        double theAngle = secondAngle - firstAngle;
+
+        mTranslation = mOriginTranslation;
+        mRotationAngle = mOriginRotation;
+        _mCosAngle = cos( mOriginRotation );
+        _mSinAngle = sin( mOriginRotation );
+
+        RotateFromCenterPost( canvasCenter, theAngle );
+
+        mEditableItem->setTransform( mTransform );
+        mGridItem->setTransform( mTransform );
+        mHUDSelection->setTransform( mTransform );
+
+        mHUDView->SetTranslation( mTranslation );
+        mHUDView->SetRotation( mRotationAngle );
     }
     else if( mState == kDrawing )
     {
-        QPointF originInItemCoordinate = mEditableItem->mapFromScene( mapToScene( mClickPos.x(), mClickPos.y() ) );
         QPointF newPointInItemCoordinate = mEditableItem->mapFromScene( mapToScene( iEvent->pos().x(), iEvent->pos().y() ) );
 
         sPointData point;
@@ -324,7 +357,6 @@ cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
             mClip->DirtyArea( dirty );
     }
 
-    mClickPos = iEvent->pos();
     QGraphicsView::mouseMoveEvent( iEvent );
 }
 
@@ -375,8 +407,8 @@ cCanvas::wheelEvent( QWheelEvent * iEvent )
         mEditableItem->setTransform( mTransform );
         mHUDSelection->setTransform( mTransform );
 
-        mHUDView->mScale = mScale;
-        mHUDView->mTranslation = mTranslation;
+        mHUDView->SetScale( mScale );
+        mHUDView->SetTranslation( mTranslation );
 
 
         emit zoomChanged( mScale );
@@ -476,16 +508,53 @@ cCanvas::toolChanged( const QModelIndex & Left, const QModelIndex & Right, const
 
 
 void
+cCanvas::TranslateBy( const QPoint & iOffset )
+{
+    mTranslation += iOffset;
+    _RecomputeMatrix();
+}
+
+
+void
 cCanvas::ScaleFromCenter( const QPoint & iCenter, double iScale )
 {
-    mTransform.translate( iCenter.x(), iCenter.y() );
-    mTransform.scale( iScale, iScale );
-    mTransform.translate( -iCenter.x(), -iCenter.y() );
+    const double xPart = mScale * (iCenter.x() - iScale * iCenter.x());
+    const double yPart = mScale * (iCenter.y() - iScale * iCenter.y());
 
-    // NO QT
-    mTranslation.setX( mScale * ( iCenter.x() - iScale * iCenter.x() ) + mTranslation.x() );
-    mTranslation.setY( mScale * ( iCenter.y() - iScale * iCenter.y() ) + mTranslation.y() );
+    mTranslation.setX( _mCosAngle * xPart - _mSinAngle * yPart + mTranslation.x() );
+    mTranslation.setY( _mSinAngle * xPart + _mCosAngle * yPart + mTranslation.y() );
+
     mScale *= iScale;
+    _RecomputeMatrix();
+}
+
+
+void
+cCanvas::RotateFromCenterPost( const QPoint & iCenter, double iAngle )
+{
+    const double cosAngle = cos( iAngle );
+    const double sinAngle = sin( iAngle );
+
+    const double xPart = mTranslation.x() - iCenter.x();
+    const double yPart = mTranslation.y() - iCenter.y();
+
+    mTranslation.setX( cosAngle * xPart - sinAngle * yPart + iCenter.x() );
+    mTranslation.setY( sinAngle * xPart + cosAngle * yPart + iCenter.y() );
+
+    mRotationAngle += iAngle;
+    _mCosAngle = cos( mRotationAngle );
+    _mSinAngle = sin( mRotationAngle );
+    _RecomputeMatrix();
+}
+
+
+void
+cCanvas::_RecomputeMatrix()
+{
+    const double cosScaled = _mCosAngle * mScale;
+    const double sinScaled = _mSinAngle * mScale;
+
+    mTransform.setMatrix( cosScaled, sinScaled, 0, -sinScaled, cosScaled, 0, mTranslation.x(), mTranslation.y(), 1 );
 }
 
 
@@ -499,8 +568,8 @@ cCanvas::SetZoom( double iZoom )
 
     mEditableItem->setTransform( mTransform );
     mHUDSelection->setTransform( mTransform );
-    mHUDView->mScale = mScale;
-    mHUDView->mTranslation = mTranslation;
+    mHUDView->SetScale( mScale );
+    mHUDView->SetTranslation( mTranslation );
 
     UpCursor();
     UpdateGridItem();

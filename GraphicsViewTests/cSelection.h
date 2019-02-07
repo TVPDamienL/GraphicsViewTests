@@ -40,7 +40,7 @@ public:
 
 public:
     void ExtractPixelsFromImageToBuffer();
-    void TransformSelection( const QTransform& iTransfo, double iXScale, double iYScale ); // Dirties the clip
+    void TransformSelection( const QTransform& iTransfo, const QRectF& iTransformedBBox ); // Dirties the clip
     void CancelTransformation(); // Dirties the clip
     void ApplyTransformation(); // Dirties the clip
 
@@ -50,10 +50,10 @@ public:
     QRect           GetSelectionBBox() const;
     inline QRect    GetTransformationBBox() const
     {
-        return  QRect( mOriginalSelectionBBox.left() + mTransfoOffset.x(),
-                       mOriginalSelectionBBox.top() + mTransfoOffset.y(),
-                       mTransfoWidth,
-                       mTransfoHeight );
+        return  QRect( mTransformationBBox.left(),
+                       mTransformationBBox.top(),
+                       mTransformationBBox.width(),
+                       mTransformationBBox.height() );
     }
 
 public:
@@ -76,9 +76,6 @@ private:
     cConvolution    mEdgeDetectionConvolution;
 
     // Transformations
-    QPointF         mTransfoOffset      = QPoint( 0, 0 );
-    double          mTransfoWidth       = 0.0;
-    double          mTransfoHeight      = 0.0;
-    double          mTransfoRotation    = 0.0;
+    QRectF         mTransformationBBox;
 };
 

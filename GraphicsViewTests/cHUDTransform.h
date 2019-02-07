@@ -31,10 +31,7 @@ private:
 
     // Returns the transformation that transforms this object, having the top left corner as origin
     // So this represents the transformation this hud had from his original position
-    // It removes scale so we can apply it aside
-    // Because we wanna use QT's rescale method, and then apply rotation + translation ourselves
-    // So we pass scale aside, and get a scale free matrix
-    QTransform      _GetLocalTransformWithTopLeftOriginNoScale() const;
+    void            TransformImage() const;
 
 private:
     int             mHandleSize = 10;
@@ -52,5 +49,6 @@ private:
     double          mOriginRotation;
     QTransform      mOriginTransformInverse;
     QTransform      mOriginLocalTransform;
+    QTransform      mOriginViewportTransformInverse;
 };
 

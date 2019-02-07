@@ -139,7 +139,7 @@ cHUDView::wheelEvent( QWheelEvent * iEvent )
 QTransform
 cHUDView::GetTransform()
 {
-    return  QTransform::fromScale( mScale, mScale ) * QTransform::fromTranslate( mTranslation.x(), mTranslation.y() );
+    return  mTransform;
 }
 
 
@@ -147,6 +147,7 @@ void
 cHUDView::TranslateBy( const QPointF & iOffset )
 {
     mTranslation += iOffset;
+    _RecomputeMatrix();
     update();
 }
 
@@ -155,6 +156,7 @@ void
 cHUDView::ScaleBy( double iScale )
 {
     mScale *= iScale;
+    _RecomputeMatrix();
     update();
 }
 
@@ -181,6 +183,32 @@ cHUDView::RotationAngle() const
 
 
 void
+cHUDView::SetTranslation( const QPointF & iTranslation )
+{
+    mTranslation = iTranslation;
+    _RecomputeMatrix();
+}
+
+
+void
+cHUDView::SetScale( double iScale )
+{
+    mScale = iScale;
+    _RecomputeMatrix();
+}
+
+
+void
+cHUDView::SetRotation( double iAngle )
+{
+    mRotationAngle = iAngle;
+    _mCosAngle = cos( iAngle );
+    _mSinAngle = sin( iAngle );
+    _RecomputeMatrix();
+}
+
+
+void
 cHUDView::AddHUDObject( cHUDObject * iObject )
 {
     mHUDObjects.push_back( iObject );
@@ -198,4 +226,14 @@ cHUDView::GetVisibleHUDObjectAtPos( const QPointF & iPoint )
     }
 
     return  0;
+}
+
+
+void
+cHUDView::_RecomputeMatrix()
+{
+    const double cosScaled = _mCosAngle * mScale;
+    const double sinScaled = _mSinAngle * mScale;
+
+    mTransform.setMatrix( cosScaled, sinScaled, 0, -sinScaled, cosScaled, 0, mTranslation.x(), mTranslation.y(), 1 );
 }

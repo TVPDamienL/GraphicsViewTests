@@ -41,19 +41,28 @@ public:
     double          Scale() const;
     double          RotationAngle() const;
 
+    void            SetTranslation( const QPointF& iTranslation );
+    void            SetScale( double iScale );
+    void            SetRotation( double iAngle );
+
 public:
     void        AddHUDObject( cHUDObject* iObject );
     cHUDObject* GetVisibleHUDObjectAtPos( const QPointF& iPoint );
 
 private:
+    void  _RecomputeMatrix();
+
+private:
     QVector< cHUDObject* >  mHUDObjects;
     cHUDObject*             mPressedHUD = 0;
 
-public:
     // Transform
-    QPointF mTranslation = QPointF( 0, 0 );
-    double  mRotationAngle = 0.0F;
-    double  mScale = 1.0F;
+    QTransform  mTransform;
+    QPointF     mTranslation = QPointF( 0, 0 );
+    double      mRotationAngle = 0.0F;
+    double      _mCosAngle = 1;
+    double      _mSinAngle = 0;
+    double      mScale = 1.0F;
 
 };
 
