@@ -1,5 +1,7 @@
 #pragma once
 
+
+#include "cBaseData.h"
 #include <QStandardItemModel>
 
 #include <cmath>
@@ -18,7 +20,8 @@ struct sPointData
 
 
 class ToolBase :
-    public QStandardItemModel
+    public QStandardItemModel,
+    public cBaseData
 {
     Q_OBJECT
 
@@ -34,7 +37,7 @@ public:
     virtual  QRect  EndDrawing( sPointData iPointData) = 0;
 
 protected:
-    QImage*                     mDrawingContext = 0;
+    QImage*     mDrawingContext = 0;
 };
 
 

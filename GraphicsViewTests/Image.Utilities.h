@@ -38,6 +38,37 @@ HardFill( QImage* dest, const QRect& area, const QColor& color )
 }
 
 
+// Blends area with color
+static
+void
+NormalFill( QImage* dest, const QRect& area, const QColor& color )
+{
+    uchar* destData = dest->bits();
+    uchar* destScanline = destData;
+    int dstBPL = dest->bytesPerLine();
+
+    const int startingX = area.left() < 0 ? 0 : area.left();
+    const int endingX = area.right() > dest->width() - 1 ? dest->width() - 1 : area.right();
+    const int startingY = area.top() < 0 ? 0 : area.top();
+    const int endingY = area.bottom() > dest->height() - 1 ? dest->height() - 1 : area.bottom();
+
+    const uint8_t r = color.red();
+    const uint8_t g = color.green();
+    const uint8_t b = color.blue();
+    const uint8_t alpha = color.alpha();
+
+    for( int y = startingY; y <= endingY; ++y )
+    {
+        destScanline    = destData + y * dstBPL + startingX * 4;
+
+        for( int x = startingX; x <= endingX; ++x )
+        {
+            BlendPixelNormal( &destScanline, r, g, b, alpha );
+        }
+    }
+}
+
+
 
 
 // Copies source to destination at point

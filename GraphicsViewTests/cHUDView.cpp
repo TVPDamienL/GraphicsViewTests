@@ -215,6 +215,13 @@ cHUDView::AddHUDObject( cHUDObject * iObject )
 }
 
 
+void
+cHUDView::RemoveHUDObject( cHUDObject * iObject )
+{
+    mHUDObjects.removeAll( iObject );
+}
+
+
 cHUDObject*
 cHUDView::GetVisibleHUDObjectAtPos( const QPointF & iPoint )
 {

@@ -7,6 +7,8 @@
 
 #include "cLayer.h"
 
+#include "ShapeBase.h"
+#include "cHUDShapeTool.h"
 
 #include <QApplication>
 #include <QClipboard>
@@ -473,6 +475,23 @@ cCanvas::SetToolModel( ToolBase* iToolModel )
 
     mTool = iToolModel;
     DrawCursor();
+
+    // HUD
+    auto toolAsShapeTool = dynamic_cast< cShapeBase* >( mTool );
+    if( toolAsShapeTool )
+    {
+         mHUDShape = new cHUDShapeTool( mHUDView, 0, toolAsShapeTool );
+         mHUDView->AddHUDObject( mHUDShape );
+    }
+    else
+    {
+        mHUDView->RemoveHUDObject( mHUDShape );
+        delete mHUDShape;
+    }
+
+    // PaintTool
+
+
     connect( mTool, &QAbstractItemModel::dataChanged, this, &cCanvas::toolChanged );
 }
 

@@ -177,6 +177,12 @@
     <ClCompile Include="Rectangle.cpp">
       <Filter>src\ToolModel\Shapes</Filter>
     </ClCompile>
+    <ClCompile Include="ShapeBase.cpp">
+      <Filter>src\ToolModel\Shapes</Filter>
+    </ClCompile>
+    <ClCompile Include="cHUDShapeTool.cpp">
+      <Filter>src\HUD</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="cMainWindow.h">
@@ -287,6 +293,12 @@
     </ClInclude>
     <ClInclude Include="Image.Utilities.h">
       <Filter>src\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="ShapeBase.h">
+      <Filter>src\ToolModel\Shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="cHUDShapeTool.h">
+      <Filter>src\HUD</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

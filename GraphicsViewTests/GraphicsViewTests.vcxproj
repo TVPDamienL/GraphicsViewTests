@@ -121,6 +121,7 @@
     <ClCompile Include="cHUDHandle.cpp" />
     <ClCompile Include="cHUDItem.cpp" />
     <ClCompile Include="cHUDObject.cpp" />
+    <ClCompile Include="cHUDShapeTool.cpp" />
     <ClCompile Include="cHUDTransform.cpp" />
     <ClCompile Include="cHUDView.cpp" />
     <ClCompile Include="cMainWindow.cpp" />
@@ -133,6 +134,7 @@
     <ClCompile Include="PaintToolBase.cpp" />
     <ClCompile Include="powerslider.cpp" />
     <ClCompile Include="Rectangle.cpp" />
+    <ClCompile Include="ShapeBase.cpp" />
     <ClCompile Include="src\cAddItem.cpp" />
     <ClCompile Include="src\Canvas.cpp" />
     <ClCompile Include="src\cCurrentFrameItem.cpp" />
@@ -178,6 +180,7 @@
       <Define Condition="'$(Configuration)|$(Platform)'=='Release|x64'">UNICODE;_UNICODE;WIN32;WIN64;QT_NO_DEBUG;NDEBUG;QT_CORE_LIB;QT_GUI_LIB;QT_WIDGETS_LIB</Define>
     </QtMoc>
     <ClInclude Include="cHUDObject.h" />
+    <ClInclude Include="cHUDShapeTool.h" />
     <ClInclude Include="cHUDTransform.h" />
     <ClInclude Include="cSelection.h" />
     <ClInclude Include="Image.Utilities.h" />
@@ -190,6 +193,7 @@
       <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);.\tester;.\src;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets</IncludePath>
       <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);.\src;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets</IncludePath>
     </QtMoc>
+    <ClInclude Include="ShapeBase.h" />
     <ClInclude Include="src\cLayer.h" />
     <ClInclude Include="src\Clip.h" />
     <ClInclude Include="src\CurveBase.h" />

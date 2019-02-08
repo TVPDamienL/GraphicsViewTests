@@ -11,6 +11,7 @@
 #include "cHUDTransform.h"
 
 class cEditableItem;
+class cHUDShapeTool;
 
 class cCanvas :
     public QGraphicsView
@@ -86,9 +87,10 @@ private:
     cGridItem*          mGridItem;
 
     // HUDs
-    cHUDView*           mHUDView;
-    cHUDItem*           mHUDSelection;
-    cHUDTransform*      mHUDTransform;
+    cHUDView*           mHUDView = 0;
+    cHUDItem*           mHUDSelection = 0;
+    cHUDTransform*      mHUDTransform = 0;
+    cHUDShapeTool*      mHUDShape = 0;
 
     // Transform
     QPointF             mTranslation = QPointF( 0, 0 );
@@ -98,10 +100,10 @@ private:
     double              mScale = 1.0F;
     QTransform          mTransform;
 
-     QPointF            mOriginTranslation;
-     double             mOriginScale;
-     double             mOriginRotation;
-     QTransform         mOriginTransformInverse;
+    QPointF             mOriginTranslation;
+    double              mOriginScale;
+    double              mOriginRotation;
+    QTransform          mOriginTransformInverse;
 
 
 
@@ -112,6 +114,7 @@ private:
 
     eTool               mToolType;
     ToolBase*           mTool;
+
     QPainter*           mPainter;
     cClip*              mClip;
 
