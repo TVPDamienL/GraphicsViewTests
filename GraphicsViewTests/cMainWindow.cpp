@@ -17,7 +17,8 @@ cMainWindow::cMainWindow(QWidget *parent) :
     QMainWindow(parent),
     mToolPaint( new cToolSimpleBrush() ),
     mToolSelect( new cToolSelectionTest() ),
-    mRectangleShape( new cShapeRectangle() )
+    mRectangleShape( new cShapeRectangle() ),
+    mRectangleSelection( new cShapeRectangle() )
 {
     ui.setupUi(this);
 
@@ -69,7 +70,7 @@ cMainWindow::cMainWindow(QWidget *parent) :
     //mToolPaint->SetAlphaMask( mClip->GetSelection()->GetSelectionMask() );
     dynamic_cast< cToolSelectionTest* >( mToolSelect )->SetSelection( mClip->GetSelection() );
     mRectangleShape->SetPaintTool( mToolPaint );
-
+    mRectangleSelection->SetPaintTool( mToolSelect );
 }
 
 
@@ -187,7 +188,7 @@ void
 cMainWindow::ToolSelectClicked()
 {
     ui.canvas->SetSelectionMode( true );
-    ui.canvas->SetToolModel( mToolSelect );
+    ui.canvas->SetToolModel( mRectangleSelection );
 }
 
 

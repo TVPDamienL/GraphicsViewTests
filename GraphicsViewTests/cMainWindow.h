@@ -57,6 +57,7 @@ private:
     cPaintToolBase*     mToolPaint;
     cPaintToolBase*     mToolSelect;
     cShapeRectangle*    mRectangleShape;
+    cShapeRectangle*    mRectangleSelection;
 
     cClip*              mClip;
 };

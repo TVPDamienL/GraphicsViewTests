@@ -78,7 +78,9 @@ cSelection::ExtractPixelsFromImageToBuffer()
     const QRect selectionBBox = GetSelectionBBox();
     const int bboxWidth = mOriginalSelectionBBox.width();
     const int bboxHeight = mOriginalSelectionBBox.height();
+
     mTransformationBuffer->fill( Qt::transparent );
+
 
     delete mExtratedBuffer;
     mExtratedBuffer = new QImage( bboxWidth, bboxHeight, QImage::Format_ARGB32_Premultiplied );
@@ -138,6 +140,10 @@ cSelection::ExtractPixelsFromImageToBuffer()
             maskScanline += 4;
         }
     }
+
+    // Copies the extracted buffer into the transformation buffer to start with
+    CopyImage( mExtratedBuffer, mTransformationBuffer, selectionBBox.topLeft() );
+    mTransformationBBox = selectionBBox;
 }
 
 

@@ -25,11 +25,15 @@ cShapeRectangle::cShapeRectangle( QObject* iParent ) :
 void
 cShapeRectangle::StartDrawing( QImage * iImage, sPointData iPointData )
 {
+    mPaintTool->StartDrawing( iImage, iPointData );
+
     mPolygon.setPoint( 0, iPointData.mPosition );
     mPolygon.setPoint( 1, iPointData.mPosition );
     mPolygon.setPoint( 2, iPointData.mPosition );
     mPolygon.setPoint( 3, iPointData.mPosition );
-    mDrawingContext = iImage;
+    mDrawingContext = mPaintTool->DrawingContext();
+
+    EmitValueChanged( kShapeStarted );
 }
 
 
@@ -74,8 +78,6 @@ cShapeRectangle::EndDrawing( sPointData iPointData )
         p4.mPressure = 1.0;
         p4.mRotation = 0.0;
 
-        mPaintTool->StartDrawing( mDrawingContext, p1 );
-
         mPaintTool->PathAddPoint( p1 );
         mPaintTool->PathAddPoint( p2 );
         mPaintTool->PathAddPoint( p3 );
@@ -83,8 +85,6 @@ cShapeRectangle::EndDrawing( sPointData iPointData )
         mPaintTool->PathAddPoint( p1 );
 
         mPaintTool->DrawFullPath();
-
-        return  mPaintTool->EndDrawing( p4 );
     }
     else
     {
@@ -99,8 +99,14 @@ cShapeRectangle::EndDrawing( sPointData iPointData )
         // Apply opacity to color
 
         NormalFill( mDrawingContext, area, color );
+        mPaintTool->EndDrawing( iPointData ); // Ending drawing for tool here, and return our filled area
+
+        EmitValueChanged( kShapeFinished );
         return  area;
     }
+
+    EmitValueChanged( kShapeFinished );
+    return  mPaintTool->EndDrawing( iPointData );
 }
 
 

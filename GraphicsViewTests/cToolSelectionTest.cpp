@@ -27,6 +27,7 @@ void
 cToolSelectionTest::StartDrawing( QImage* iImage, sPointData iPointData )
 {
     cPaintToolBase::StartDrawing( iImage, iPointData );
+    mDrawingContext = mTheSelection->GetSelectionMask();
 }
 
 

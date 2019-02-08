@@ -14,3 +14,10 @@ ToolBase::ToolBase( QObject *parent ) :
 }
 
 
+QImage*
+ToolBase::DrawingContext()
+{
+    return  mDrawingContext;
+}
+
+

@@ -487,6 +487,7 @@ cCanvas::SetToolModel( ToolBase* iToolModel )
     {
         mHUDView->RemoveHUDObject( mHUDShape );
         delete mHUDShape;
+        mHUDShape = 0;
     }
 
     // PaintTool

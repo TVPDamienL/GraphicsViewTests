@@ -9,12 +9,13 @@ public:
     cBaseData();
 
 public:
-    void RegisterEditionCallback( std::function< void( cBaseData* iSender, int iArg ) > iCB );
+    unsigned int    RegisterEditionCallback( std::function< void( cBaseData* iSender, int iArg ) > iCB );
+    void            UnregisterEditionCallback( unsigned int iCBID );
 
 public:
     void EmitValueChanged( int iArg );
 
 private:
-    std::vector< std::function< void( cBaseData* iSender, int iArg ) > > mEditionCBList;
+    std::unordered_map< unsigned int, std::function< void( cBaseData* iSender, int iArg ) > > mEditionCBList;
 };
 

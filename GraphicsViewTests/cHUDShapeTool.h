@@ -23,5 +23,6 @@ private:
 
 private:
     cShapeBase*     mShape;
+    unsigned int mCBHandle;
 };
 

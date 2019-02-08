@@ -23,14 +23,15 @@ cPaintToolBase::cPaintToolBase( QObject *parent ) :
 int
 cPaintToolBase::getSize() const
 {
-    return  itemFromIndex( index( 0, 0 ) )->data().toInt();
+    return  mToolSize;
+    //return  itemFromIndex( index( 0, 0 ) )->data().toInt();
 }
 
 
 void
 cPaintToolBase::setSize( int iSize )
 {
-    itemFromIndex( index( 0, 0 ) )->setData( iSize );
+    //itemFromIndex( index( 0, 0 ) )->setData( iSize );
     mToolSize = iSize;
 }
 
@@ -38,15 +39,18 @@ cPaintToolBase::setSize( int iSize )
 QColor
 cPaintToolBase::getColor() const
 {
-    QVariant dataColor = itemFromIndex( index( 1, 0 ) )->data();
-    return  dataColor.value< QColor >();
+    // This is so much easier in the end ...
+    return  mColor;
+
+    //QVariant dataColor = itemFromIndex( index( 1, 0 ) )->data();
+    //return  dataColor.value< QColor >();
 }
 
 
 void
 cPaintToolBase::setColor( const QColor & iColor )
 {
-    itemFromIndex( index( 1, 0 ) )->setData( iColor );
+    //itemFromIndex( index( 1, 0 ) )->setData( iColor );
     mColor = iColor;
 }
 
@@ -62,7 +66,7 @@ void
 cPaintToolBase::setStep( float iStep )
 {
     mStep = iStep;
-    itemFromIndex( index( 2, 0 ) )->setData( iStep );
+    //itemFromIndex( index( 2, 0 ) )->setData( iStep );
 }
 
 

@@ -12,7 +12,9 @@ class cShapeBase :
 public:
     enum eMessage : int
     {
-        kShapeChanged
+        kShapeStarted,
+        kShapeChanged,
+        kShapeFinished
     };
 
 public:

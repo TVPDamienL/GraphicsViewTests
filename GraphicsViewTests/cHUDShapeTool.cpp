@@ -8,6 +8,7 @@
 
 cHUDShapeTool::~cHUDShapeTool()
 {
+    mShape->UnregisterEditionCallback( mCBHandle );
 }
 
 
@@ -15,7 +16,7 @@ cHUDShapeTool::cHUDShapeTool( cHUDView* iParentView, cHUDObject* iParentObject, 
     cHUDObject( iParentView, iParentObject )
 {
     mShape = iShapeTool;
-    mShape->RegisterEditionCallback( [ this ]( cBaseData* sender, int iArg )
+    mCBHandle = mShape->RegisterEditionCallback( [ this ]( cBaseData* sender, int iArg )
     {
         this->ShapeChanged( sender, iArg );
     });
@@ -60,6 +61,14 @@ cHUDShapeTool::ShapeChanged( cBaseData * sender, int args )
         mParentView->update();
         // FUTURE: uncomment
         //_Layout();
+    }
+    else if( args == cShapeBase::eMessage::kShapeStarted )
+    {
+        mVisible = true;
+    }
+    else if( args == cShapeBase::eMessage::kShapeFinished )
+    {
+        mVisible = false;
     }
 }
 

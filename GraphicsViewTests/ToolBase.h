@@ -29,6 +29,8 @@ public:
     ~ToolBase();
     ToolBase( QObject* iParent = Q_NULLPTR );
 
+public:
+    QImage*         DrawingContext();
 
 
 public:
