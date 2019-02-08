@@ -14,6 +14,7 @@
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QFormLayout>
+#include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QMainWindow>
@@ -51,9 +52,10 @@ public:
     QSpinBox *stepSpinBox;
     QSpacerItem *verticalSpacer;
     QLabel *label_3;
-    QHBoxLayout *horizontalLayout_3;
+    QGridLayout *gridLayout;
     QPushButton *buttonToolPaint;
     QPushButton *buttonToolSelect;
+    QPushButton *buttonRectangle;
     cCanvas *canvas;
     QHBoxLayout *horizontalLayout_4;
     QSpacerItem *horizontalSpacer;
@@ -159,21 +161,26 @@ public:
 
         verticalLayout->addWidget(label_3);
 
-        horizontalLayout_3 = new QHBoxLayout();
-        horizontalLayout_3->setSpacing(6);
-        horizontalLayout_3->setObjectName(QString::fromUtf8("horizontalLayout_3"));
+        gridLayout = new QGridLayout();
+        gridLayout->setSpacing(6);
+        gridLayout->setObjectName(QString::fromUtf8("gridLayout"));
         buttonToolPaint = new QPushButton(centralWidget);
         buttonToolPaint->setObjectName(QString::fromUtf8("buttonToolPaint"));
 
-        horizontalLayout_3->addWidget(buttonToolPaint);
+        gridLayout->addWidget(buttonToolPaint, 0, 0, 1, 1);
 
         buttonToolSelect = new QPushButton(centralWidget);
         buttonToolSelect->setObjectName(QString::fromUtf8("buttonToolSelect"));
 
-        horizontalLayout_3->addWidget(buttonToolSelect);
+        gridLayout->addWidget(buttonToolSelect, 0, 1, 1, 1);
+
+        buttonRectangle = new QPushButton(centralWidget);
+        buttonRectangle->setObjectName(QString::fromUtf8("buttonRectangle"));
+
+        gridLayout->addWidget(buttonRectangle, 1, 0, 1, 1);
 
 
-        verticalLayout->addLayout(horizontalLayout_3);
+        verticalLayout->addLayout(gridLayout);
 
 
         horizontalLayout_2->addLayout(verticalLayout);
@@ -258,6 +265,7 @@ public:
         label_3->setText(QApplication::translate("cMainWindow", "Tools", nullptr));
         buttonToolPaint->setText(QApplication::translate("cMainWindow", "Paint", nullptr));
         buttonToolSelect->setText(QApplication::translate("cMainWindow", "Select", nullptr));
+        buttonRectangle->setText(QApplication::translate("cMainWindow", "Rectangle", nullptr));
         playButton->setText(QApplication::translate("cMainWindow", "Play", nullptr));
         stopButton->setText(QApplication::translate("cMainWindow", "Stop", nullptr));
     } // retranslateUi

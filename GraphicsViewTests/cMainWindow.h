@@ -8,10 +8,11 @@
 #include <QTimer>
 #include <QDataWidgetMapper>
 
-#include "ToolBase.h"
+#include "PaintToolBase.h"
 #include "Clip.h"
 
 class cCustomGraphicsView;
+class cShapeRectangle;
 
 class cMainWindow :
     public QMainWindow
@@ -42,6 +43,7 @@ public slots:
     void UpdateUI();
     void ToolPaintClicked();
     void ToolSelectClicked();
+    void ToolRectangleClicked();
 
 private:
     Ui::cMainWindow     ui;
@@ -52,8 +54,9 @@ private:
     QTimer*             mAnimationTimer;
 
     QDataWidgetMapper*  mMapper;
-    ToolBase*           mToolPaint;
-    ToolBase*           mToolSelect;
+    cPaintToolBase*     mToolPaint;
+    cPaintToolBase*     mToolSelect;
+    cShapeRectangle*    mRectangleShape;
 
     cClip*              mClip;
 };

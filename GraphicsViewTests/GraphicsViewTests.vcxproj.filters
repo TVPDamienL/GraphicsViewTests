@@ -76,6 +76,12 @@
     <Filter Include="src\Image">
       <UniqueIdentifier>{b0c7a1d6-7523-4989-a136-9b7f5c1ce42b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\ToolModel\Shapes">
+      <UniqueIdentifier>{0290776b-e8b5-4a8b-9156-c809ff33b5e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\ToolModel\Tools">
+      <UniqueIdentifier>{e2861c69-95b1-4b42-9f3c-f446b1b3d67f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -102,9 +108,6 @@
     <ClCompile Include="src\EditableItem.cpp">
       <Filter>src\GraphicsItem</Filter>
     </ClCompile>
-    <ClCompile Include="src\ToolModel.cpp">
-      <Filter>src\ToolModel</Filter>
-    </ClCompile>
     <ClCompile Include="ColorSwatch.cpp">
       <Filter>src\Widgets</Filter>
     </ClCompile>
@@ -120,12 +123,6 @@
     <ClCompile Include="powerslider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ToolBase.cpp">
-      <Filter>src\ToolModel</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ToolSimpleBrush.cpp">
-      <Filter>src\ToolModel</Filter>
-    </ClCompile>
     <ClCompile Include="src\CurveBase.cpp">
       <Filter>src\Curve</Filter>
     </ClCompile>
@@ -137,15 +134,6 @@
     </ClCompile>
     <ClCompile Include="src\Undoable.cpp">
       <Filter>src\Undo</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ToolSelection.cpp">
-      <Filter>src\ToolModel</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ToolSelectionRectangle.cpp">
-      <Filter>src\ToolModel</Filter>
-    </ClCompile>
-    <ClCompile Include="cToolSelectionTest.cpp">
-      <Filter>src\ToolModel</Filter>
     </ClCompile>
     <ClCompile Include="cSelection.cpp">
       <Filter>src\Projet</Filter>
@@ -174,6 +162,21 @@
     <ClCompile Include="cBaseData.cpp">
       <Filter>src\Data</Filter>
     </ClCompile>
+    <ClCompile Include="cToolSelectionTest.cpp">
+      <Filter>src\ToolModel\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="PaintToolBase.cpp">
+      <Filter>src\ToolModel\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="ToolBase.cpp">
+      <Filter>src\ToolModel\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ToolSimpleBrush.cpp">
+      <Filter>src\ToolModel\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="Rectangle.cpp">
+      <Filter>src\ToolModel\Shapes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="cMainWindow.h">
@@ -194,20 +197,23 @@
     <QtMoc Include="powerslider.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="ToolBase.h">
-      <Filter>src\ToolModel</Filter>
-    </QtMoc>
-    <QtMoc Include="src\ToolModel.h">
-      <Filter>src\ToolModel</Filter>
-    </QtMoc>
-    <QtMoc Include="src\ToolSimpleBrush.h">
-      <Filter>src\ToolModel</Filter>
-    </QtMoc>
-    <QtMoc Include="cToolSelectionTest.h">
-      <Filter>src\ToolModel</Filter>
-    </QtMoc>
     <QtMoc Include="cHUDView.h">
       <Filter>src\HUD</Filter>
+    </QtMoc>
+    <QtMoc Include="cToolSelectionTest.h">
+      <Filter>src\ToolModel\Tools</Filter>
+    </QtMoc>
+    <QtMoc Include="PaintToolBase.h">
+      <Filter>src\ToolModel\Tools</Filter>
+    </QtMoc>
+    <QtMoc Include="ToolBase.h">
+      <Filter>src\ToolModel\Tools</Filter>
+    </QtMoc>
+    <QtMoc Include="src\ToolSimpleBrush.h">
+      <Filter>src\ToolModel\Tools</Filter>
+    </QtMoc>
+    <QtMoc Include="Rectangle.h">
+      <Filter>src\ToolModel\Shapes</Filter>
     </QtMoc>
   </ItemGroup>
   <ItemGroup>
@@ -248,12 +254,6 @@
     </ClInclude>
     <ClInclude Include="src\Undoable.h">
       <Filter>src\Undo</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ToolSelection.h">
-      <Filter>src\ToolModel</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ToolSelectionRectangle.h">
-      <Filter>src\ToolModel</Filter>
     </ClInclude>
     <ClInclude Include="cSelection.h">
       <Filter>src\Projet</Filter>

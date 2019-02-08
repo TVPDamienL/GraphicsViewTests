@@ -28,7 +28,7 @@ colorPickerDialog::~colorPickerDialog()
 }
 
 
-colorPickerDialog::colorPickerDialog( cToolModel* model, QWidget* iParent ) :
+colorPickerDialog::colorPickerDialog( cPaintToolBase* model, QWidget* iParent ) :
     QFrame( iParent ),
     _ToolModel( model )
 {

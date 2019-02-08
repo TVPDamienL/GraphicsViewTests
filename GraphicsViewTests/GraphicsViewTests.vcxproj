@@ -130,7 +130,9 @@
     <ClCompile Include="cSelection.cpp" />
     <ClCompile Include="cToolSelectionTest.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="PaintToolBase.cpp" />
     <ClCompile Include="powerslider.cpp" />
+    <ClCompile Include="Rectangle.cpp" />
     <ClCompile Include="src\cAddItem.cpp" />
     <ClCompile Include="src\Canvas.cpp" />
     <ClCompile Include="src\cCurrentFrameItem.cpp" />
@@ -141,9 +143,6 @@
     <ClCompile Include="src\Clip.cpp" />
     <ClCompile Include="src\CurveBase.cpp" />
     <ClCompile Include="src\EditableItem.cpp" />
-    <ClCompile Include="src\ToolModel.cpp" />
-    <ClCompile Include="src\ToolSelection.cpp" />
-    <ClCompile Include="src\ToolSelectionRectangle.cpp" />
     <ClCompile Include="src\ToolSimpleBrush.cpp" />
     <ClCompile Include="src\Undoable.cpp" />
     <ClCompile Include="ToolBase.cpp" />
@@ -183,12 +182,18 @@
     <ClInclude Include="cSelection.h" />
     <ClInclude Include="Image.Utilities.h" />
     <ClInclude Include="Math.Fast.h" />
+    <QtMoc Include="PaintToolBase.h">
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);.\tester;.\src;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets</IncludePath>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);.\src;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets</IncludePath>
+    </QtMoc>
+    <QtMoc Include="Rectangle.h">
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);.\tester;.\src;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets</IncludePath>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);.\src;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets</IncludePath>
+    </QtMoc>
     <ClInclude Include="src\cLayer.h" />
     <ClInclude Include="src\Clip.h" />
     <ClInclude Include="src\CurveBase.h" />
     <ClInclude Include="src\CurveTests.h" />
-    <ClInclude Include="src\ToolSelection.h" />
-    <ClInclude Include="src\ToolSelectionRectangle.h" />
     <ClInclude Include="src\Undoable.h" />
     <QtMoc Include="src\ToolSimpleBrush.h" />
     <QtMoc Include="ToolBase.h" />
@@ -199,7 +204,6 @@
     <ClInclude Include="src\cAddItem.h" />
     <ClInclude Include="src\cGridItem.h" />
     <ClInclude Include="src\EditableItem.h" />
-    <QtMoc Include="src\ToolModel.h" />
     <QtMoc Include="src\Canvas.h" />
     <ClInclude Include="src\cCurrentFrameItem.h" />
     <ClInclude Include="src\cGraphicItem.h">

@@ -135,6 +135,8 @@ cHUDTransform::Event( QEvent * iEvent )
             }
             else
             {
+                // Translation is last operation done, so it's post transform, meaning we act on what we see
+                // Here, the mouse moves in a view that is only affected by the viewport's transform
                 QPointF offset = mOriginViewportTransformInverse.map( eventAsMouse->pos() ) - mOriginViewportTransformInverse .map( mClickOrigin );
                 mTranslation = mOriginTranslation + offset ;
             }

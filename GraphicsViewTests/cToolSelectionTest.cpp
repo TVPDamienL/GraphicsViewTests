@@ -8,7 +8,7 @@ cToolSelectionTest::~cToolSelectionTest()
 
 
 cToolSelectionTest::cToolSelectionTest( QObject* iParent ) :
-    ToolBase( iParent )
+    cPaintToolBase( iParent )
 {
     mColor = Qt::black;
     mToolSize = 50;
@@ -19,14 +19,14 @@ cToolSelectionTest::cToolSelectionTest( QObject* iParent ) :
 Qt::ItemFlags
 cToolSelectionTest::flags( const QModelIndex & iIndex ) const
 {
-    return  ToolBase::flags( iIndex) | Qt::ItemIsEditable;
+    return  cPaintToolBase::flags( iIndex) | Qt::ItemIsEditable;
 }
 
 
 void
-cToolSelectionTest::StartDrawing( QImage* iImage )
+cToolSelectionTest::StartDrawing( QImage* iImage, sPointData iPointData )
 {
-    ToolBase::StartDrawing( iImage );
+    cPaintToolBase::StartDrawing( iImage, iPointData );
 }
 
 
@@ -99,13 +99,13 @@ cToolSelectionTest::DrawLine( int x1, int y1, int x2, int y2 )
 
 
 QRect
-cToolSelectionTest::EndDrawing()
+cToolSelectionTest::EndDrawing( sPointData iPointData )
 {
     mTheSelection->ProcessEdgeDetection();
     mTheSelection->ExtractPixelsFromImageToBuffer();
     mTheSelection->SetActive( true );
     mTheSelection->EmitPainted();
-    return  ToolBase::EndDrawing();
+    return  cPaintToolBase::EndDrawing( iPointData );
 }
 
 

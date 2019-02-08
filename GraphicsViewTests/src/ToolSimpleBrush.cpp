@@ -13,7 +13,7 @@ cToolSimpleBrush::~cToolSimpleBrush()
 
 
 cToolSimpleBrush::cToolSimpleBrush( QObject * iParent ) :
-    ToolBase( iParent )
+    cPaintToolBase( iParent )
 {
     // Some debug values to work with
     mToolSize = 10;
@@ -29,7 +29,7 @@ cToolSimpleBrush::cToolSimpleBrush( QObject * iParent ) :
 Qt::ItemFlags
 cToolSimpleBrush::flags( const QModelIndex & iIndex ) const
 {
-    return  ToolBase::flags( iIndex) | Qt::ItemIsEditable;
+    return  cPaintToolBase::flags( iIndex) | Qt::ItemIsEditable;
 }
 
 
@@ -68,9 +68,9 @@ cToolSimpleBrush::ApplyProfile() const
 
 
 void
-cToolSimpleBrush::StartDrawing( QImage* iImage )
+cToolSimpleBrush::StartDrawing( QImage* iImage, sPointData iPointData )
 {
-    ToolBase::StartDrawing( iImage );
+    cPaintToolBase::StartDrawing( iImage, iPointData );
 
     delete  mTipRendered;
     mTipRendered = new QImage( mToolSize, mToolSize, QImage::Format::Format_RGBA8888_Premultiplied );

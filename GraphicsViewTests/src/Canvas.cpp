@@ -21,7 +21,7 @@
 cCanvas::cCanvas( QWidget *parent ) :
     QGraphicsView( parent ),
     cursorPixmap( 0 ),
-    mToolModel( 0 ),
+    mTool( 0 ),
     mPainter( 0 )
 {
     // Config
@@ -174,12 +174,12 @@ cCanvas::keyPressEvent( QKeyEvent * iEvent )
 
     if( iEvent->key() == Qt::Key_B )
     {
-        mTool = kBrush;
+        mToolType = kBrush;
         DrawCursor();
     }
     else if( iEvent->key() == Qt::Key_E )
     {
-        mTool = kEraser;
+        mToolType = kEraser;
         DrawCursor();
     }
     else if( iEvent->key() == Qt::Key_C )
@@ -267,23 +267,30 @@ cCanvas::mousePressEvent( QMouseEvent * iEvent )
         }
         else
         {
-            if( !mSelectionMode )
+            auto paintTool = dynamic_cast< cPaintToolBase* >( mTool );
+            if( paintTool && !mSelectionMode )
             {
                 if( mClip->GetSelection()->IsActive() )
                 {
-                    mToolModel->SetAlphaMask( mClip->GetSelection()->GetSelectionMask() );
+                    paintTool->SetAlphaMask( mClip->GetSelection()->GetSelectionMask() );
                 }
                 else
                 {
-                    mToolModel->SetAlphaMask( 0 );
+                    paintTool->SetAlphaMask( 0 );
                 }
             }
 
             mState = kDrawing;
 
-            mToolModel->StartDrawing( mClip->CurrentLayer()->Image() );
+            sPointData point;
+            QPointF clickMapped = mEditableItem->mapFromScene( mapToScene( iEvent->pos().x(), iEvent->pos().y() ) );
+            point.mPosition = QPoint( clickMapped.x(), clickMapped.y() );
+            point.mPressure = 1.0F;
+            point.mRotation = 0.0F;
 
-            if( mTool == kEraser )
+            mTool->StartDrawing( mClip->CurrentLayer()->Image(), point );
+
+            if( mToolType == kEraser )
                 mPainter->setCompositionMode( QPainter::CompositionMode_Clear );
         }
     }
@@ -291,7 +298,7 @@ cCanvas::mousePressEvent( QMouseEvent * iEvent )
     {
         if( QApplication::keyboardModifiers() & Qt::ControlModifier )
         {
-            //auto test = new colorPickerDialog( mToolModel, this );
+            //auto test = new colorPickerDialog( mTool, this );
             //test->openAtPosition( iEvent->screenPos() - QPointF( test->size().width()/2, test->size().height()/2 ) );
         }
     }
@@ -352,7 +359,7 @@ cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
         point.mPressure = 1.0F;
         point.mRotation = 0.0F;
 
-        auto dirty = mToolModel->MoveDrawing( point );
+        auto dirty = mTool->MoveDrawing( point );
         if( !dirty.isEmpty() )
             mClip->DirtyArea( dirty );
     }
@@ -366,7 +373,13 @@ cCanvas::mouseReleaseEvent( QMouseEvent * iEvent )
 {
     if( mState == kDrawing )
     {
-        auto dirty = mToolModel->EndDrawing();
+        sPointData point;
+        QPointF clickMapped = mEditableItem->mapFromScene( mapToScene( iEvent->pos().x(), iEvent->pos().y() ) );
+        point.mPosition = QPoint( clickMapped.x(), clickMapped.y() );
+        point.mPressure = 1.0F;
+        point.mRotation = 0.0F;
+
+        auto dirty = mTool->EndDrawing( point );
         if( !dirty.isEmpty() )
             mClip->DirtyArea( dirty );
 
@@ -455,12 +468,12 @@ cCanvas::SetClip( cClip * iClip )
 void
 cCanvas::SetToolModel( ToolBase* iToolModel )
 {
-    if( mToolModel )
-        disconnect( mToolModel, &QAbstractItemModel::dataChanged, this, &cCanvas::toolChanged );
+    if( mTool )
+        disconnect( mTool, &QAbstractItemModel::dataChanged, this, &cCanvas::toolChanged );
 
-    mToolModel = iToolModel;
+    mTool = iToolModel;
     DrawCursor();
-    connect( mToolModel, &QAbstractItemModel::dataChanged, this, &cCanvas::toolChanged );
+    connect( mTool, &QAbstractItemModel::dataChanged, this, &cCanvas::toolChanged );
 }
 
 

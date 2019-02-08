@@ -2,7 +2,7 @@
 
 #include "colorPicker.h"
 
-#include "ToolModel.h"
+#include "PaintToolBase.h"
 
 #include  <QFrame>
 #include  <QVBoxLayout>
@@ -15,7 +15,7 @@ class colorPickerDialog :
 
 public:
     ~colorPickerDialog();
-    colorPickerDialog( cToolModel* model, QWidget* iParent = nullptr );
+    colorPickerDialog( cPaintToolBase* model, QWidget* iParent = nullptr );
 
     void  openAtPosition( QPointF iPos );
 
@@ -36,6 +36,6 @@ private:
     QSlider*        _slider;
     QSlider*        _slider2;
 
-    cToolModel*     _ToolModel;
+    cPaintToolBase*     _ToolModel;
 };
 

@@ -110,8 +110,8 @@ private:
 
     bool                mSelectionMode = false;
 
-    eTool               mTool;
-    ToolBase*           mToolModel;
+    eTool               mToolType;
+    ToolBase*           mTool;
     QPainter*           mPainter;
     cClip*              mClip;
 

@@ -6,6 +6,7 @@
 
 #include "ToolSimpleBrush.h"
 #include "cToolSelectionTest.h"
+#include "Rectangle.h"
 
 #include "cLayer.h"
 
@@ -15,7 +16,8 @@
 cMainWindow::cMainWindow(QWidget *parent) :
     QMainWindow(parent),
     mToolPaint( new cToolSimpleBrush() ),
-    mToolSelect( new cToolSelectionTest() )
+    mToolSelect( new cToolSelectionTest() ),
+    mRectangleShape( new cShapeRectangle() )
 {
     ui.setupUi(this);
 
@@ -58,13 +60,16 @@ cMainWindow::cMainWindow(QWidget *parent) :
 
     connect( ui.buttonToolSelect, &QPushButton::clicked, this, &cMainWindow::ToolSelectClicked );
     connect( ui.buttonToolPaint, &QPushButton::clicked, this, &cMainWindow::ToolPaintClicked );
+    connect( ui.buttonRectangle, &QPushButton::clicked, this, &cMainWindow::ToolRectangleClicked );
 
 
     CurrentFrameChanged( 0 );
 
     // Tools setups
-    mToolPaint->SetAlphaMask( mClip->GetSelection()->GetSelectionMask() );
+    //mToolPaint->SetAlphaMask( mClip->GetSelection()->GetSelectionMask() );
     dynamic_cast< cToolSelectionTest* >( mToolSelect )->SetSelection( mClip->GetSelection() );
+    mRectangleShape->SetPaintTool( mToolPaint );
+
 }
 
 
@@ -183,6 +188,13 @@ cMainWindow::ToolSelectClicked()
 {
     ui.canvas->SetSelectionMode( true );
     ui.canvas->SetToolModel( mToolSelect );
+}
+
+
+void
+cMainWindow::ToolRectangleClicked()
+{
+    ui.canvas->SetToolModel( mRectangleShape );
 }
 
 

@@ -1,13 +1,13 @@
 #pragma once
 
 
-#include "ToolBase.h"
+#include "PaintToolBase.h"
 #include "CurveBase.h"
 
 #include <QColor>
 
 class cToolSimpleBrush :
-    public ToolBase
+    public cPaintToolBase
 {
     Q_OBJECT
 
@@ -29,7 +29,7 @@ private:
 
 public:
     // Overrides
-    virtual  void  StartDrawing( QImage* iImage ) override;
+    virtual  void  StartDrawing( QImage* iImage, sPointData iPointData ) override;
     virtual  QRect MoveDrawing( sPointData iPointData ) override;
     virtual  void  DrawDot( int x, int y, float iPressure, float iRotation ) override;
     virtual  void  DrawLine( int x1, int y1, int x2, int y2 ) override;
