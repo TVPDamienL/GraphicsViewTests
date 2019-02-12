@@ -72,6 +72,7 @@ private:
     bool            mActive = false;
     QImage*         mOriginalImage = 0;         // The original image the selection is working on
     QImage*         mExtratedBuffer = 0;        // The extracted part
+    QImage*         mExtratedBufferTMP = 0;        //TMP
     QImage*         mTransformationBuffer = 0;  // The extracted part transformed
     cConvolution    mEdgeDetectionConvolution;
 

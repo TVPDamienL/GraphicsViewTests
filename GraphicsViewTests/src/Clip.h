@@ -55,7 +55,7 @@ private:
 
     cSelection*             mSelection;
     QImage*                 mCurrentFrameRendering;
-    QRect                   mDirtyArea;
+    QRect                   mDirtyArea = QRect( 0, 0, 0, 0 );
 };
 
 

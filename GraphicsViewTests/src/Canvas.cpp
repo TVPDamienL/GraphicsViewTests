@@ -464,6 +464,7 @@ cCanvas::SetClip( cClip * iClip )
 
         });
 
+    SetImage( mClip->ComposeLayers() );
 }
 
 

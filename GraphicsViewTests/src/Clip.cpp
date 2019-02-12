@@ -20,7 +20,7 @@ cClip::cClip( unsigned int iWidth, unsigned int iHeight ) :
     mSelection = new cSelection( mWidth, mHeight, this );
     mCurrentFrameRendering = new QImage( mWidth, mHeight, QImage::Format_ARGB32_Premultiplied );
     mCurrentFrameRendering->fill( Qt::transparent );
-    mDirtyArea = QRect( 0, 0, mWidth, mHeight );
+    DirtyArea( QRect( 0, 0, mWidth, mHeight ) );
 }
 
 

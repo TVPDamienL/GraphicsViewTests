@@ -3,6 +3,25 @@
 #include <QImage>
 
 #include "Blending.h"
+#include "BenchmarkStuff.h"
+
+static uint counterFill = 0;
+static uint counterCopy = 0;
+
+static
+void
+Reset__()
+{
+    counterFill = 0;
+    counterCopy = 0;
+}
+
+static
+void
+ShowMe__()
+{
+    qDebug() << "Fill : " << counterFill << " -- Copy : " << counterCopy;
+}
 
 
 
@@ -33,6 +52,7 @@ HardFill( QImage* dest, const QRect& area, const QColor& color )
         for( int x = startingX; x <= endingX; ++x )
         {
             BlendPixelNone( &destScanline, r, g, b, alpha );
+            ++counterFill;
         }
     }
 }
@@ -91,9 +111,9 @@ CopyImage( QImage* source, QImage* destination, const QPoint& point )
     const int maxY = minY + source->height() - 1;
 
     const int startingX = minX < 0 ? 0 : minX;
-    const int endingX = maxX >= destination->width() ? destination->width() - 1 : maxX;
+    const int endingX = maxX > destination->width() - 1 ? destination->width() - 1 : maxX;
     const int startingY = minY < 0 ? 0 : minY;
-    const int endingY = maxY >= destination->height() ? destination->height() - 1 : maxY;
+    const int endingY = maxY > destination->height() - 1 ? destination->height() - 1 : maxY;
 
     for( int y = startingY; y <= endingY; ++y )
     {
@@ -104,6 +124,7 @@ CopyImage( QImage* source, QImage* destination, const QPoint& point )
         {
             BlendPixelNone( &destScanline, *(sourceScanline+2), *(sourceScanline+1), *(sourceScanline), *(sourceScanline+3) );
             sourceScanline += 4;
+            ++counterCopy;
         }
     }
 }
@@ -209,3 +230,115 @@ BlendImageNormalSameSizes( QImage* source, QImage* destination, const QRect& are
         }
     }
 }
+
+
+// ==============================================================================
+// ==============================================================================
+// ==============================================================================
+
+
+static
+QPolygonF
+MapToPolygonF( const QTransform& iTransfo, const QRectF& iRect )
+{
+    QPolygonF output;
+
+    output.append( iTransfo.map( iRect.topLeft() ) );
+    output.append( iTransfo.map( iRect  .topRight() ) );
+    output.append( iTransfo.map( iRect  .bottomRight() ) );
+    output.append( iTransfo.map( iRect  .bottomLeft() ) );
+
+    return  output;
+}
+
+
+static
+QPolygonF
+MapToPolygonF( const QTransform& iTransfo, const QRect& iRect )
+{
+    return  MapToPolygonF( iTransfo, QRectF( iRect ) );
+}
+
+
+//================================================================
+//================================================================
+//================================================================
+
+
+static
+QImage*
+TransformNearestNeighbour( QImage* iInput, /*QImage* iOutput, */const QTransform& iTransform )
+{
+    QImage* output = 0;
+
+    const QTransform inverse = iTransform.inverted();
+    const int inputWidth = iInput->width();
+    const int inputHeight = iInput->height();
+
+    QPolygonF outputRect = MapToPolygonF( iTransform, iInput->rect() );
+
+    // Transformed BBox
+    int minX = outputRect.at( 0 ).x();
+    int minY = outputRect.at( 0 ).y();
+    int maxX = outputRect.at( 0 ).x();
+    int maxY = outputRect.at( 0 ).y();
+
+    for( auto point : outputRect )
+    {
+        if( point.x() < minX )
+            minX = point.x();
+
+        if( point.y() < minY )
+            minY = point.y();
+
+        if( point.x() > maxX )
+            maxX = point.x();
+
+        if( point.y() > maxY )
+            maxY = point.y();
+    }
+
+    QRect transfoBBox( minX, minY, maxX - minX, maxY - minY );
+
+    output = new QImage( transfoBBox.width(), transfoBBox.height(), QImage::Format::Format_ARGB32_Premultiplied );
+
+    uchar* inputData = iInput->bits();
+    const int inputBPL = iInput->bytesPerLine();
+
+    uchar* outputData = output->bits();
+    uchar* outputScanline = outputData;
+    const int outputBPL = output->bytesPerLine();
+
+
+    for( int y = minY; y < maxY; ++y )
+    {
+        outputScanline = outputData + (y-minY) * outputBPL;
+
+        for( int x = minX; x < maxX; ++x )
+        {
+            const QPointF xyMapped = inverse.map( QPointF( x, y ) );
+            const QPoint xyMappedCut( xyMapped.x(), xyMapped.y() );
+
+            if( xyMapped.x() < 0 || xyMapped.y() < 0
+                || xyMapped.x() > inputWidth -1 || xyMapped.y() > inputHeight -1 )
+            {
+                *outputScanline = 0; ++outputScanline;
+                *outputScanline = 0; ++outputScanline;
+                *outputScanline = 0; ++outputScanline;
+                *outputScanline = 0; ++outputScanline;
+                continue;
+            }
+
+            int inputIndex = xyMappedCut.y() * inputBPL + xyMappedCut.x() * 4;
+            *outputScanline = inputData[ inputIndex + 0 ]; ++outputScanline;
+            *outputScanline = inputData[ inputIndex + 1 ]; ++outputScanline;
+            *outputScanline = inputData[ inputIndex + 2 ]; ++outputScanline;
+            *outputScanline = inputData[ inputIndex + 3 ]; ++outputScanline;
+        }
+    }
+
+    return  output;
+}
+
+
+

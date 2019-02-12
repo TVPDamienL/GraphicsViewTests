@@ -3,7 +3,7 @@
 #include "cSelection.h"
 
 #include "cHUDView.h"
-
+#include "Image.Utilities.h"
 
 cHUDTransform::~cHUDTransform()
 {
@@ -246,7 +246,7 @@ cHUDTransform::TransformImage() const
 {
     auto localTransfor = GetLocalTransform();
 
-    QPolygon transfo =  localTransfor.mapToPolygon( QRect( mOriginalFrame.x(), mOriginalFrame.y(), mOriginalFrame.width(), mOriginalFrame.height() ) );
+    QPolygonF transfo =  MapToPolygonF( localTransfor, mOriginalFrame );
 
     int minX = 99999;
     int minY = 99999;
@@ -260,6 +260,7 @@ cHUDTransform::TransformImage() const
         maxX = point.x() > maxX ? point.x() : maxX;
         maxY = point.y() > maxY ? point.y() : maxY;
     }
+
     QRect transfoBBox( minX, minY, maxX - minX, maxY - minY );
 
     QPointF topLeft = mOriginalFrame.topLeft();
@@ -268,6 +269,7 @@ cHUDTransform::TransformImage() const
     double sinAngle = _mSinAngle;
 
     localTransfor.setMatrix( cosAngle*mXScale, sinAngle*mXScale, 0, -sinAngle*mYScale, cosAngle*mYScale, 0, diff.x(), diff.y(), 1 );
+
     mSelection->TransformSelection( localTransfor, transfoBBox );
 }
 

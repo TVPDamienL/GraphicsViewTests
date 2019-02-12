@@ -161,11 +161,12 @@ void cSelection::TransformSelection( const QTransform& iTransfo, const QRectF& i
     auto transfoWithoutTranslatioon = QTransform();
     transfoWithoutTranslatioon.setMatrix( iTransfo.m11(), iTransfo.m12(), iTransfo.m13(), iTransfo.m21(), iTransfo.m22(), iTransfo.m23(), 0, 0, 1 );
 
-    QImage scaledBuffer = mExtratedBuffer->transformed( transfoWithoutTranslatioon );
+    delete mExtratedBufferTMP;
+    mExtratedBufferTMP = TransformNearestNeighbour( mExtratedBuffer, iTransfo );
 
-    //dirtyArea = dirtyArea.united( GetTransformationBBox() );
+    HardFill( mTransformationBuffer, dirtyArea, Qt::transparent );
+    CopyImage( mExtratedBufferTMP, mTransformationBuffer, dirtyArea.topLeft() );
 
-    CopyImage( &scaledBuffer, mTransformationBuffer, GetTransformationBBox().topLeft() );
     mAssociatedClip->DirtyArea( dirtyArea );
 }
 
