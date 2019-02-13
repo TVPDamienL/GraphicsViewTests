@@ -40,7 +40,7 @@ public:
 
 public:
     void ExtractPixelsFromImageToBuffer();
-    void TransformSelection( const QTransform& iTransfo, const QRectF& iTransformedBBox ); // Dirties the clip
+    void TransformSelection( const QTransform& iTransfo ); // Dirties the clip
     void CancelTransformation(); // Dirties the clip
     void ApplyTransformation(); // Dirties the clip
 
@@ -57,7 +57,7 @@ public:
     }
 
 public:
-    QImage* ExtractedImage() { return  mExtratedBuffer; }
+    QImage* ExtractedImage() { return  mExtractedBuffer; }
     QImage* TransformedImage() { return  mTransformationBuffer; }
 
 private:
@@ -71,7 +71,7 @@ private:
 
     bool            mActive = false;
     QImage*         mOriginalImage = 0;         // The original image the selection is working on
-    QImage*         mExtratedBuffer = 0;        // The extracted part
+    QImage*         mExtractedBuffer = 0;        // The extracted part
     QImage*         mExtratedBufferTMP = 0;        //TMP
     QImage*         mTransformationBuffer = 0;  // The extracted part transformed
     cConvolution    mEdgeDetectionConvolution;

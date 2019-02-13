@@ -5,24 +5,45 @@
 #include "Blending.h"
 #include "BenchmarkStuff.h"
 
-static uint counterFill = 0;
-static uint counterCopy = 0;
 
+
+
+inline
 static
-void
-Reset__()
+bool
+ImageContainsPoint( const QImage* iImage, const QPoint& iPoint )
 {
-    counterFill = 0;
-    counterCopy = 0;
+    return  iImage->rect().contains( iPoint );
 }
 
-static
-void
-ShowMe__()
-{
-    qDebug() << "Fill : " << counterFill << " -- Copy : " << counterCopy;
-}
 
+inline
+static
+QRect
+ExclusiveBoundingBox( const QPolygonF& iPolygon )
+{
+    int minX = iPolygon.at( 0 ).x();
+    int minY = iPolygon.at( 0 ).y();
+    int maxX = iPolygon.at( 0 ).x();
+    int maxY = iPolygon.at( 0 ).y();
+
+    for( auto point : iPolygon )
+    {
+        if( point.x() < minX )
+            minX = point.x();
+
+        if( point.y() < minY )
+            minY = point.y();
+
+        if( point.x() > maxX )
+            maxX = point.x();
+
+        if( point.y() > maxY )
+            maxY = point.y();
+    }
+
+    return  QRect( minX, minY, maxX - minX, maxY - minY );
+}
 
 
 // Sets area with color
@@ -52,7 +73,6 @@ HardFill( QImage* dest, const QRect& area, const QColor& color )
         for( int x = startingX; x <= endingX; ++x )
         {
             BlendPixelNone( &destScanline, r, g, b, alpha );
-            ++counterFill;
         }
     }
 }
@@ -124,7 +144,6 @@ CopyImage( QImage* source, QImage* destination, const QPoint& point )
         {
             BlendPixelNone( &destScanline, *(sourceScanline+2), *(sourceScanline+1), *(sourceScanline), *(sourceScanline+3) );
             sourceScanline += 4;
-            ++counterCopy;
         }
     }
 }
@@ -267,15 +286,16 @@ MapToPolygonF( const QTransform& iTransfo, const QRect& iRect )
 
 static
 QImage*
-TransformNearestNeighbour( QImage* iInput, /*QImage* iOutput, */const QTransform& iTransform )
+TransformNearestNeighbourIntoImage( QImage* iInput, const QTransform& iTransform )
 {
     QImage* output = 0;
 
     const QTransform inverse = iTransform.inverted();
     const int inputWidth = iInput->width();
     const int inputHeight = iInput->height();
+    const QRect inputArea = iInput->rect();
 
-    QPolygonF outputRect = MapToPolygonF( iTransform, iInput->rect() );
+    QPolygonF outputRect = MapToPolygonF( iTransform, inputArea );
 
     // Transformed BBox
     int minX = outputRect.at( 0 ).x();
@@ -316,11 +336,9 @@ TransformNearestNeighbour( QImage* iInput, /*QImage* iOutput, */const QTransform
 
         for( int x = minX; x < maxX; ++x )
         {
-            const QPointF xyMapped = inverse.map( QPointF( x, y ) );
-            const QPoint xyMappedCut( xyMapped.x(), xyMapped.y() );
+            const QPoint xyMapped = inverse.map( QPoint( x, y ) );
 
-            if( xyMapped.x() < 0 || xyMapped.y() < 0
-                || xyMapped.x() > inputWidth -1 || xyMapped.y() > inputHeight -1 )
+            if( !inputArea.contains( xyMapped ) )
             {
                 *outputScanline = 0; ++outputScanline;
                 *outputScanline = 0; ++outputScanline;
@@ -329,7 +347,7 @@ TransformNearestNeighbour( QImage* iInput, /*QImage* iOutput, */const QTransform
                 continue;
             }
 
-            int inputIndex = xyMappedCut.y() * inputBPL + xyMappedCut.x() * 4;
+            int inputIndex = xyMapped.y() * inputBPL + xyMapped.x() * 4;
             *outputScanline = inputData[ inputIndex + 0 ]; ++outputScanline;
             *outputScanline = inputData[ inputIndex + 1 ]; ++outputScanline;
             *outputScanline = inputData[ inputIndex + 2 ]; ++outputScanline;
@@ -338,6 +356,69 @@ TransformNearestNeighbour( QImage* iInput, /*QImage* iOutput, */const QTransform
     }
 
     return  output;
+}
+
+
+static
+void
+TransformNearestNeighbourDirectOutput( QImage* iInput, QImage* iOutput, const QTransform& iTransform, const QPoint& iOrigin )
+{
+    const QTransform    inverse = iTransform.inverted();
+    const int           inputWidth = iInput->width();
+    const int           inputHeight = iInput->height();
+    QRect               inputArea = iInput->rect();
+    inputArea.moveTopLeft( iOrigin );
+
+    const int           outputWidth = iOutput->width();
+    const int           outputHeight = iOutput->height();
+
+    QPolygonF           outputRect = MapToPolygonF( iTransform, inputArea );
+    QRect transfoBBox = ExclusiveBoundingBox( outputRect );
+
+
+    int minX = transfoBBox.left();
+    int minY = transfoBBox.top();
+    int maxX = transfoBBox.right();
+    int maxY = transfoBBox.bottom();
+
+    transfoBBox = transfoBBox.intersected( iOutput->rect() );
+    // If QRect is 0, 0, 1920, 1080, it'll go from 0 to 1919. That's how Qt implements it
+    // So by doing intersection between the output and anything else, we'll have x1/x2 - y1/y2 values between 0 and width/height-1
+    // Which means, in the loop below, we go to <= endX/Y, and not <
+
+    int startX = transfoBBox.left();
+    int startY = transfoBBox.top();
+    int endX = transfoBBox.right();
+    int endY = transfoBBox.bottom();
+
+    uchar* inputData = iInput->bits();
+    const int inputBPL = iInput->bytesPerLine();
+
+    uchar* outputData = iOutput->bits();
+    uchar* outputScanline = outputData;
+    const int outputBPL = iOutput->bytesPerLine();
+
+    const int xOffset = startX * 4;
+    uchar* scanXOffset = outputData + xOffset;
+
+    for( int y = startY; y <= endY; ++y )
+    {
+        outputScanline = scanXOffset + y * outputBPL;
+
+        for( int x = startX; x <= endX; ++x )
+        {
+            const QPoint xyMapped = inverse.map( QPoint( x, y ) );
+
+            if( !inputArea.contains( xyMapped ) )
+            {
+                BlendPixelNone( &outputScanline, 0, 0, 0, 0 );
+                continue;
+            }
+
+            int inputIndex = (xyMapped.y() - iOrigin.y()) * inputBPL + (xyMapped.x() - iOrigin.x()) * 4;
+            BlendPixelNone( &outputScanline, inputData[ inputIndex + 2 ], inputData[ inputIndex + 1 ], inputData[ inputIndex + 0 ], inputData[ inputIndex + 3 ] );
+        }
+    }
 }
 
 

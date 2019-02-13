@@ -244,33 +244,7 @@ cHUDTransform::_GetOppositeHandle( int iIndex )
 void
 cHUDTransform::TransformImage() const
 {
-    auto localTransfor = GetLocalTransform();
-
-    QPolygonF transfo =  MapToPolygonF( localTransfor, mOriginalFrame );
-
-    int minX = 99999;
-    int minY = 99999;
-    int maxX = -1;
-    int maxY = -1;
-
-    for( auto point : transfo )
-    {
-        minX = point.x() < minX ? point.x() : minX;
-        minY = point.y() < minY ? point.y() : minY;
-        maxX = point.x() > maxX ? point.x() : maxX;
-        maxY = point.y() > maxY ? point.y() : maxY;
-    }
-
-    QRect transfoBBox( minX, minY, maxX - minX, maxY - minY );
-
-    QPointF topLeft = mOriginalFrame.topLeft();
-    QPointF diff = transfoBBox.topLeft() - topLeft;
-    double cosAngle = _mCosAngle;
-    double sinAngle = _mSinAngle;
-
-    localTransfor.setMatrix( cosAngle*mXScale, sinAngle*mXScale, 0, -sinAngle*mYScale, cosAngle*mYScale, 0, diff.x(), diff.y(), 1 );
-
-    mSelection->TransformSelection( localTransfor, transfoBBox );
+    mSelection->TransformSelection( GetLocalTransform() );
 }
 
 

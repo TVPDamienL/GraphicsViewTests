@@ -248,8 +248,10 @@ cHUDObject::GetFinalTransform() const
 QTransform
 cHUDObject::GetLocalTransform() const
 {
-    QTransform rotate = QTransform().rotate( mRotationAngle * 180 / PI );
-    return QTransform::fromScale( mXScale, mYScale ) * rotate * QTransform::fromTranslate( mTranslation.x(), mTranslation.y() );
+    QTransform local = QTransform();
+    local.setMatrix( _mCosAngle*mXScale, _mSinAngle*mXScale, 0, -_mSinAngle*mYScale, _mCosAngle*mYScale, 0, mTranslation.x(), mTranslation.y(), 1 );
+
+    return  local;
 }
 
 

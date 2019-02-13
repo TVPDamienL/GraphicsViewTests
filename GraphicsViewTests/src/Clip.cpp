@@ -134,7 +134,8 @@ cClip::ComposeLayers()
 
         if( mSelection->IsActive() && layer == mCurrentLayer )
         {
-            BlendImageNormalSameSizes( mSelection->TransformedImage(), mCurrentFrameRendering, mSelection->GetTransformationBBox() );
+            QRect clippedArea = mDirtyArea.intersected( mSelection->GetTransformationBBox() );
+            BlendImageNormalSameSizes( mSelection->TransformedImage(), mCurrentFrameRendering, clippedArea );
         }
     }
 

@@ -82,11 +82,11 @@ cSelection::ExtractPixelsFromImageToBuffer()
     mTransformationBuffer->fill( Qt::transparent );
 
 
-    delete mExtratedBuffer;
-    mExtratedBuffer = new QImage( bboxWidth, bboxHeight, QImage::Format_ARGB32_Premultiplied );
+    delete mExtractedBuffer;
+    mExtractedBuffer = new QImage( bboxWidth, bboxHeight, QImage::Format_ARGB32_Premultiplied );
 
     const int bpl = mOriginalImage->bytesPerLine();
-    const int bufferBpl = mExtratedBuffer->bytesPerLine();
+    const int bufferBpl = mExtractedBuffer->bytesPerLine();
 
     // Source we extract from
     uchar* sourceData = mOriginalImage->bits();
@@ -97,7 +97,7 @@ cSelection::ExtractPixelsFromImageToBuffer()
     uchar* maskScanline = maskData;
 
     // The output extracted buffer image
-    uchar* bufferData = mExtratedBuffer->bits();
+    uchar* bufferData = mExtractedBuffer->bits();
     uchar* bufferScanline = bufferData;
 
     const int minX = selectionBBox.left();
@@ -142,30 +142,24 @@ cSelection::ExtractPixelsFromImageToBuffer()
     }
 
     // Copies the extracted buffer into the transformation buffer to start with
-    CopyImage( mExtratedBuffer, mTransformationBuffer, selectionBBox.topLeft() );
+    CopyImage( mExtractedBuffer, mTransformationBuffer, selectionBBox.topLeft() );
     mTransformationBBox = selectionBBox;
 }
 
 
 
-void cSelection::TransformSelection( const QTransform& iTransfo, const QRectF& iTransformedBBox )
+void cSelection::TransformSelection( const QTransform& iTransfo )
 {
-    if( !mExtratedBuffer )
+    if( !mExtractedBuffer )
         return;
 
-    QRect dirtyArea = GetTransformationBBox();
+    QRect dirtyArea = GetTransformationBBox(); // Old position
 
-    mTransformationBBox = iTransformedBBox;
-    mTransformationBBox.setTopLeft( mOriginalSelectionBBox.topLeft() + QPointF( iTransfo.dx(), iTransfo.dy() ) );
+    mTransformationBBox = ExclusiveBoundingBox( MapToPolygonF( iTransfo, mOriginalSelectionBBox ) );
 
-    auto transfoWithoutTranslatioon = QTransform();
-    transfoWithoutTranslatioon.setMatrix( iTransfo.m11(), iTransfo.m12(), iTransfo.m13(), iTransfo.m21(), iTransfo.m22(), iTransfo.m23(), 0, 0, 1 );
+    TransformNearestNeighbourDirectOutput( mExtractedBuffer, mTransformationBuffer, iTransfo, mOriginalSelectionBBox.topLeft() );
 
-    delete mExtratedBufferTMP;
-    mExtratedBufferTMP = TransformNearestNeighbour( mExtratedBuffer, iTransfo );
-
-    HardFill( mTransformationBuffer, dirtyArea, Qt::transparent );
-    CopyImage( mExtratedBufferTMP, mTransformationBuffer, dirtyArea.topLeft() );
+    // Somehow, we don't need to dirty the new position, dunno why, but that's less pixels to render i guess, as long as it works ...
 
     mAssociatedClip->DirtyArea( dirtyArea );
 }
@@ -175,7 +169,7 @@ void
 cSelection::CancelTransformation()
 {
     QRect dirtyArea = GetTransformationBBox();
-    BlendImageNormal( mExtratedBuffer, mOriginalImage, mOriginalSelectionBBox.topLeft() );
+    BlendImageNormal( mExtractedBuffer, mOriginalImage, mOriginalSelectionBBox.topLeft() );
     dirtyArea = dirtyArea.united( mOriginalSelectionBBox );
 
     Clear();
