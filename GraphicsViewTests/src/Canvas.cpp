@@ -84,44 +84,22 @@ cCanvas::tabletEvent( QTabletEvent*  iEvent )
     {
         case  QEvent::TabletPress:
         {
-            mClickPos = iEvent->pos();
+            MouseDown( iEvent->pos(), iEvent->button(), iEvent->pressure(), iEvent->rotation() );
 
-            if( iEvent->button() == Qt::LeftButton )
-            {
-                if( QApplication::keyboardModifiers() & Qt::AltModifier )
-                {
-                }
-                else
-                {
-                }
-            }
-            else if( iEvent->button() == Qt::RightButton )
-            {
-            }
+            QGraphicsView::tabletEvent( iEvent );
+            break;
+        }
+        case  QEvent::TabletMove:
+        {
+            MouseMove( iEvent->pos(), iEvent->pressure(), iEvent->rotation() );
 
             QGraphicsView::tabletEvent( iEvent );
             break;
         }
         case  QEvent::TabletRelease:
         {
-            if( mState == kDrawing )
-            {
-            }
+            MouseUp( iEvent->pos(), iEvent->pressure(), iEvent->rotation() );
 
-            mState = kIdle;
-            QGraphicsView::tabletEvent( iEvent );
-            break;
-        }
-        case  QEvent::TabletMove:
-        {
-            if( mState == kPan )
-            {
-            }
-            else if( mState == kDrawing )
-            {
-            }
-
-            mClickPos = iEvent->pos();
             QGraphicsView::tabletEvent( iEvent );
             break;
         }
@@ -251,60 +229,7 @@ cCanvas::keyReleaseEvent( QKeyEvent * iEvent )
 void
 cCanvas::mousePressEvent( QMouseEvent * iEvent )
 {
-    mClickPos = iEvent->pos();
-
-    if( iEvent->button() == Qt::LeftButton )
-    {
-        if( QApplication::keyboardModifiers() == Qt::AltModifier )
-        {
-            mState = kPan;
-            mOriginTranslation = mTranslation;
-        }
-        else if( QApplication::keyboardModifiers() == ( Qt::AltModifier | Qt::ShiftModifier ) )
-        {
-            mState = kRotate;
-
-            mOriginTranslation = mTranslation;
-            mOriginRotation = mRotationAngle;
-        }
-        else
-        {
-            auto paintTool = dynamic_cast< cPaintToolBase* >( mTool );
-            if( paintTool && !mSelectionMode )
-            {
-                if( mClip->GetSelection()->IsActive() )
-                {
-                    paintTool->SetAlphaMask( mClip->GetSelection()->GetSelectionMask() );
-                }
-                else
-                {
-                    paintTool->SetAlphaMask( 0 );
-                }
-            }
-
-            mState = kDrawing;
-
-            sPointData point;
-            QPointF clickMapped = mEditableItem->mapFromScene( mapToScene( iEvent->pos().x(), iEvent->pos().y() ) );
-            point.mPosition = QPoint( clickMapped.x(), clickMapped.y() );
-            point.mPressure = 1.0F;
-            point.mRotation = 0.0F;
-
-            mTool->StartDrawing( mClip->CurrentLayer()->Image(), point );
-
-            if( mToolType == kEraser )
-                mPainter->setCompositionMode( QPainter::CompositionMode_Clear );
-        }
-    }
-    else if( iEvent->button() == Qt::RightButton )
-    {
-        if( QApplication::keyboardModifiers() & Qt::ControlModifier )
-        {
-            //auto test = new colorPickerDialog( mTool, this );
-            //test->openAtPosition( iEvent->screenPos() - QPointF( test->size().width()/2, test->size().height()/2 ) );
-        }
-    }
-
+    MouseDown( iEvent->pos(), iEvent->button(), 1.0, 0.0 );
     QGraphicsView::mousePressEvent( iEvent );
 }
 
@@ -312,60 +237,7 @@ cCanvas::mousePressEvent( QMouseEvent * iEvent )
 void
 cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
 {
-    if( mState == kPan )
-    {
-        QPointF offset = iEvent->pos() - mClickPos;
-
-        mTranslation = mOriginTranslation;
-        TranslateBy( QPoint( offset.x(), offset.y() ) );
-
-        mEditableItem->setTransform( mTransform );
-        mGridItem->setTransform( mTransform );
-        mHUDSelection->setTransform( mTransform );
-
-        mHUDView->SetTranslation( mTranslation );
-    }
-    else if( mState == kRotate )
-    {
-        auto canvasCenter   = QPoint( width()/2, height()/2 );
-        auto currentClick  = iEvent->pos();
-
-        QPointF originVector = mClickPos - canvasCenter;
-        QPointF newVector = currentClick - canvasCenter;
-
-        double firstAngle = atan2( originVector.y(), originVector.x() );
-        double secondAngle = atan2( newVector.y(), newVector.x() );
-
-        double theAngle = secondAngle - firstAngle;
-
-        mTranslation = mOriginTranslation;
-        mRotationAngle = mOriginRotation;
-        _mCosAngle = cos( mOriginRotation );
-        _mSinAngle = sin( mOriginRotation );
-
-        RotateFromCenterPost( canvasCenter, theAngle );
-
-        mEditableItem->setTransform( mTransform );
-        mGridItem->setTransform( mTransform );
-        mHUDSelection->setTransform( mTransform );
-
-        mHUDView->SetTranslation( mTranslation );
-        mHUDView->SetRotation( mRotationAngle );
-    }
-    else if( mState == kDrawing )
-    {
-        QPointF newPointInItemCoordinate = mEditableItem->mapFromScene( mapToScene( iEvent->pos().x(), iEvent->pos().y() ) );
-
-        sPointData point;
-        point.mPosition = QPoint( newPointInItemCoordinate.x(), newPointInItemCoordinate.y() );
-        point.mPressure = 1.0F;
-        point.mRotation = 0.0F;
-
-        auto dirty = mTool->MoveDrawing( point );
-        if( !dirty.isEmpty() )
-            mClip->DirtyArea( dirty );
-    }
-
+    MouseMove( iEvent->pos(), 1.0, 0.0 );
     QGraphicsView::mouseMoveEvent( iEvent );
 }
 
@@ -373,30 +245,7 @@ cCanvas::mouseMoveEvent( QMouseEvent * iEvent )
 void
 cCanvas::mouseReleaseEvent( QMouseEvent * iEvent )
 {
-    if( mState == kDrawing )
-    {
-        sPointData point;
-        QPointF clickMapped = mEditableItem->mapFromScene( mapToScene( iEvent->pos().x(), iEvent->pos().y() ) );
-        point.mPosition = QPoint( clickMapped.x(), clickMapped.y() );
-        point.mPressure = 1.0F;
-        point.mRotation = 0.0F;
-
-        auto dirty = mTool->EndDrawing( point );
-        if( !dirty.isEmpty() )
-            mClip->DirtyArea( dirty );
-
-        if( !mSelectionMode )
-        {
-            mClip->CurrentLayer()->WriteUndoHistory();
-            //currentFrameGotPainted( *mEditableItem->mpixmap );
-        }
-        else
-        {
-            mHUDSelection->SetSelectionOutlineImage( mClip->GetSelection()->GetSelectionEdgeMask() );
-        }
-    }
-
-    mState = kIdle;
+    MouseUp( iEvent->pos(), 1.0, 0.0 );
     QGraphicsView::mouseReleaseEvent( iEvent );
 }
 
@@ -434,6 +283,154 @@ cCanvas::wheelEvent( QWheelEvent * iEvent )
 
     QGraphicsView::wheelEvent( iEvent );
 }
+
+
+void
+cCanvas::MouseDown( const QPoint& iPos, const Qt::MouseButton& iButton, double iPressure, double iRotation )
+{
+    mClickPos = iPos;
+
+    if( iButton == Qt::LeftButton )
+    {
+        if( QApplication::keyboardModifiers() == Qt::AltModifier )
+        {
+            mState = kPan;
+            mOriginTranslation = mTranslation;
+        }
+        else if( QApplication::keyboardModifiers() == ( Qt::AltModifier | Qt::ShiftModifier ) )
+        {
+            mState = kRotate;
+
+            mOriginTranslation = mTranslation;
+            mOriginRotation = mRotationAngle;
+        }
+        else
+        {
+            auto paintTool = dynamic_cast< cPaintToolBase* >( mTool );
+            if( paintTool && !mSelectionMode )
+            {
+                if( mClip->GetSelection()->IsActive() )
+                {
+                    paintTool->SetAlphaMask( mClip->GetSelection()->GetSelectionMask() );
+                }
+                else
+                {
+                    paintTool->SetAlphaMask( 0 );
+                }
+            }
+
+            mState = kDrawing;
+
+            sPointData point;
+            QPointF clickMapped = mEditableItem->mapFromScene( mapToScene( iPos.x(), iPos.y() ) );
+            point.mPosition = QPoint( clickMapped.x(), clickMapped.y() );
+            point.mPressure = 1.0F;
+            point.mRotation = 0.0F;
+
+            mTool->StartDrawing( mClip->CurrentLayer()->Image(), point );
+
+            if( mToolType == kEraser )
+                mPainter->setCompositionMode( QPainter::CompositionMode_Clear );
+        }
+    }
+    else if( iButton == Qt::RightButton )
+    {
+        if( QApplication::keyboardModifiers() & Qt::ControlModifier )
+        {
+            //auto test = new colorPickerDialog( mTool, this );
+            //test->openAtPosition( iEvent->screenPos() - QPointF( test->size().width()/2, test->size().height()/2 ) );
+        }
+    }
+}
+
+void
+cCanvas::MouseMove( const QPoint& iPos, double iPressure, double iRotation )
+{
+    if( mState == kPan )
+    {
+        QPointF offset = iPos - mClickPos;
+
+        mTranslation = mOriginTranslation;
+        TranslateBy( QPoint( offset.x(), offset.y() ) );
+
+        mEditableItem->setTransform( mTransform );
+        mGridItem->setTransform( mTransform );
+        mHUDSelection->setTransform( mTransform );
+
+        mHUDView->SetTranslation( mTranslation );
+    }
+    else if( mState == kRotate )
+    {
+        auto canvasCenter   = QPoint( width()/2, height()/2 );
+        auto currentClick  = iPos;
+
+        QPointF originVector = mClickPos - canvasCenter;
+        QPointF newVector = currentClick - canvasCenter;
+
+        double firstAngle = atan2( originVector.y(), originVector.x() );
+        double secondAngle = atan2( newVector.y(), newVector.x() );
+
+        double theAngle = secondAngle - firstAngle;
+
+        mTranslation = mOriginTranslation;
+        mRotationAngle = mOriginRotation;
+        _mCosAngle = cos( mOriginRotation );
+        _mSinAngle = sin( mOriginRotation );
+
+        RotateFromCenterPost( canvasCenter, theAngle );
+
+        mEditableItem->setTransform( mTransform );
+        mGridItem->setTransform( mTransform );
+        mHUDSelection->setTransform( mTransform );
+
+        mHUDView->SetTranslation( mTranslation );
+        mHUDView->SetRotation( mRotationAngle );
+    }
+    else if( mState == kDrawing )
+    {
+        QPointF newPointInItemCoordinate = mEditableItem->mapFromScene( mapToScene( iPos.x(), iPos.y() ) );
+
+        sPointData point;
+        point.mPosition = QPoint( newPointInItemCoordinate.x(), newPointInItemCoordinate.y() );
+        point.mPressure = iPressure;
+        point.mRotation = iRotation;
+
+        auto dirty = mTool->MoveDrawing( point );
+        if( !dirty.isEmpty() )
+            mClip->DirtyArea( dirty );
+    }
+}
+
+
+void
+cCanvas::MouseUp( const QPoint& iPos, double iPressure, double iRotation )
+{
+    if( mState == kDrawing )
+    {
+        sPointData point;
+        QPointF clickMapped = mEditableItem->mapFromScene( mapToScene( iPos.x(), iPos.y() ) );
+        point.mPosition = QPoint( clickMapped.x(), clickMapped.y() );
+        point.mPressure = 1.0F;
+        point.mRotation = 0.0F;
+
+        auto dirty = mTool->EndDrawing( point );
+        if( !dirty.isEmpty() )
+            mClip->DirtyArea( dirty );
+
+        if( !mSelectionMode )
+        {
+            mClip->CurrentLayer()->WriteUndoHistory();
+            //currentFrameGotPainted( *mEditableItem->mpixmap );
+        }
+        else
+        {
+            mHUDSelection->SetSelectionOutlineImage( mClip->GetSelection()->GetSelectionEdgeMask() );
+        }
+    }
+
+    mState = kIdle;
+}
+
 
 
 void

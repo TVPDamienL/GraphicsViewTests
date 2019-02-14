@@ -1,5 +1,7 @@
 #include "PaintToolBase.h"
 
+#include "Math.Fast.h"
+
 #include <QVector2d>
 
 cPaintToolBase::~cPaintToolBase()
@@ -11,9 +13,9 @@ cPaintToolBase::cPaintToolBase( QObject *parent ) :
     ToolBase( parent ),
     mAlphaMask( 0 )
 {
-    mStep = 10.0F;
+    mStep = 0.1;
     mLastRenderedPathIndex = 0;
-    mRequiredStepLength = mStep;
+    mRequiredStepLength = _GetStepInPixelValue();
 }
 
 
@@ -147,7 +149,7 @@ cPaintToolBase::DrawPathFromLastRenderedPoint()
 
 
         // If spare steps from previous it, we apply it, and then use this point as first
-        if( abs( mRequiredStepLength - mStep ) > 0.1F )
+        if( abs( mRequiredStepLength - _GetStepInPixelValue() ) > 0.1F )
         {
             startingPoint = __DrawDotVectorTruc_RequiresAName_( p1, stepVectorNormalizedAsPF * mRequiredStepLength, pressure_p1, rotation_p1 );
             remainingDistance -= mRequiredStepLength;
@@ -158,17 +160,17 @@ cPaintToolBase::DrawPathFromLastRenderedPoint()
 
 
                        // We split the segment using mStep, and draw dots on each step while there is room on the segment
-        while( remainingDistance >= mStep )
+        while( remainingDistance >= _GetStepInPixelValue() )
         {
             float pressure = std::abs(pressure_p2 - pressure_p1) * (1.0 - remainingDistance/distance) + std::min(pressure_p1, pressure_p2);
             float rotation = std::abs(rotation_p2 - rotation_p1) * (1.0 - remainingDistance/distance) + std::min(rotation_p1, rotation_p2);
-            __DrawDotVectorTruc_RequiresAName_( startingPoint, stepVectorNormalizedAsPF * mStep * count, pressure, rotation );
-            remainingDistance -= mStep;
+            __DrawDotVectorTruc_RequiresAName_( startingPoint, stepVectorNormalizedAsPF * _GetStepInPixelValue() * count, pressure, rotation );
+            remainingDistance -= _GetStepInPixelValue();
             ++count;
         }
 
         // Here, we probably have space between the last dot and the next point, not enough for a step, but still space, so we remember it for next iteration
-        mRequiredStepLength = mStep - remainingDistance;
+        mRequiredStepLength = _GetStepInPixelValue() - remainingDistance;
     }
 }
 
@@ -235,4 +237,11 @@ cPaintToolBase::__DrawDotVectorTruc_RequiresAName_( const QPoint& iStart, const 
     DrawDot( stepPosition.x(), stepPosition.y(), iPressure, iRotation );
 
     return  stepPosition;
+}
+
+
+float
+cPaintToolBase::_GetStepInPixelValue() const
+{
+    return  mStep * mToolSize;
 }

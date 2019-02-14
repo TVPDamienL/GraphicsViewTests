@@ -13,7 +13,7 @@ cLayer::cLayer( unsigned int iWidth, unsigned int iHeight ) :
     mCurrentHistoryIndex( 0 )
 {
     //mImage = new QImage( iWidth, iHeight, QImage::Format_ARGB32_Premultiplied );
-    mImage = new QImage( "Resources/lapin.png" );
+    mImage = new QImage( "Resources/lapinGrid.png" );
 
     //mImage->fill( 0xFF333333 );
     //mImage->fill( 0x00000000 ); // Clear with transparent

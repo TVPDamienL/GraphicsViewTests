@@ -3,6 +3,7 @@
 #include <QDebug>
 
 #include "BenchmarkStuff.h"
+#include "Image.Utilities.h"
 #include "Math.Fast.h"
 #include "Blending.h"
 
@@ -18,7 +19,7 @@ cToolSimpleBrush::cToolSimpleBrush( QObject * iParent ) :
     // Some debug values to work with
     mToolSize = 10;
     mColor = Qt::red;
-    mStep = 10.0F; // Because we stay in squared numerics, to avoid the sqrt, so this would be a 5 pixel step
+    mStep = 0.05;
     mApplyProfile = true;
 
     mTipRendered = 0;
@@ -104,11 +105,12 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
 
     int bytesPerLine = mDrawingContext->bytesPerLine();
 
-    int size = mToolSize * iPressure;
+    _mToolSizeAfterPressure = mToolSize * iPressure;
     QImage* scaledTip = mTipRendered;
 
-    if( size != mToolSize )
-        scaledTip = new QImage( mTipRendered->scaled( size, size, Qt::AspectRatioMode::KeepAspectRatio ) );
+    if( _mToolSizeAfterPressure != mToolSize )
+        scaledTip = DownscaleBoxAverageIntoImage( mTipRendered, QTransform() * QTransform::fromScale( iPressure, iPressure ) );
+        //scaledTip = new QImage( mTipRendered->scaled( size, size, Qt::AspectRatioMode::KeepAspectRatio ) );
 
     int radius = scaledTip->width() / 2;
     uchar* dataTip = scaledTip->bits();
@@ -116,9 +118,9 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
     int bytesPerLineTip = scaledTip->bytesPerLine();
 
     int minX = iX - radius;
-    int maxX = iX + radius;
+    int maxX = minX + scaledTip->width();
     int minY = iY - radius;
-    int maxY = iY + radius;
+    int maxY = minY + scaledTip->height();
 
     // Basic out of bounds elimination
     if( minX >= mDrawingContext->width() || minY >= mDrawingContext->height() )
@@ -177,6 +179,9 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
         }
     }
 
+    if( _mToolSizeAfterPressure != mToolSize )
+        delete  scaledTip;
+
     //BENCHEND
 }
 
@@ -188,6 +193,13 @@ cToolSimpleBrush::DrawLine( int x1, int y1, int x2, int y2 )
     DrawDot( x2, y2, 1, 0 );
 
     // All inbetweens
+}
+
+
+float
+cToolSimpleBrush::_GetStepInPixelValue() const
+{
+    return  mStep * _mToolSizeAfterPressure;
 }
 
 

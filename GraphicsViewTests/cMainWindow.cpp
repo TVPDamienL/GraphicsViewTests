@@ -159,7 +159,7 @@ cMainWindow::sizeChanged( int iNew )
 void
 cMainWindow::stepChanged( int iStep )
 {
-    mToolPaint->setStep( iStep );
+    mToolPaint->setStep( iStep/100.F );
 }
 
 

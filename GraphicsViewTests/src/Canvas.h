@@ -39,6 +39,12 @@ public:
     void  mouseReleaseEvent( QMouseEvent* iEvent )  override;
     void  wheelEvent( QWheelEvent* iEvent )         override;
 
+
+public:
+    void  MouseDown( const QPoint& iPos, const Qt::MouseButton& iButton, double iPressure, double iRotation );
+    void  MouseMove( const QPoint& iPos, double iPressure, double iRotation );
+    void  MouseUp( const QPoint& iPos, double iPressure, double iRotation );
+
 public:
     void  SetImage( QImage* iImage );
     void  SetClip( cClip* iClip );

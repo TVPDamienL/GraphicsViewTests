@@ -20,12 +20,11 @@ public:
     Qt::ItemFlags   flags( const QModelIndex& iIndex ) const override;
     void  buildTool();
 
+
 public:
     void  ApplyProfile( bool iApply );
     bool  ApplyProfile() const;
 
-
-private:
 
 public:
     // Overrides
@@ -33,6 +32,10 @@ public:
     virtual  QRect MoveDrawing( sPointData iPointData ) override;
     virtual  void  DrawDot( int x, int y, float iPressure, float iRotation ) override;
     virtual  void  DrawLine( int x1, int y1, int x2, int y2 ) override;
+
+
+protected:
+    virtual  float   _GetStepInPixelValue() const;
 
 
 private:
@@ -43,5 +46,7 @@ private:
     cCurveBase< float > mProfile;
     bool                mApplyProfile;
     QImage*             mTipRendered;
+
+    float               _mToolSizeAfterPressure;
 };
 

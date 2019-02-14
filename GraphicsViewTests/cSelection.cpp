@@ -157,7 +157,17 @@ void cSelection::TransformSelection( const QTransform& iTransfo )
 
     mTransformationBBox = ExclusiveBoundingBox( MapToPolygonF( iTransfo, mOriginalSelectionBBox ) );
 
-    TransformNearestNeighbourDirectOutput( mExtractedBuffer, mTransformationBuffer, iTransfo, mOriginalSelectionBBox.topLeft() );
+    //TransformNearestNeighbourDirectOutput( mExtractedBuffer, mTransformationBuffer, iTransfo, mOriginalSelectionBBox.topLeft() );
+
+
+
+    QImage * out = DownscaleBoxAverageIntoImage( mExtractedBuffer, iTransfo );
+
+    HardFill( mTransformationBuffer, GetTransformationBBox(), Qt::transparent );
+    CopyImage( out, mTransformationBuffer, GetTransformationBBox().topLeft() );
+
+
+
 
     // Somehow, we don't need to dirty the new position, dunno why, but that's less pixels to render i guess, as long as it works ...
 

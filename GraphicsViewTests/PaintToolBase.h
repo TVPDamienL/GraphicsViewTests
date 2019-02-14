@@ -41,8 +41,13 @@ public:
     void  SetAlphaMask( QImage* iImage );
     void  ClearAlphaMask();
 
-private:
+protected:
     QPoint  __DrawDotVectorTruc_RequiresAName_( const QPoint& iStart, const QPointF& iVector, float iPressure, float iRotation );
+
+    // This method returns the amount of pixel needed to reach the next dot
+    // It's a percentage of the toolsize, and can be rederivated to include pressure
+    // Because step is always depending on size
+    virtual  float   _GetStepInPixelValue() const;
 
 
 protected:
