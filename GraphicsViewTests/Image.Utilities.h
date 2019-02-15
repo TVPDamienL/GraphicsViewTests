@@ -8,7 +8,6 @@
 #include "Math.Fast.h"
 
 
-
 inline
 static
 bool

@@ -94,8 +94,6 @@ cToolSimpleBrush::MoveDrawing( sPointData iPointData )
 void
 cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
 {
-    //BENCHSTART
-
     uchar* data = mDrawingContext->bits();
     uchar* dataScanline = data;
 
@@ -180,8 +178,6 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
 
     if( _mToolSizeAfterPressure != mToolSize )
         delete  scaledTip;
-
-    //BENCHEND
 }
 
 
