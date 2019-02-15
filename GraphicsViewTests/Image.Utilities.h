@@ -5,6 +5,7 @@
 #include "Blending.h"
 #include "BenchmarkStuff.h"
 
+#include "Math.Fast.h"
 
 
 
@@ -473,8 +474,8 @@ DownscaleBoxAverageIntoImage( QImage* iInput, const QTransform& iTransform )
 
     int minX = transfoBBox.left();
     int minY = transfoBBox.top();
-    int maxX = transfoBBox.right();
-    int maxY = transfoBBox.bottom();
+    int maxX = transfoBBox.right() + 1;
+    int maxY = transfoBBox.bottom() + 1;
 
     // Scales
     const double xScaleFactor = Distance2Points( outputRect[ 0 ], outputRect[ 1 ] ) / double( inputArea.width() );
@@ -487,8 +488,7 @@ DownscaleBoxAverageIntoImage( QImage* iInput, const QTransform& iTransform )
     const double yScaleInverse = 1/ yScaleFactor;
 
     // The output image
-    output = new QImage( transfoBBox.width(), transfoBBox.height(), QImage::Format::Format_ARGB32_Premultiplied );
-    HardFill( output, output->rect(), Qt::blue );
+    output = new QImage( transfoBBox.width()+1, transfoBBox.height()+1, QImage::Format::Format_ARGB32_Premultiplied );
 
     // Data iteration
     uchar* inputData = iInput->bits();
@@ -504,6 +504,10 @@ DownscaleBoxAverageIntoImage( QImage* iInput, const QTransform& iTransform )
     unsigned int gSum = 0;
     unsigned int bSum = 0;
     unsigned int aSum = 0;
+    double surface = 0.0;
+    double xRatio = 1.0;
+    double yRatio = 1.0;
+    double finalRatio = 1.0;
 
     for( int y = minY; y <= maxY; ++y )
     {
@@ -512,9 +516,8 @@ DownscaleBoxAverageIntoImage( QImage* iInput, const QTransform& iTransform )
         for( int x = minX; x <= maxX; ++x )
         {
             // Get the point in original
-            //const QPoint xyMapped = inverse.map( QPoint( x, y ) );
-            const QPointF xyMappedT = inverse.map( QPointF( x, y ) );
-            const QPoint xyMapped = QPoint( round( xyMappedT.x() ), round( xyMappedT.y() ) );
+            const QPointF xyMappedF = inverse.map( QPointF( x, y ) );
+            const QPoint xyMapped = QPoint( xyMappedF.x(), xyMappedF.y() );
 
             if( !inputArea.contains( xyMapped ) )
             {
@@ -523,31 +526,57 @@ DownscaleBoxAverageIntoImage( QImage* iInput, const QTransform& iTransform )
             }
 
             // Get the box to read in original
-            QRect boxArea( xyMapped.x(), xyMapped.y(), int( xScaleInverse ), int( yScaleInverse ) );
+            QRectF boxAreaF( xyMapped.x(), xyMapped.y(), xScaleInverse, yScaleInverse );
+            QRect boxArea( xyMapped.x(), xyMapped.y(), int( xScaleInverse ) + 1, int( yScaleInverse ) + 1 );
+
+
             // Clip to not write oob
             boxArea = boxArea.intersected( inputArea );
-            const int boxSurface = boxArea.width() * boxArea.height();
 
             if( !boxArea.isEmpty() )
             {
                 // Sum of all pixel values
                 for( int j = boxArea.top(); j <= boxArea.bottom(); ++j )
                 {
+                    double ratio = 1 - (boxAreaF.top() - j);
+                    if( ratio < 1.0 )
+                    {
+                        yRatio = ratio;
+                    }
+                    else
+                    {
+                        yRatio = Min( 1 - (j - boxAreaF.bottom()), 1.0);
+                    }
+
+
                     inputScanline = inputData + j * inputBPL + boxArea.left() * 4;
                     for( int i = boxArea.left(); i <= boxArea.right(); ++i )
                     {
-                        //int index = j * inputBPL + i * 4;
-                        bSum += *inputScanline; ++inputScanline;
-                        gSum += *inputScanline; ++inputScanline;
-                        rSum += *inputScanline; ++inputScanline;
-                        aSum += *inputScanline; ++inputScanline;
+                        ratio = 1 - (boxAreaF.left() - i);
+                        if( ratio < 1.0 )
+                        {
+                            xRatio = ratio;
+                        }
+                        else
+                        {
+                            xRatio = Min( 1 - (i - boxAreaF.right()), 1.0 );
+                        }
+
+                        finalRatio = xRatio * yRatio;
+
+                        bSum += *inputScanline * finalRatio; ++inputScanline;
+                        gSum += *inputScanline * finalRatio; ++inputScanline;
+                        rSum += *inputScanline * finalRatio; ++inputScanline;
+                        aSum += *inputScanline * finalRatio; ++inputScanline;
+
+                        surface += finalRatio;
                     }
                 }
 
-                rSum /= boxSurface;
-                gSum /= boxSurface;
-                bSum /= boxSurface;
-                aSum /= boxSurface;
+                rSum /= surface;
+                gSum /= surface;
+                bSum /= surface;
+                aSum /= surface;
 
                 // Blend
                 BlendPixelNone( &outputScanline, rSum, gSum, bSum, aSum );
@@ -556,6 +585,7 @@ DownscaleBoxAverageIntoImage( QImage* iInput, const QTransform& iTransform )
                 gSum = 0;
                 bSum = 0;
                 aSum = 0;
+                surface = 0.0;
             }
         }
     }

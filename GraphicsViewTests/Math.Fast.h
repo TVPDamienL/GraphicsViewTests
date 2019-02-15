@@ -55,3 +55,28 @@ Distance2Points( const QPointF& iP1, const QPointF& iP2 )
 {
     return  std::sqrt( Distance2PointsSquared( iP1, iP2 ) );
 }
+
+
+template< typename T >
+static
+inline
+T Min( const T& a, const T& b )
+{
+    if( a < b )
+        return  a;
+
+    return  b;
+}
+
+
+template< typename T >
+static
+inline
+T Max( const T& a, const T& b )
+{
+    if( a > b )
+        return  a;
+
+    return  b;
+}
+

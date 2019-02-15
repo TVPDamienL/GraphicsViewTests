@@ -1,6 +1,14 @@
 #pragma once
 
 #include "ToolBase.h"
+#include "qcolor.h"              // for QColor
+#include "qcompilerdetection.h"  // for Q_NULLPTR
+#include "qobjectdefs.h"         // for Q_OBJECT
+#include "qpoint.h"              // for QPoint, QPointF
+#include "qrect.h"               // for QRect
+#include "qstring.h"             // for QString
+#include "vector"                // for vector
+#include <memory>                // for allocator
 
 class cPaintToolBase :
     public  ToolBase

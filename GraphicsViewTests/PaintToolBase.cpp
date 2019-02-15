@@ -2,7 +2,15 @@
 
 #include "Math.Fast.h"
 
-#include <QVector2d>
+#include <QDebug>
+
+#include "algorithm"       // for min
+#include "cmath"           // for abs, roundf
+#include "corecrt_math.h"  // for roundf
+#include "cstdlib"         // for abs
+#include "qlogging.h"      // for qDebug
+#include "qvector2d.h"     // for QVector2D
+#include "type_traits"     // for move
 
 cPaintToolBase::~cPaintToolBase()
 {
@@ -112,7 +120,6 @@ cPaintToolBase::DrawPathFromLastRenderedPoint()
     if( mPath.size() <= 0 )
         return;
 
-
     for( mLastRenderedPathIndex; mLastRenderedPathIndex < mPath.size() - 1; ++mLastRenderedPathIndex )
     {
         // Setting base variables : starting point, ending point and their distance
@@ -123,6 +130,8 @@ cPaintToolBase::DrawPathFromLastRenderedPoint()
         float  rotation_p1 = mPath[ mLastRenderedPathIndex ].mRotation;
         float  rotation_p2 = mPath[ mLastRenderedPathIndex + 1 ].mRotation;
         float distance = Distance2Points( p1, p2 );
+        float subPression = pressure_p2 - pressure_p1;
+        float subRotation = rotation_p2 - rotation_p1;
 
         // Two identical points -> SKIP
         if( abs( distance ) < 0.01 )
@@ -162,8 +171,10 @@ cPaintToolBase::DrawPathFromLastRenderedPoint()
                        // We split the segment using mStep, and draw dots on each step while there is room on the segment
         while( remainingDistance >= _GetStepInPixelValue() )
         {
-            float pressure = std::abs(pressure_p2 - pressure_p1) * (1.0 - remainingDistance/distance) + std::min(pressure_p1, pressure_p2);
-            float rotation = std::abs(rotation_p2 - rotation_p1) * (1.0 - remainingDistance/distance) + std::min(rotation_p1, rotation_p2);
+            float ratio = 1.0 - remainingDistance/distance;
+
+            float pressure = pressure_p1 + subPression * ratio;
+            float rotation = rotation_p1 + subRotation * ratio;
             __DrawDotVectorTruc_RequiresAName_( startingPoint, stepVectorNormalizedAsPF * _GetStepInPixelValue() * count, pressure, rotation );
             remainingDistance -= _GetStepInPixelValue();
             ++count;

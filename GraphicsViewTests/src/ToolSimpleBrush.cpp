@@ -105,12 +105,11 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
 
     int bytesPerLine = mDrawingContext->bytesPerLine();
 
-    _mToolSizeAfterPressure = mToolSize * iPressure;
+    _mToolSizeAfterPressure = Max( mToolSize * iPressure, 0.1F );
     QImage* scaledTip = mTipRendered;
 
     if( _mToolSizeAfterPressure != mToolSize )
         scaledTip = DownscaleBoxAverageIntoImage( mTipRendered, QTransform() * QTransform::fromScale( iPressure, iPressure ) );
-        //scaledTip = new QImage( mTipRendered->scaled( size, size, Qt::AspectRatioMode::KeepAspectRatio ) );
 
     int radius = scaledTip->width() / 2;
     uchar* dataTip = scaledTip->bits();
