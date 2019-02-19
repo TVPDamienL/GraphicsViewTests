@@ -82,6 +82,9 @@
     <Filter Include="src\ToolModel\Tools">
       <UniqueIdentifier>{e2861c69-95b1-4b42-9f3c-f446b1b3d67f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Shaders">
+      <UniqueIdentifier>{76098876-2e02-4d75-b1f5-0cc4a85b4937}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -182,6 +185,9 @@
     </ClCompile>
     <ClCompile Include="cHUDShapeTool.cpp">
       <Filter>src\HUD</Filter>
+    </ClCompile>
+    <ClCompile Include="GPUFuncs.cpp">
+      <Filter>src\Shaders</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -300,10 +306,30 @@
     <ClInclude Include="cHUDShapeTool.h">
       <Filter>src\HUD</Filter>
     </ClInclude>
+    <ClInclude Include="GPUFuncs.h">
+      <Filter>src\Shaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="cMainWindow.ui">
       <Filter>Form Files</Filter>
     </QtUic>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Sum.cu">
+      <Filter>src\Shaders</Filter>
+    </None>
+    <None Include="Gaussian.cu">
+      <Filter>src\Shaders</Filter>
+    </None>
+    <None Include="GaussianDoublePassH.cl">
+      <Filter>src\Shaders</Filter>
+    </None>
+    <None Include="GaussianDoublePassV.cl">
+      <Filter>src\Shaders</Filter>
+    </None>
+    <None Include="NormalBlend.cl">
+      <Filter>src\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -5,7 +5,9 @@
 #include "BenchmarkStuff.h"
 #include "Math.Fast.h"
 #include "Blending.h"
+
 #include "Image.Utilities.h"
+#include "GPUFuncs.h"
 
 cClip::~cClip()
 {
@@ -95,49 +97,40 @@ cClip::ComposeLayers()
     int minY = mDirtyArea.top();
     int maxY = minY + mDirtyArea.height();
 
-    HardFill( mCurrentFrameRendering, mDirtyArea, Qt::transparent );
-
-    uchar* renderData = mCurrentFrameRendering->bits();
-    uchar* pixelRow = renderData;
+//#define GPU
+#ifdef GPU
+    mGPU.FillImageGPU( mCurrentFrameRendering, mDirtyArea, Qt::transparent, 1 );
 
     for( auto layer : mLayers )
     {
-        unsigned int bpr = layer->Image()->bytesPerLine();
+        mGPU.BlendImageSameSizesGPU(  layer->Image(), mCurrentFrameRendering, mDirtyArea, 0 );
 
-        // BLENDIMAGE - optimized with dirty area
-        unsigned int index = 0;
-        uchar* originData = layer->Image()->bits();
-        uchar* originPixelRow = originData;
-
-        for( unsigned int y = minY; y < maxY ; ++y )
+        // REMOVE this when benchmarking
+        if( mSelection->IsActive() && layer == mCurrentLayer )
         {
-            const int index = y * bpr + minX * 4;
-            pixelRow        = renderData + index;
-            originPixelRow  = originData + index;
+            QRect clippedArea = mDirtyArea.intersected( mSelection->GetTransformationBBox() );
+            mGPU.BlendImageSameSizesGPU(  mSelection->TransformedImage(), mCurrentFrameRendering, clippedArea, 0 );
 
-            for( unsigned int x = minX; x < maxX; ++x )
-            {
-                const uint8_t alpha = originPixelRow[ 3 ];
-                uchar sourceAlpha = alpha;
-                if( sourceAlpha == 0 )
-                {
-                    originPixelRow += 4;
-                    pixelRow += 4;
-                    continue;
-                }
-
-                BlendPixelNormal( &pixelRow, *(originPixelRow+2), *(originPixelRow+1), *(originPixelRow), alpha );
-                originPixelRow += 4;
-            }
         }
-        // /BLENDIMAGE
+        // /REMOVE this when benchmarking
+    }
+#else
+    HardFill( mCurrentFrameRendering, mDirtyArea, Qt::transparent );
 
+    for( auto layer : mLayers )
+    {
+        BlendImageNormalSameSizes( layer->Image(), mCurrentFrameRendering, mDirtyArea );
+
+        // REMOVE this when benchmarking
         if( mSelection->IsActive() && layer == mCurrentLayer )
         {
             QRect clippedArea = mDirtyArea.intersected( mSelection->GetTransformationBBox() );
             BlendImageNormalSameSizes( mSelection->TransformedImage(), mCurrentFrameRendering, clippedArea );
+
         }
+        // /REMOVE this when benchmarking
     }
+#endif
 
     EmitValueChanged( kRenderedDirtyArea );
 

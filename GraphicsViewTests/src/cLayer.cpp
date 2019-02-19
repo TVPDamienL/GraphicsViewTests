@@ -1,6 +1,10 @@
 #include "cLayer.h"
 
 
+#include "GPUFuncs.h"
+#include "BenchmarkStuff.h"
+
+
 cLayer::~cLayer()
 {
     delete  mImage;
@@ -14,6 +18,15 @@ cLayer::cLayer( unsigned int iWidth, unsigned int iHeight ) :
 {
     //mImage = new QImage( iWidth, iHeight, QImage::Format_ARGB32_Premultiplied );
     mImage = new QImage( "Resources/lapinGrid.png" );
+    //mImage = GaussianBlurCPP( mImage );
+    //BENCHSTART
+    //mImage = GaussianBlurGPU1D2Pass( mImage );
+    //BENCHEND
+
+    //qDebug() << " CPU ================ ";
+    //BENCHSTART
+        //mImage = GaussianBlurCPPDoublePass( mImage );
+    //BENCHEND
 
     //mImage->fill( 0xFF333333 );
     //mImage->fill( 0x00000000 ); // Clear with transparent

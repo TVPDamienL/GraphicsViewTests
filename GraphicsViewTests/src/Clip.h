@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 
+#include "GPUFuncs.h"
 #include <qpixmap.h>
 #include "cSelection.h"
 #include "cBaseData.h"
@@ -56,6 +57,8 @@ private:
     cSelection*             mSelection;
     QImage*                 mCurrentFrameRendering;
     QRect                   mDirtyArea = QRect( 0, 0, 0, 0 );
+
+    GPUManager              mGPU;
 };
 
 

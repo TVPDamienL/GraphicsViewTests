@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <QDebug>
 
 
 #define BENCHSTART  Bench::ClockBegin();                       \
