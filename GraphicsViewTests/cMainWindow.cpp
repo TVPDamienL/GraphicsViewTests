@@ -32,6 +32,8 @@ cMainWindow::cMainWindow(QWidget *parent) :
     mClip = new cClip( 1920, 1080 );
     mClip->AddLayer();
 
+
+
     UpdateUI();
 
     ui.colorSwatch->SetColor( mToolPaint->getColor() );

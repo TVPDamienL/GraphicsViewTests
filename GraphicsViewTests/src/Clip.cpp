@@ -7,7 +7,7 @@
 #include "Blending.h"
 
 #include "Image.Utilities.h"
-#include "GPUFuncs.h"
+#include "GPUForThisApp.h"
 
 cClip::~cClip()
 {
@@ -22,6 +22,8 @@ cClip::cClip( unsigned int iWidth, unsigned int iHeight ) :
     mSelection = new cSelection( mWidth, mHeight, this );
     mCurrentFrameRendering = new QImage( mWidth, mHeight, QImage::Format_ARGB32_Premultiplied );
     mCurrentFrameRendering->fill( Qt::transparent );
+    _GPU->SetLayersByteSize( mCurrentFrameRendering->sizeInBytes() );
+    _GPU->SetLayersBytePerLine( mCurrentFrameRendering->bytesPerLine() ); // Very abusive, as we assume all image of same size have same BPL
     DirtyArea( QRect( 0, 0, mWidth, mHeight ) );
 }
 
@@ -86,6 +88,11 @@ cClip::AddLayer()
         mCurrentLayer = mLayers.back();
         mSelection->SetOriginalImage( mCurrentLayer->Image() );
     }
+
+    // TMP hack to see stuff
+    mCurrentLayer = mLayers.back();
+
+    _GPU->LoadLayerToGPU( mLayers.back()->Image() );
 }
 
 
@@ -97,19 +104,23 @@ cClip::ComposeLayers()
     int minY = mDirtyArea.top();
     int maxY = minY + mDirtyArea.height();
 
-//#define GPU
+#define GPU
 #ifdef GPU
-    mGPU.FillImageGPU( mCurrentFrameRendering, mDirtyArea, Qt::transparent, 1 );
+    _GPU->FillImageGPU( mCurrentFrameRendering, mDirtyArea, Qt::transparent, 1 );
+    _GPU->PerformLayerCompositing( mCurrentFrameRendering, mDirtyArea );
 
     for( auto layer : mLayers )
     {
-        mGPU.BlendImageSameSizesGPU(  layer->Image(), mCurrentFrameRendering, mDirtyArea, 0 );
+        //_GPU->BlendImageSameSizesGPU(  layer->Image(), mCurrentFrameRendering, mDirtyArea, 0 );
 
         // REMOVE this when benchmarking
         if( mSelection->IsActive() && layer == mCurrentLayer )
         {
             QRect clippedArea = mDirtyArea.intersected( mSelection->GetTransformationBBox() );
-            mGPU.BlendImageSameSizesGPU(  mSelection->TransformedImage(), mCurrentFrameRendering, clippedArea, 0 );
+            BlendImageNormalSameSizes( mSelection->TransformedImage(), mCurrentFrameRendering, clippedArea );
+
+            //QRect clippedArea = mDirtyArea.intersected( mSelection->GetTransformationBBox() );
+            //_GPU->BlendImageSameSizesGPU(  mSelection->TransformedImage(), mCurrentFrameRendering, clippedArea, 0 );
 
         }
         // /REMOVE this when benchmarking

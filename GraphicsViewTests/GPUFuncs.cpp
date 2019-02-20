@@ -168,7 +168,7 @@ GPUManager::GaussianBlurGPU1D( QImage* image )
 
     // kernel calculates for each element C=A+B
     std::string kernel_code =
-#include "Gaussian.cu"
+#include "Shaders/Gaussian.cu"
         ;
 
     sources.push_back({kernel_code.c_str(),kernel_code.length()});
@@ -240,11 +240,11 @@ GPUManager::GaussianBlurGPU1D2Pass( QImage* image )
     // HORIZONTAL
     cl::Program::Sources sources;
     std::string kernelHorizontal =
-#include "GaussianDoublePassH.cl"
+#include "Shaders/GaussianDoublePassH.cl"
         ;
 
     std::string kernelVertical =
-#include "GaussianDoublePassV.cl"
+#include "Shaders/GaussianDoublePassV.cl"
         ;
 
     sources.push_back( {kernelVertical.c_str(), kernelVertical.length()} );
@@ -257,6 +257,7 @@ GPUManager::GaussianBlurGPU1D2Pass( QImage* image )
     // create buffers on the device
     cl::Buffer memImageData( *mContext, CL_MEM_READ_WRITE, byteSizeImage );
     cl::Buffer memKernel( *mContext, CL_MEM_READ_WRITE, byteSizeKernel );
+    cl::Buffer memBuffer( *mContext, CL_MEM_READ_WRITE, byteSizeImage );
     cl::Buffer memOutput( *mContext, CL_MEM_WRITE_ONLY, byteSizeImage );
 
     //create queue to which we will push commands for the device.
@@ -269,11 +270,11 @@ GPUManager::GaussianBlurGPU1D2Pass( QImage* image )
     kernel_GaussV.setArg( 3, image->bytesPerLine() );
     kernel_GaussV.setArg( 4, memKernel );
     kernel_GaussV.setArg( 5, kernelSize );
-    kernel_GaussV.setArg( 6, memOutput );
+    kernel_GaussV.setArg( 6, memBuffer );
 
     //alternative way to run the kernel
     cl::Kernel kernel_GaussH = cl::Kernel( program, "GaussianDoublePassH" );
-    kernel_GaussH.setArg( 0, memImageData );
+    kernel_GaussH.setArg( 0, memBuffer );
     kernel_GaussH.setArg( 1, image->width() );
     kernel_GaussH.setArg( 2, image->height() );
     kernel_GaussH.setArg( 3, image->bytesPerLine() );
@@ -290,11 +291,6 @@ GPUManager::GaussianBlurGPU1D2Pass( QImage* image )
     // Vertical call
     queue.enqueueNDRangeKernel( kernel_GaussV, cl::NullRange, cl::NDRange(totalSize/4), cl::NullRange );
     //queue.finish();
-
-    queue.enqueueReadBuffer( memOutput, CL_TRUE, 0, byteSizeImage, output->bits() );
-    //queue.finish();
-
-    queue.enqueueWriteBuffer( memImageData, CL_TRUE, 0, byteSizeImage, output->bits() );
 
     // Horizontal call
     queue.enqueueNDRangeKernel( kernel_GaussH, cl::NullRange, cl::NDRange(totalSize/4), cl::NullRange );
@@ -326,10 +322,10 @@ GPUManager::BlendImageSameSizesGPU( QImage* source, QImage* destination, const Q
     // HORIZONTAL
     cl::Program::Sources sources;
     std::string programBlendNormal =
-#include "NormalBlend.cl"
+#include "Shaders/NormalBlend.cl"
         ;
     std::string programBlendNone =
-#include "NoneBlend.cl"
+#include "Shaders/NoneBlend.cl"
         ;
 
     sources.push_back( {programBlendNormal.c_str(), programBlendNormal.length()} );

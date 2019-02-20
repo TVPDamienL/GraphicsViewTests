@@ -1,7 +1,7 @@
 #include "cLayer.h"
 
 
-#include "GPUFuncs.h"
+#include "GPUForThisApp.h"
 #include "BenchmarkStuff.h"
 
 
@@ -18,31 +18,15 @@ cLayer::cLayer( unsigned int iWidth, unsigned int iHeight ) :
 {
     //mImage = new QImage( iWidth, iHeight, QImage::Format_ARGB32_Premultiplied );
     mImage = new QImage( "Resources/lapinGrid.png" );
-    //mImage = GaussianBlurCPP( mImage );
-    //BENCHSTART
-    //mImage = GaussianBlurGPU1D2Pass( mImage );
-    //BENCHEND
+
+    //mImage = _GPU->GaussianBlurGPU1D2Pass( mImage );
+
 
     //qDebug() << " CPU ================ ";
     //BENCHSTART
         //mImage = GaussianBlurCPPDoublePass( mImage );
     //BENCHEND
 
-    //mImage->fill( 0xFF333333 );
-    //mImage->fill( 0x00000000 ); // Clear with transparent
-
-
-    // Manual version
-    //uchar*          data = emptyImage->bits();
-    //unsigned int    size = emptyImage->width() * emptyImage->height() * 4;
-    //for( int i = 0; i < size; i += 4 )
-    //{
-    //    Format is read reversed : BGRA
-    //    data[ i ]       = 255;    //B
-    //    data[ i + 1 ]   = 50;     //G
-    //    data[ i + 2 ]   = 50;     //R
-    //    data[ i + 3 ]   = 255;    //A
-    //}
 
     WriteUndoHistory(); // First undo state, the empty image
 }

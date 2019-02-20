@@ -2,6 +2,7 @@
 
 #include "Undoable.h"
 
+
 #include <QImage>
 
 #include <vector>

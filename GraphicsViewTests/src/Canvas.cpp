@@ -343,9 +343,13 @@ cCanvas::MouseDown( const QPoint& iPos, const Qt::MouseButton& iButton, double i
     }
 }
 
+static int c = 0;
+
 void
 cCanvas::MouseMove( const QPoint& iPos, double iPressure, double iRotation )
 {
+    ++c;
+    qDebug() << "Move " << c;
     if( mState == kPan )
     {
         QPointF offset = iPos - mClickPos;

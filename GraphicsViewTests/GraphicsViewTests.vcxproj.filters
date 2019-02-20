@@ -85,6 +85,9 @@
     <Filter Include="src\Shaders">
       <UniqueIdentifier>{76098876-2e02-4d75-b1f5-0cc4a85b4937}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\GPU">
+      <UniqueIdentifier>{b738d8bd-a6c9-4a6b-a0c8-3d8b325060b5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -188,6 +191,12 @@
     </ClCompile>
     <ClCompile Include="GPUFuncs.cpp">
       <Filter>src\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="GPUController.cpp">
+      <Filter>src\GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="GPUForThisApp.cpp">
+      <Filter>src\GPU</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -309,6 +318,12 @@
     <ClInclude Include="GPUFuncs.h">
       <Filter>src\Shaders</Filter>
     </ClInclude>
+    <ClInclude Include="GPUController.h">
+      <Filter>src\GPU</Filter>
+    </ClInclude>
+    <ClInclude Include="GPUForThisApp.h">
+      <Filter>src\GPU</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="cMainWindow.ui">
@@ -316,18 +331,6 @@
     </QtUic>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Sum.cu">
-      <Filter>src\Shaders</Filter>
-    </None>
-    <None Include="Gaussian.cu">
-      <Filter>src\Shaders</Filter>
-    </None>
-    <None Include="GaussianDoublePassH.cl">
-      <Filter>src\Shaders</Filter>
-    </None>
-    <None Include="GaussianDoublePassV.cl">
-      <Filter>src\Shaders</Filter>
-    </None>
     <None Include="NormalBlend.cl">
       <Filter>src\Shaders</Filter>
     </None>
