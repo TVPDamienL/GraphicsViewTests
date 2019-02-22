@@ -28,10 +28,12 @@ GPUForThisApp::GPUForThisApp() :
     RegisterShader( "Shaders/GaussianDoublePassH.cl" );
     RegisterShader( "Shaders/GaussianDoublePassV.cl" );
     RegisterShader( "Shaders/NormalBlend.cl" );
+    RegisterShader( "Shaders/NormalBlendMore.cl" );
     RegisterShader( "Shaders/NormalBlendSameSize.cl" );
     RegisterShader( "Shaders/NormalBlendPixelToImage.cl" );
     RegisterShader( "Shaders/Sum.cu" );
     RegisterShader( "Shaders/NoneBlendPixelToImage.cl" );
+    RegisterShader( "Shaders/Tests.cl" );
 
     if( BuildProgram() != CL_SUCCESS )
         return;
@@ -39,10 +41,12 @@ GPUForThisApp::GPUForThisApp() :
     BuildKernel( "GaussianDoublePassH" );
     BuildKernel( "GaussianDoublePassV" );
     BuildKernel( "NormalBlend" );
+    BuildKernel( "NormalBlendMore" );
     BuildKernel( "NormalBlendSameSize" );
     BuildKernel( "NormalBlendPixelToImage" );
     BuildKernel( "NoneBlend" );
     BuildKernel( "NoneBlendPixelToImage" );
+    BuildKernel( "Tests" );
 }
 
 
@@ -277,26 +281,65 @@ GPUForThisApp::LoadLayerToGPU( QImage * iLayerImage )
     mLayers.push_back( layer );
 }
 
-
 void
 GPUForThisApp::PerformLayerCompositing( QImage* oResult, const QRect& iDirtyArea )
 {
-    //create queue to which we will push commands for the device.
-    cl::CommandQueue queue( *mContext, mDevice );
+    if( iDirtyArea.isEmpty() )
+        return;
 
-    cl::Kernel* kernel = GetKernel( "NormalBlend" );
+    // Align dirty area to fit 32*32
+    QRect areaAligned = iDirtyArea;
+    areaAligned.setWidth( (areaAligned.width() | 31) + 1 );
+    areaAligned.setHeight( (areaAligned.height() | 31) + 1 );
 
-    for( int i = 0; i < mLayers.size(); ++i )
+    if( areaAligned.right() >= oResult->width() )
     {
-        kernel->setArg( 0, *mLayers[ i ] );
-        kernel->setArg( 1, *mOutputBuffer );
-        kernel->setArg( 2, mLayerBytePerLine );
-
-        cl_int error = queue.enqueueNDRangeKernel( *kernel, cl::NDRange( iDirtyArea.left(), iDirtyArea.top() ), cl::NDRange( iDirtyArea.width(), iDirtyArea.height() ), cl::NullRange );
-        if( error != CL_SUCCESS )
-            qDebug() << "FAILED KERNEL : " << error;
-        queue.finish();
+        areaAligned.moveLeft( oResult->width() - areaAligned.width() ); // It's a move to, not move by
+    }
+    if( areaAligned.bottom() >= oResult->height() )
+    {
+        areaAligned.moveTop( oResult->height() - areaAligned.height() ); // It's a move to, not move by
     }
 
-    queue.enqueueReadBuffer( *mOutputBuffer, CL_TRUE, 0, mLayerByteSize, oResult->bits() );
+    cl::Kernel* kernelBlendNormal = GetKernel( "NormalBlend" );
+    cl::Kernel* kernelFillNone = GetKernel( "NoneBlendPixelToImage" );
+
+    // Fill Transparent
+    kernelFillNone->setArg( 0, *mOutputBuffer );
+    kernelFillNone->setArg( 1, 0 );
+    kernelFillNone->setArg( 2, 255 );
+    kernelFillNone->setArg( 3, 0 );
+    kernelFillNone->setArg( 4, 255 );
+    kernelFillNone->setArg( 5, mLayerBytePerLine );
+
+    cl_int error = mQueue->enqueueNDRangeKernel( *kernelFillNone, cl::NDRange( iDirtyArea.left(), iDirtyArea.top() ), cl::NDRange( iDirtyArea.width(), iDirtyArea.height() ), cl::NullRange );
+    mQueue->finish();
+
+    kernelBlendNormal->setArg( 1, *mOutputBuffer );
+    kernelBlendNormal->setArg( 2, mLayerBytePerLine );
+
+    qDebug() << " Area : " << areaAligned;
+    //BENCHSTART
+    // Composite all layers
+    for( int i = 0; i < mLayers.size(); ++i )
+    {
+        kernelBlendNormal->setArg( 0, *mLayers[ i ] );
+
+        cl_int error = mQueue->enqueueNDRangeKernel( *kernelBlendNormal, cl::NDRange( areaAligned.left(), areaAligned.top() ), cl::NDRange( areaAligned.width(), areaAligned.height() ), cl::NDRange( 32, 32 ) );
+        if( error != CL_SUCCESS )
+            qDebug() << "FAILED KERNEL : " << error;
+        mQueue->finish();
+    }
+    //BENCHEND
+
+    cl::size_t<3> offset; // In byte too
+    offset[ 0 ] = areaAligned.left() * 4;
+    offset[ 1 ] = areaAligned.top();
+
+    cl::size_t<3> size; // In bytes
+    size[ 0 ] = areaAligned.width()  *4; // Pixel is 4 bytes wide
+    size[ 1 ] = areaAligned.height() *1; // 1 byte high
+    size[ 2 ] = 1; // 1 Byte deep
+
+    mQueue->enqueueReadBufferRect( *mOutputBuffer, CL_TRUE, offset, offset, size, mLayerBytePerLine, 0, mLayerBytePerLine, 0, oResult->bits() );
 }

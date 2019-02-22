@@ -30,6 +30,8 @@ protected:
     cl::Program::Sources*                           mShadersSource;
     cl::Program*                                    mProgram;
     std::unordered_map< std::string, cl::Kernel* >  mKernels;
+    cl::CommandQueue*                               mQueue;
+
 
 
 private:

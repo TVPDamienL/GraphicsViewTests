@@ -16,7 +16,7 @@ cLayer::~cLayer()
 cLayer::cLayer( unsigned int iWidth, unsigned int iHeight ) :
     mCurrentHistoryIndex( 0 )
 {
-    //mImage = new QImage( iWidth, iHeight, QImage::Format_ARGB32_Premultiplied );
+    mImage = new QImage( iWidth, iHeight, QImage::Format_ARGB32_Premultiplied );
     mImage = new QImage( "Resources/lapinGrid.png" );
 
     //mImage = _GPU->GaussianBlurGPU1D2Pass( mImage );

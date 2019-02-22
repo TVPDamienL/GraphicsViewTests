@@ -30,7 +30,9 @@ cMainWindow::cMainWindow(QWidget *parent) :
 
     //mClip = new cClip( 3840, 2160 );
     mClip = new cClip( 1920, 1080 );
-    mClip->AddLayer();
+
+    for( int i = 0; i < 1; ++i )
+        mClip->AddLayer();
 
 
 

@@ -16,6 +16,7 @@ GPUController::~GPUController()
 
     delete  mProgram;
     delete  mShadersSource;
+    delete  mQueue;
 }
 
 
@@ -43,6 +44,8 @@ GPUController::GPUController()
 
     mDevice.getInfo( CL_DEVICE_GLOBAL_MEM_SIZE, &_mTotalAvailableMemory );
     _mMemoryLeftAvailabe = _mTotalAvailableMemory;
+
+    mQueue = new cl::CommandQueue( *mContext, mDevice );
 }
 
 
