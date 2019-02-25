@@ -82,9 +82,6 @@
     <Filter Include="src\ToolModel\Tools">
       <UniqueIdentifier>{e2861c69-95b1-4b42-9f3c-f446b1b3d67f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\Shaders">
-      <UniqueIdentifier>{76098876-2e02-4d75-b1f5-0cc4a85b4937}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\GPU">
       <UniqueIdentifier>{b738d8bd-a6c9-4a6b-a0c8-3d8b325060b5}</UniqueIdentifier>
     </Filter>
@@ -177,9 +174,6 @@
     <ClCompile Include="ToolBase.cpp">
       <Filter>src\ToolModel\Tools</Filter>
     </ClCompile>
-    <ClCompile Include="src\ToolSimpleBrush.cpp">
-      <Filter>src\ToolModel\Tools</Filter>
-    </ClCompile>
     <ClCompile Include="Rectangle.cpp">
       <Filter>src\ToolModel\Shapes</Filter>
     </ClCompile>
@@ -189,14 +183,14 @@
     <ClCompile Include="cHUDShapeTool.cpp">
       <Filter>src\HUD</Filter>
     </ClCompile>
-    <ClCompile Include="GPUFuncs.cpp">
-      <Filter>src\Shaders</Filter>
-    </ClCompile>
     <ClCompile Include="GPUController.cpp">
       <Filter>src\GPU</Filter>
     </ClCompile>
     <ClCompile Include="GPUForThisApp.cpp">
       <Filter>src\GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ToolSimpleBrush.cpp">
+      <Filter>src\ToolModel\Tools</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -315,9 +309,6 @@
     <ClInclude Include="cHUDShapeTool.h">
       <Filter>src\HUD</Filter>
     </ClInclude>
-    <ClInclude Include="GPUFuncs.h">
-      <Filter>src\Shaders</Filter>
-    </ClInclude>
     <ClInclude Include="GPUController.h">
       <Filter>src\GPU</Filter>
     </ClInclude>
@@ -329,10 +320,5 @@
     <QtUic Include="cMainWindow.ui">
       <Filter>Form Files</Filter>
     </QtUic>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="NormalBlend.cl">
-      <Filter>src\Shaders</Filter>
-    </None>
   </ItemGroup>
 </Project>

@@ -5,6 +5,7 @@
 #include "CurveBase.h"
 
 #include <QColor>
+#include <qobject.h>
 
 class cToolSimpleBrush :
     public cPaintToolBase

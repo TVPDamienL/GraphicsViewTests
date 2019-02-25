@@ -16,17 +16,32 @@ cLayer::~cLayer()
 cLayer::cLayer( unsigned int iWidth, unsigned int iHeight ) :
     mCurrentHistoryIndex( 0 )
 {
-    mImage = new QImage( iWidth, iHeight, QImage::Format_ARGB32_Premultiplied );
+    //mImage = new QImage( iWidth, iHeight, QImage::Format_ARGB32_Premultiplied );
     mImage = new QImage( "Resources/lapinGrid.png" );
 
-    //mImage = _GPU->GaussianBlurGPU1D2Pass( mImage );
+
+    //QImage* output = new QImage( 1920, 1080, QImage::Format_ARGB32_Premultiplied );
+    //output->fill( Qt::blue );
+
+    //QTransform trans;
+
+    //const QPoint translation( 10, 10 );
+    ////const float rotation = 0;
+    //const float rotation = 45.0F / 180.0F * 3.14F;
+    //const float scale = 0.5;
+    //const float cosRot = cos( rotation );
+    //const float sinRot = sin( rotation );
+
+    //trans.setMatrix( cosRot * scale, sinRot * scale, 0, -sinRot * scale, cosRot * scale, 0, translation.x(), translation.y(), 1 );
 
 
-    //qDebug() << " CPU ================ ";
-    //BENCHSTART
-        //mImage = GaussianBlurCPPDoublePass( mImage );
-    //BENCHEND
 
+    //_GPU->LoadSelectionOriginalBuffer( mImage );
+    //_GPU->LoadSelectionOutputImage( output );
+    //_GPU->PerformTransformation( trans, QPoint( 0, 0 ) );
+
+    //delete  mImage;
+    //mImage = output;
 
     WriteUndoHistory(); // First undo state, the empty image
 }

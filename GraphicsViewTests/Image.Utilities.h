@@ -352,7 +352,6 @@ TransformNearestNeighbourDirectOutput( QImage* iInput, QImage* iOutput, const QT
     QPolygonF           outputRect = MapToPolygonF( iTransform, inputArea );
     QRect transfoBBox = ExclusiveBoundingBox( outputRect );
 
-
     int minX = transfoBBox.left();
     int minY = transfoBBox.top();
     int maxX = transfoBBox.right();

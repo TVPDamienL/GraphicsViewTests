@@ -7,6 +7,7 @@
 #include "Math.Fast.h"
 #include "Blending.h"
 
+
 cToolSimpleBrush::~cToolSimpleBrush()
 {
     delete  mTipRendered;
@@ -97,7 +98,6 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
     uchar* data = mDrawingContext->bits();
     uchar* dataScanline = data;
 
-
     const uchar* alphaData = 0;
     const uchar* alphaScanline = 0;
 
@@ -154,7 +154,6 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
             int srcG = *dataTipScanline; ++dataTipScanline;
             int srcR = *dataTipScanline; ++dataTipScanline;
             int srcA = *dataTipScanline; ++dataTipScanline;
-
 
             if( useAlphaMask )
             {

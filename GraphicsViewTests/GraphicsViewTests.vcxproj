@@ -133,10 +133,6 @@
     <ClCompile Include="cToolSelectionTest.cpp" />
     <ClCompile Include="GPUController.cpp" />
     <ClCompile Include="GPUForThisApp.cpp" />
-    <ClCompile Include="GPUFuncs.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PaintToolBase.cpp" />
     <ClCompile Include="powerslider.cpp" />
@@ -192,10 +188,6 @@
     <ClInclude Include="cSelection.h" />
     <ClInclude Include="GPUController.h" />
     <ClInclude Include="GPUForThisApp.h" />
-    <ClInclude Include="GPUFuncs.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </ClInclude>
     <ClInclude Include="Image.Utilities.h" />
     <ClInclude Include="Math.Fast.h" />
     <QtMoc Include="PaintToolBase.h">
@@ -235,9 +227,6 @@
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="cMainWindow.ui" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="NormalBlend.cl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
