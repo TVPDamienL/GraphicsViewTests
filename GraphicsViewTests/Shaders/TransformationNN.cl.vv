@@ -6,12 +6,11 @@ typedef struct sPoint
 
 
 sPoint
-local ApplyTransfo( float m1, float m2, float m3, float m4, float m5, float m6, float m7, float m8, float m9,
-                    int iX, int iY )
+local ApplyTransfo( global const float* iTransfo, int iX, int iY )
 {
     sPoint p;
-    p.mX = iX * m1 + iY * m4 + m7;
-    p.mY = iX * m2 + iY * m5 + m8;
+    p.mX = iX * iTransfo[ 0 ] + iY * iTransfo[ 3 ] + iTransfo[ 6 ];
+    p.mY = iX * iTransfo[ 1 ] + iY * iTransfo[ 4 ] + iTransfo[ 7 ];
 
     return  p;
 }
@@ -21,9 +20,9 @@ local ApplyTransfo( float m1, float m2, float m3, float m4, float m5, float m6, 
 void
 kernel TransformationNN( global const unsigned char* iInput, global unsigned char* oOutput, int iInputBPL, int iOutputBPL,
                             int iOutputRight, int iOutputBottom,
+                            global const float* iTransfoInverse,
                             int iOriginX, int iOriginY,
-                            int iInputAreaLeft, int iInputAreaRight, int iInputAreaTop, int iInputAreaBottom,
-                            float mI1, float mI2, float mI3, float mI4, float mI5, float mI6, float mI7, float mI8, float mI9  )
+                            int iInputAreaLeft, int iInputAreaRight, int iInputAreaTop, int iInputAreaBottom  )
 {
     int pixX = get_global_id(0);
     int pixY = get_global_id(1);
@@ -32,7 +31,7 @@ kernel TransformationNN( global const unsigned char* iInput, global unsigned cha
 
     int pixelIndex = pixY * iOutputBPL + pixX * 4;
 
-    sPoint xyMapped = ApplyTransfo( mI1, mI2, mI3, mI4, mI5, mI6, mI7, mI8, mI9, pixX, pixY );
+    sPoint xyMapped = ApplyTransfo( iTransfoInverse, pixX, pixY );
 
     // If inputArea doesn't contains xyMapped
     if( xyMapped.mX < iInputAreaLeft || xyMapped.mX > iInputAreaRight

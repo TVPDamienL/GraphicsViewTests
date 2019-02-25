@@ -6,6 +6,7 @@
 #include "Image.Utilities.h"
 #include "Math.Fast.h"
 #include "Blending.h"
+#include "GPUForThisApp.h"
 
 
 cToolSimpleBrush::~cToolSimpleBrush()
@@ -79,6 +80,10 @@ cToolSimpleBrush::StartDrawing( QImage* iImage, sPointData iPointData )
     mTipRendered->fill( Qt::transparent );
     _DrawDot( mTipRendered, mToolSize/2, mToolSize/2, 1.0, 0.0 );
     mDirtyArea = QRect( 0, 0, 0, 0 );
+
+    _GPU->LoadPaintContext( mDrawingContext );
+    //_GPU->LoadPaintAlpha( mAlphaMask );
+    _GPU->LoadBrushTip( mTipRendered );
 }
 
 
@@ -95,6 +100,40 @@ cToolSimpleBrush::MoveDrawing( sPointData iPointData )
 void
 cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
 {
+    // Can't work because too many calls :
+    // If step is small and mouse moves are large : each move = 100+ dots, plus a lot of moves per seconds, this means hundreds of calls per seconds
+    // This means a LOT of readBuffer -> Not efficient, would need to never read buffer = use some sort of openGL display
+
+
+
+
+    //_GPU->Paint( iX, iY, iPressure, iRotation );
+
+    //_mToolSizeAfterPressure = Max( mToolSize * iPressure, 1.0F );
+
+    //int diam = mToolSize * iPressure;
+    //int radius = diam / 2;
+
+    //int minX = iX - radius;
+    //int maxX = minX + diam;
+    //int minY = iY - radius;
+    //int maxY = minY + diam;
+
+    //// Basic out of bounds elimination
+    //if( minX >= mDrawingContext->width() || minY >= mDrawingContext->height() )
+    //    return;
+    //if( maxX < 0 || maxY < 0 )
+    //    return;
+
+    //int startingX = minX < 0 ? 0 : minX;
+    //int endingX = maxX >= mDrawingContext->width() ? mDrawingContext->width() - 1 : maxX;
+    //int startingY = minY < 0 ? 0 : minY;
+    //int endingY = maxY >= mDrawingContext->height() ? mDrawingContext->height() - 1 : maxY;
+
+    //mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX + 1, endingY - startingY + 1 ) );
+
+    //return;
+
     uchar* data = mDrawingContext->bits();
     uchar* dataScanline = data;
 
@@ -103,21 +142,22 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
 
     int bytesPerLine = mDrawingContext->bytesPerLine();
 
-    _mToolSizeAfterPressure = Max( mToolSize * iPressure, 0.1F );
+    _mToolSizeAfterPressure = Max( mToolSize * iPressure, 1.0F );
     QImage* scaledTip = mTipRendered;
 
     if( _mToolSizeAfterPressure != mToolSize )
         scaledTip = DownscaleBoxAverageIntoImage( mTipRendered, QTransform() * QTransform::fromScale( iPressure, iPressure ) );
 
-    int radius = scaledTip->width() / 2;
+    int diam = mToolSize * iPressure;
+    int radius = diam / 2;
     uchar* dataTip = scaledTip->bits();
     uchar* dataTipScanline = dataTip;
     int bytesPerLineTip = scaledTip->bytesPerLine();
 
     int minX = iX - radius;
-    int maxX = minX + scaledTip->width();
+    int maxX = minX + diam;
     int minY = iY - radius;
-    int maxY = minY + scaledTip->height();
+    int maxY = minY + diam;
 
     // Basic out of bounds elimination
     if( minX >= mDrawingContext->width() || minY >= mDrawingContext->height() )
@@ -187,6 +227,15 @@ cToolSimpleBrush::DrawLine( int x1, int y1, int x2, int y2 )
     DrawDot( x2, y2, 1, 0 );
 
     // All inbetweens
+}
+
+
+QRect
+cToolSimpleBrush::EndDrawing( sPointData iPointData )
+{
+    _GPU->ClearPaintToolBuffers();
+
+    return  cPaintToolBase::EndDrawing( iPointData );
 }
 
 

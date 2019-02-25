@@ -20,6 +20,7 @@ GPUForThisApp::Instance()
 
 GPUForThisApp::~GPUForThisApp()
 {
+    delete  mTransformationInverse;
 }
 
 
@@ -43,6 +44,7 @@ GPUForThisApp::GPUForThisApp() :
     BuildKernel( "GaussianDoublePassH" );
     BuildKernel( "GaussianDoublePassV" );
     BuildKernel( "NormalBlend" );
+    BuildKernel( "NormalBlendNotSameSizes" );
     BuildKernel( "NormalBlendMore" );
     BuildKernel( "NormalBlendSameSize" );
     BuildKernel( "NormalBlendPixelToImage" );
@@ -50,6 +52,8 @@ GPUForThisApp::GPUForThisApp() :
     BuildKernel( "NoneBlendPixelToImage" );
     BuildKernel( "TransformationNN" );
     BuildKernel( "Tests" );
+
+    mTransformationInverse = NewBuffer( sizeof(float)*9, CL_MEM_READ_ONLY );
 }
 
 
@@ -181,11 +185,10 @@ GPUForThisApp::BlendImageSameSizesGPU( QImage* source, QImage* destination, cons
     const int width = endingX - startingX;
     const int height = endingY - startingY;
 
-    CL_INVALID_PROGRAM_EXECUTABLE;
     // Vertical call
     cl_int error = queue.enqueueNDRangeKernel( *theKernel, cl::NDRange( startingX, startingY ), cl::NDRange( width + 1, height + 1 ), cl::NullRange );
     if( error != CL_SUCCESS )
-        qDebug() << "FAILED KERNEL : " << error;
+        qDebug() << "FAILED KERNEL : " << __FUNCTION__ << error;
     queue.finish();
 
     queue.enqueueReadBuffer( memDstImage, CL_TRUE, 0, byteSizeDstImage, destination->bits() );
@@ -248,10 +251,120 @@ void GPUForThisApp::FillImageGPU( QImage * destination, const QRect & area, cons
 
     cl_int error = queue.enqueueNDRangeKernel( *theKernel, cl::NDRange( startingX, startingY ), cl::NDRange( width + 1, height + 1 ), cl::NullRange );
     if( error != CL_SUCCESS )
-        qDebug() << "FAILED KERNEL : " << error;
+        qDebug() << "FAILED KERNEL : " << __FUNCTION__ << error;
     queue.finish();
 
     queue.enqueueReadBuffer( memDstImage, CL_TRUE, 0, byteSizeDstImage, destination->bits() );
+}
+
+
+// GPU Version of standard methods
+
+
+void
+GPUForThisApp::_TransformNN( cl::Buffer* iInput, int iInputBPL, const QRect& iInputArea,
+                             cl::Buffer* oOutput, int iOutputBPL, const QRect& iOutputArea,
+                             const QTransform & iTransfo, const QPoint & iOrigin )
+{
+    auto  inverted = iTransfo.inverted();
+    float transMatrixInverse[ 9 ] = { inverted.m11(),  inverted.m12(),  inverted.m13(),  inverted.m21(),  inverted.m22(),  inverted.m23(),  inverted.m31(),  inverted.m32(),  inverted.m33() };
+
+    QRect inputArea = iInputArea;
+    QRect outputArea = iOutputArea;
+    inputArea.moveTopLeft( iOrigin );
+    QPolygonF           outputRect = MapToPolygonF( iTransfo, inputArea );
+    QRect transfoBBox = ExclusiveBoundingBox( outputRect );
+    transfoBBox = transfoBBox.intersected( iOutputArea );
+
+    // Get these before changong width/height
+    const int rightLimit = transfoBBox.right();
+    const int bottomLimit = transfoBBox.bottom();
+
+    // 32 alignment
+    transfoBBox.setWidth( (transfoBBox.width() | 31) + 1 );
+    transfoBBox.setHeight( (transfoBBox.height() | 31) + 1 );
+
+
+    cl::Kernel* kernel = GetKernel( "TransformationNN" );
+
+    kernel->setArg( 0, *iInput );
+    kernel->setArg( 1, *oOutput );
+    kernel->setArg( 2, iInputBPL );
+    kernel->setArg( 3, iOutputBPL );
+
+    kernel->setArg( 4, rightLimit );
+    kernel->setArg( 5, bottomLimit );
+
+    //kernel->setArg( 6, *mTransformationInverse );
+
+    //kernel->setArg( 7, iOrigin.x() );
+    //kernel->setArg( 8, iOrigin.y() );
+
+    //kernel->setArg( 9, inputArea.left() );
+    //kernel->setArg( 10, inputArea.right() );
+    //kernel->setArg( 11, inputArea.top() );
+    //kernel->setArg( 12, inputArea.bottom() );
+
+    //mQueue->enqueueWriteBuffer( *mTransformationInverse, CL_TRUE, 0, sizeof(float)*9, transMatrixInverse );
+
+    kernel->setArg( 6, iOrigin.x() );
+    kernel->setArg( 7, iOrigin.y() );
+
+    kernel->setArg( 8, inputArea.left() );
+    kernel->setArg( 9, inputArea.right() );
+    kernel->setArg( 10, inputArea.top() );
+    kernel->setArg( 11, inputArea.bottom() );
+
+    kernel->setArg( 12, transMatrixInverse[ 0 ] );
+    kernel->setArg( 13, transMatrixInverse[ 1 ] );
+    kernel->setArg( 14, transMatrixInverse[ 2 ] );
+    kernel->setArg( 15, transMatrixInverse[ 3 ] );
+    kernel->setArg( 16, transMatrixInverse[ 4 ] );
+    kernel->setArg( 17, transMatrixInverse[ 5 ] );
+    kernel->setArg( 18, transMatrixInverse[ 6 ] );
+    kernel->setArg( 19, transMatrixInverse[ 7 ] );
+    kernel->setArg( 20, transMatrixInverse[ 8 ] );
+
+    cl_int error = mQueue->enqueueNDRangeKernel( *kernel, cl::NDRange( transfoBBox.left(), transfoBBox.top() ), cl::NDRange( transfoBBox.width(), transfoBBox.height() ), cl::NDRange( 32, 32 ) );
+    if( error != CL_SUCCESS )
+        qDebug() << "FAILED KERNEL : " << __FUNCTION__ << error;
+}
+
+
+void
+GPUForThisApp::_BlendImage( cl::Buffer* iInput, const QRect& iInputRect,  int iInputBPL,
+                            cl::Buffer* oOutput,  const QRect& iOutputRect, int iOutputBPL,
+                            const QPoint& point )
+{
+    // Drawing area
+    const int minX = point.x();
+    const int maxX = minX + iInputRect.width() - 1;
+    const int minY = point.y();
+    const int maxY = minY + iInputRect.height() - 1;
+
+    const int startingX = minX < 0 ? 0 : minX;
+    const int endingX = maxX >= iOutputRect.width() ? iOutputRect.width() - 1 : maxX;
+    const int startingY = minY < 0 ? 0 : minY;
+    const int endingY = maxY >= iOutputRect.height() ? iOutputRect.height() - 1 : maxY;
+
+    QRect dstDrawingArea( startingX, startingY, endingX - startingX, endingY - startingY );
+    dstDrawingArea.setWidth( (dstDrawingArea.width() | 31) + 1);
+    dstDrawingArea.setHeight( (dstDrawingArea.height() | 31) + 1);
+
+    cl::Kernel* normalBlend = GetKernel( "NormalBlendNotSameSizes" );
+
+    normalBlend->setArg( 0, *iInput );
+    normalBlend->setArg( 1, iInputBPL );
+    normalBlend->setArg( 2, *oOutput );
+    normalBlend->setArg( 3, iOutputBPL );
+    normalBlend->setArg( 4, dstDrawingArea.left() );
+    normalBlend->setArg( 5, dstDrawingArea.top() );
+    normalBlend->setArg( 6, endingX +1 );
+    normalBlend->setArg( 7, endingY +1 );
+
+    cl_int error = mQueue->enqueueNDRangeKernel( *normalBlend, cl::NDRange( dstDrawingArea.left(), dstDrawingArea.top() ), cl::NDRange( dstDrawingArea.width(), dstDrawingArea.height() ), cl::NDRange( 32, 32 ) );
+    if( error != CL_SUCCESS )
+        qDebug() << "FAILED KERNEL : " << __FUNCTION__ << error;
 }
 
 
@@ -281,6 +394,7 @@ GPUForThisApp::LoadLayerToGPU( QImage * iLayerImage )
 
     mLayers.push_back( layer );
 }
+
 
 void
 GPUForThisApp::PerformLayerCompositing( QImage* oResult, const QRect& iDirtyArea )
@@ -328,7 +442,7 @@ GPUForThisApp::PerformLayerCompositing( QImage* oResult, const QRect& iDirtyArea
 
         cl_int error = mQueue->enqueueNDRangeKernel( *kernelBlendNormal, cl::NDRange( areaAligned.left(), areaAligned.top() ), cl::NDRange( areaAligned.width(), areaAligned.height() ), cl::NDRange( 32, 32 ) );
         if( error != CL_SUCCESS )
-            qDebug() << "FAILED KERNEL : " << error;
+            qDebug() << "FAILED KERNEL : " << __FUNCTION__ << error;
         mQueue->finish();
     }
     //BENCHEND
@@ -386,58 +500,137 @@ GPUForThisApp::ClearSelectionBuffers()
 void
 GPUForThisApp::PerformTransformation( const QTransform& iTransfo, const QPoint& iOrigin )
 {
-    auto  inverted = iTransfo.inverted();
-    float transMatrix[ 9 ]        = { iTransfo.m11(), iTransfo.m12(), iTransfo.m13(), iTransfo.m21(), iTransfo.m22(), iTransfo.m23(), iTransfo.m31(), iTransfo.m32(), iTransfo.m33() };
-    float transMatrixInverse[ 9 ] = { inverted.m11(),  inverted.m12(),  inverted.m13(),  inverted.m21(),  inverted.m22(),  inverted.m23(),  inverted.m31(),  inverted.m32(),  inverted.m33() };
-
-    QRect inputArea = mInputImage->rect();
-    QRect outputArea = mOutputImage->rect();
-    inputArea.moveTopLeft( iOrigin );
-    QPolygonF           outputRect = MapToPolygonF( iTransfo, inputArea );
-    QRect transfoBBox = ExclusiveBoundingBox( outputRect );
-    transfoBBox = transfoBBox.intersected( mOutputImage->rect() );
-
-    // Get these before changong width/height
-    const int rightLimit = transfoBBox.right();
-    const int bottomLimit = transfoBBox.bottom();
-
-    // 32 alignment
-    transfoBBox.setWidth( (transfoBBox.width() | 31) + 1 );
-    transfoBBox.setHeight( (transfoBBox.height() | 31) + 1 );
+    _TransformNN( mSelInputBuffer, mInputImage->bytesPerLine(), mInputImage->rect(), mSelOutputBuffer, mOutputImage->bytesPerLine(), mOutputImage->rect(), iTransfo, iOrigin );
+    mQueue->finish();
 
 
-    cl::Kernel* kernel = GetKernel( "TransformationNN" );
+    qDebug() << "Reading : " << mOutputImage->sizeInBytes();
+    mQueue->enqueueReadBuffer( *mSelOutputBuffer, CL_TRUE, 0, mOutputImage->sizeInBytes(), mOutputImage->bits() );
+}
 
-    cl::Buffer transfo(         *mContext, CL_MEM_READ_ONLY, sizeof(float)*9 );
-    cl::Buffer transfoInverse(  *mContext, CL_MEM_READ_ONLY, sizeof(float)*9 );
 
-    kernel->setArg( 0, *mSelInputBuffer );
-    kernel->setArg( 1, *mSelOutputBuffer );
-    kernel->setArg( 2, mInputImage->bytesPerLine() );
-    kernel->setArg( 3, mOutputImage->bytesPerLine() );
 
-    kernel->setArg( 4, rightLimit );
-    kernel->setArg( 5, bottomLimit );
+void GPUForThisApp::LoadPaintContext( QImage * iBuff )
+{
+    mPaintContext = iBuff;
+    delete  mBufferPaintContext;
+    mBufferPaintContext = NewBuffer( iBuff->sizeInBytes(), CL_MEM_READ_WRITE );
+    mQueue->enqueueWriteBuffer( *mBufferPaintContext, CL_FALSE, 0, iBuff->sizeInBytes(), iBuff->bits() );
+}
 
-    kernel->setArg( 6, transfo );
-    kernel->setArg( 7, transfoInverse );
 
-    kernel->setArg( 8, iOrigin.x() );
-    kernel->setArg( 9, iOrigin.y() );
+void
+GPUForThisApp::LoadPaintAlpha( const QImage * iBuff )
+{
+    mPaintAlpha = iBuff;
+    delete  mBufferPaintAlpha;
+    mBufferPaintAlpha = NewBuffer( iBuff->sizeInBytes(), CL_MEM_READ_ONLY );
+    mQueue->enqueueWriteBuffer( *mBufferPaintAlpha, CL_FALSE, 0, iBuff->sizeInBytes(), iBuff->bits() );
+}
 
-    kernel->setArg( 10, inputArea.left() );
-    kernel->setArg( 11, inputArea.right() );
-    kernel->setArg( 12, inputArea.top() );
-    kernel->setArg( 13, inputArea.bottom() );
 
-    mQueue->enqueueWriteBuffer( transfo,        CL_FALSE, 0, sizeof(float)*9, transMatrix );
-    mQueue->enqueueWriteBuffer( transfoInverse, CL_TRUE, 0, sizeof(float)*9, transMatrixInverse );
+void
+GPUForThisApp::LoadBrushTip( const QImage * iBuff )
+{
+    mBrushTip = iBuff;
+    delete  mBufferBrushTip;
+    mBufferBrushTip = NewBuffer( iBuff->sizeInBytes(), CL_MEM_READ_ONLY );
+    mBufferBrushTipScaled = NewBuffer( iBuff->sizeInBytes(), CL_MEM_READ_WRITE );
+    mQueue->enqueueWriteBuffer( *mBufferBrushTip, CL_FALSE, 0, iBuff->sizeInBytes(), iBuff->bits() );
+}
 
-    cl_int error = mQueue->enqueueNDRangeKernel( *kernel, cl::NDRange( transfoBBox.left(), transfoBBox.top() ), cl::NDRange( transfoBBox.width(), transfoBBox.height() ), cl::NDRange( 32, 32 ) );
-    if( error != CL_SUCCESS )
-        qDebug() << "FAILED KERNEL : " << error;
+
+void
+GPUForThisApp::ClearPaintToolBuffers()
+{
+    delete  mBufferPaintContext;
+    mBufferPaintContext = 0;
+    delete  mBufferPaintAlpha;
+    mBufferPaintAlpha = 0;
+    delete  mBufferBrushTip;
+    mBufferBrushTip = 0;
+}
+
+
+void
+GPUForThisApp::Paint( int iX, int iY, float iPressure, float iRotatio )
+{
+    QTransform trans = QTransform::fromScale( iPressure, iPressure );
+    QRect outputArea = trans.mapRect( mBrushTip->rect() );
+    outputArea.moveCenter( QPoint( iX, iY ) );
+
+    // This will write in mBufferBrushTipScaled the scaled buffer, in the area outputArea
+    _TransformNN( mBufferBrushTip, mBrushTip->bytesPerLine(), mBrushTip->rect(),
+                  mBufferBrushTipScaled, mBrushTip->bytesPerLine(), mBrushTip->rect(),
+                  trans, QPoint( 0, 0 ) );
 
     mQueue->finish();
 
-    mQueue->enqueueReadBuffer( *mSelOutputBuffer, CL_TRUE, 0, mOutputImage->sizeInBytes(), mOutputImage->bits() );
+    _BlendImage( mBufferBrushTipScaled, outputArea, mBrushTip->bytesPerLine(),
+                 mBufferPaintContext, mPaintContext->rect(), mPaintContext->bytesPerLine(),
+                 outputArea.topLeft() );
+
+    //mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX + 1, endingY - startingY + 1 ) );
+
+    //bool useAlphaMask = mAlphaMask && mAlphaMask->width() == mDrawingContext->width() && mAlphaMask->height() == mDrawingContext->height();
+    //if( useAlphaMask )
+    //{
+    //    alphaData = mAlphaMask->bits();
+    //    alphaScanline = alphaData;
+    //}
+
+    //for( int y = startingY; y < endingY ; ++y )
+    //{
+    //    int offset = y * bytesPerLine + startingX * 4;
+    //    dataScanline = data +  offset;
+    //    dataTipScanline = dataTip + (y - minY) * bytesPerLineTip + (startingX - minX ) * 4;
+
+    //    if( useAlphaMask )
+    //        alphaScanline = alphaData +  offset + 3;
+
+    //    for( int x = startingX; x < endingX; ++x )
+    //    {
+    //        int srcB = *dataTipScanline; ++dataTipScanline;
+    //        int srcG = *dataTipScanline; ++dataTipScanline;
+    //        int srcR = *dataTipScanline; ++dataTipScanline;
+    //        int srcA = *dataTipScanline; ++dataTipScanline;
+
+    //        if( useAlphaMask )
+    //        {
+    //            int alphaMaskTransparency = *alphaScanline; alphaScanline += 4;
+    //            srcR = BlinnMult( srcR, alphaMaskTransparency );
+    //            srcG = BlinnMult( srcG, alphaMaskTransparency );
+    //            srcB = BlinnMult( srcB, alphaMaskTransparency );
+    //            srcA = BlinnMult( srcA, alphaMaskTransparency );
+    //        }
+
+    //        if( srcA == 0 )
+    //        {
+    //            dataScanline += 4;
+    //        }
+    //        else
+    //        {
+    //            BlendPixelNormal( &dataScanline, srcR, srcG, srcB, srcA );
+    //        }
+    //    }
+    //}
+
+    //if( _mToolSizeAfterPressure != mToolSize )
+    //    delete  scaledTip;
+
+    mQueue->finish();
+
+    cl::size_t<3> offset; // In byte too
+    offset[ 0 ] = outputArea.left() * 4;
+    offset[ 1 ] = outputArea.top();
+
+    cl::size_t<3> size; // In bytes
+    size[ 0 ] = outputArea.width()  *4; // Pixel is 4 bytes wide
+    size[ 1 ] = outputArea.height() *1; // 1 byte high
+    size[ 2 ] = 1; // 1 Byte deep
+
+    qDebug() << "Reading : " << outputArea;
+
+    mQueue->enqueueReadBufferRect( *mBufferPaintContext, CL_TRUE, offset, offset, size, mPaintContext->bytesPerLine(), 0, mPaintContext->bytesPerLine(), 0, mPaintContext->bits() );
+
 }

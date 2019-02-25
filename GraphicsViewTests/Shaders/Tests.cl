@@ -22,6 +22,6 @@
 void
 kernel Tests( global const float* iTransfo )
 {
-    sPoint ssss = ApplyTransfo( iTransfo, 10, 10 );
+    // sPoint ssss = ApplyTransfo( iTransfo, 10, 10 );
     // printf("Point : %d - %d\n", ssss.x, ssss.y );
 }
