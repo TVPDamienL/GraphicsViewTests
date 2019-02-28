@@ -46,6 +46,9 @@ GPUController::GPUController()
     _mMemoryLeftAvailabe = _mTotalAvailableMemory;
 
     mQueue = new cl::CommandQueue( *mContext, mDevice );
+
+    // infos
+    //mDevice.getInfo( CL_DEVICE_MAX_WORK_GROUP_SIZE, &_mTotalAvailableMemory );
 }
 
 
@@ -75,12 +78,12 @@ GPUController::DeleteBuffer( cl::Buffer * iBuffer )
     {
         if( mAllocatedBuffers[ i ] == iBuffer )
         {
-            delete  iBuffer;
             mAllocatedBuffers.erase( mAllocatedBuffers.begin() + i );
 
             size_t mem;
             iBuffer->getInfo( CL_MEM_SIZE, &mem );
             _mMemoryLeftAvailabe += mem;
+            delete  iBuffer;
         }
     }
 }

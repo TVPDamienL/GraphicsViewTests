@@ -16,10 +16,17 @@ cLayer::~cLayer()
 cLayer::cLayer( unsigned int iWidth, unsigned int iHeight ) :
     mCurrentHistoryIndex( 0 )
 {
+    //mImage = new QImage( "Resources/lapinGridBenchmarkSize.png" );
     //mImage = new QImage( iWidth, iHeight, QImage::Format_ARGB32_Premultiplied );
-    mImage = new QImage( "Resources/lapinGrid.png" );
+    auto qBench = new QImage( "Resources/lapinGridBenchmarkSize.png" );
+    mImage = new QImage( 2048, 1080, QImage::Format_ARGB32_Premultiplied );
+    mImage->fill( Qt::red );
 
+    BENCHSTART( 100 )
+    _GPU->BlendImages( qBench, mImage, mImage->rect(), 0 );
+    BENCHEND( 100 )
 
+    //_GPU->Bench( qBench, mImage );
     //QImage* output = new QImage( 1920, 1080, QImage::Format_ARGB32_Premultiplied );
     //output->fill( Qt::blue );
 

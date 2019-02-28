@@ -3,6 +3,7 @@
 #include <QDebug>
 #include "BenchmarkStuff.h"
 #include "Image.Utilities.h"
+#include <iostream>
 
 
 static GPUForThisApp* sGPU = 0;
@@ -258,6 +259,22 @@ void GPUForThisApp::FillImageGPU( QImage * destination, const QRect & area, cons
 }
 
 
+void
+GPUForThisApp::BlendImages( QImage * source, QImage * destination, const QRect & area, int iBlendingMode )
+{
+    auto src = NewBuffer( source->sizeInBytes(), CL_MEM_READ_WRITE );
+    mQueue->enqueueWriteBuffer( *src, CL_FALSE, 0, source->sizeInBytes(), source->bits() );
+    auto dst = NewBuffer( destination->sizeInBytes(), CL_MEM_READ_WRITE );
+    mQueue->enqueueWriteBuffer( *dst, CL_FALSE, 0, destination->sizeInBytes(), destination->bits() );
+
+    _BlendImage( src, source->rect(), source->bytesPerLine(), dst, destination->rect(), destination->bytesPerLine(), QPoint( 0, 0 ) );
+    mQueue->enqueueReadBuffer( *dst, CL_TRUE, 0, destination->sizeInBytes(), destination->bits() );
+
+    DeleteBuffer( src );
+    DeleteBuffer( dst );
+}
+
+
 // GPU Version of standard methods
 
 
@@ -280,9 +297,8 @@ GPUForThisApp::_TransformNN( cl::Buffer* iInput, int iInputBPL, const QRect& iIn
     const int rightLimit = transfoBBox.right();
     const int bottomLimit = transfoBBox.bottom();
 
-    // 32 alignment
-    transfoBBox.setWidth( (transfoBBox.width() | 31) + 1 );
-    transfoBBox.setHeight( (transfoBBox.height() | 31) + 1 );
+    // 256 alignment
+    transfoBBox.setWidth( (transfoBBox.width() | 255) + 1 );
 
 
     cl::Kernel* kernel = GetKernel( "TransformationNN" );
@@ -325,7 +341,7 @@ GPUForThisApp::_TransformNN( cl::Buffer* iInput, int iInputBPL, const QRect& iIn
     kernel->setArg( 19, transMatrixInverse[ 7 ] );
     kernel->setArg( 20, transMatrixInverse[ 8 ] );
 
-    cl_int error = mQueue->enqueueNDRangeKernel( *kernel, cl::NDRange( transfoBBox.left(), transfoBBox.top() ), cl::NDRange( transfoBBox.width(), transfoBBox.height() ), cl::NDRange( 32, 32 ) );
+    cl_int error = mQueue->enqueueNDRangeKernel( *kernel, cl::NDRange( transfoBBox.left(), transfoBBox.top() ), cl::NDRange( transfoBBox.width(), transfoBBox.height() ), cl::NDRange( 256, 1 ) );
     if( error != CL_SUCCESS )
         qDebug() << "FAILED KERNEL : " << __FUNCTION__ << error;
 }
@@ -348,8 +364,7 @@ GPUForThisApp::_BlendImage( cl::Buffer* iInput, const QRect& iInputRect,  int iI
     const int endingY = maxY >= iOutputRect.height() ? iOutputRect.height() - 1 : maxY;
 
     QRect dstDrawingArea( startingX, startingY, endingX - startingX, endingY - startingY );
-    dstDrawingArea.setWidth( (dstDrawingArea.width() | 31) + 1);
-    dstDrawingArea.setHeight( (dstDrawingArea.height() | 31) + 1);
+    dstDrawingArea.setWidth( (dstDrawingArea.width() | 255) + 1);
 
     cl::Kernel* normalBlend = GetKernel( "NormalBlendNotSameSizes" );
 
@@ -362,7 +377,7 @@ GPUForThisApp::_BlendImage( cl::Buffer* iInput, const QRect& iInputRect,  int iI
     normalBlend->setArg( 6, endingX +1 );
     normalBlend->setArg( 7, endingY +1 );
 
-    cl_int error = mQueue->enqueueNDRangeKernel( *normalBlend, cl::NDRange( dstDrawingArea.left(), dstDrawingArea.top() ), cl::NDRange( dstDrawingArea.width(), dstDrawingArea.height() ), cl::NDRange( 32, 32 ) );
+    cl_int error = mQueue->enqueueNDRangeKernel( *normalBlend, cl::NDRange( dstDrawingArea.left(), dstDrawingArea.top() ), cl::NDRange( dstDrawingArea.width(), dstDrawingArea.height() ), cl::NDRange( 256, 1 ) );
     if( error != CL_SUCCESS )
         qDebug() << "FAILED KERNEL : " << __FUNCTION__ << error;
 }
@@ -471,7 +486,7 @@ void
 GPUForThisApp::LoadSelectionOriginalBuffer( QImage * iBuff )
 {
     mInputImage = iBuff;
-    delete  mSelInputBuffer;
+    DeleteBuffer( mSelInputBuffer );
     mSelInputBuffer = NewBuffer( iBuff->sizeInBytes(), CL_MEM_READ_ONLY );
     mQueue->enqueueWriteBuffer( *mSelInputBuffer, CL_FALSE, 0, iBuff->sizeInBytes(), iBuff->bits() );
 }
@@ -481,7 +496,7 @@ void
 GPUForThisApp::LoadSelectionOutputImage( QImage * iBuff )
 {
     mOutputImage = iBuff;
-    delete  mSelOutputBuffer;
+    DeleteBuffer( mSelOutputBuffer );
     mSelOutputBuffer = NewBuffer( iBuff->sizeInBytes(), CL_MEM_READ_WRITE );
     mQueue->enqueueWriteBuffer( *mSelOutputBuffer, CL_FALSE, 0, iBuff->sizeInBytes(), iBuff->bits() );
 }
@@ -490,9 +505,9 @@ GPUForThisApp::LoadSelectionOutputImage( QImage * iBuff )
 void
 GPUForThisApp::ClearSelectionBuffers()
 {
-    delete  mSelInputBuffer;
+    DeleteBuffer( mSelInputBuffer );
     mSelInputBuffer = 0;
-    delete  mSelOutputBuffer;
+    DeleteBuffer( mSelOutputBuffer );
     mSelOutputBuffer = 0;
 }
 
@@ -500,12 +515,12 @@ GPUForThisApp::ClearSelectionBuffers()
 void
 GPUForThisApp::PerformTransformation( const QTransform& iTransfo, const QPoint& iOrigin )
 {
+    BENCHSTART( 100 )
     _TransformNN( mSelInputBuffer, mInputImage->bytesPerLine(), mInputImage->rect(), mSelOutputBuffer, mOutputImage->bytesPerLine(), mOutputImage->rect(), iTransfo, iOrigin );
     mQueue->finish();
 
-
-    qDebug() << "Reading : " << mOutputImage->sizeInBytes();
     mQueue->enqueueReadBuffer( *mSelOutputBuffer, CL_TRUE, 0, mOutputImage->sizeInBytes(), mOutputImage->bits() );
+    BENCHEND( 100 )
 }
 
 
@@ -513,7 +528,7 @@ GPUForThisApp::PerformTransformation( const QTransform& iTransfo, const QPoint& 
 void GPUForThisApp::LoadPaintContext( QImage * iBuff )
 {
     mPaintContext = iBuff;
-    delete  mBufferPaintContext;
+    DeleteBuffer( mBufferPaintContext );
     mBufferPaintContext = NewBuffer( iBuff->sizeInBytes(), CL_MEM_READ_WRITE );
     mQueue->enqueueWriteBuffer( *mBufferPaintContext, CL_FALSE, 0, iBuff->sizeInBytes(), iBuff->bits() );
 }
@@ -523,7 +538,7 @@ void
 GPUForThisApp::LoadPaintAlpha( const QImage * iBuff )
 {
     mPaintAlpha = iBuff;
-    delete  mBufferPaintAlpha;
+    DeleteBuffer( mBufferPaintAlpha );
     mBufferPaintAlpha = NewBuffer( iBuff->sizeInBytes(), CL_MEM_READ_ONLY );
     mQueue->enqueueWriteBuffer( *mBufferPaintAlpha, CL_FALSE, 0, iBuff->sizeInBytes(), iBuff->bits() );
 }
@@ -533,7 +548,7 @@ void
 GPUForThisApp::LoadBrushTip( const QImage * iBuff )
 {
     mBrushTip = iBuff;
-    delete  mBufferBrushTip;
+    DeleteBuffer( mBufferBrushTip );
     mBufferBrushTip = NewBuffer( iBuff->sizeInBytes(), CL_MEM_READ_ONLY );
     mBufferBrushTipScaled = NewBuffer( iBuff->sizeInBytes(), CL_MEM_READ_WRITE );
     mQueue->enqueueWriteBuffer( *mBufferBrushTip, CL_FALSE, 0, iBuff->sizeInBytes(), iBuff->bits() );
@@ -543,11 +558,11 @@ GPUForThisApp::LoadBrushTip( const QImage * iBuff )
 void
 GPUForThisApp::ClearPaintToolBuffers()
 {
-    delete  mBufferPaintContext;
+    DeleteBuffer( mBufferPaintContext );
     mBufferPaintContext = 0;
-    delete  mBufferPaintAlpha;
+    DeleteBuffer( mBufferPaintAlpha );
     mBufferPaintAlpha = 0;
-    delete  mBufferBrushTip;
+    DeleteBuffer( mBufferBrushTip );
     mBufferBrushTip = 0;
 }
 
@@ -633,4 +648,203 @@ GPUForThisApp::Paint( int iX, int iY, float iPressure, float iRotatio )
 
     mQueue->enqueueReadBufferRect( *mBufferPaintContext, CL_TRUE, offset, offset, size, mPaintContext->bytesPerLine(), 0, mPaintContext->bytesPerLine(), 0, mPaintContext->bits() );
 
+}
+
+
+void
+GPUForThisApp::Bench( QImage* source, QImage* destination )
+{
+    //qDebug() << "Few Big ============================================";
+    //BENCHSTART( 100 )
+    //const int oneM = 1024000;
+    //int* m1 = new int[ oneM ];
+
+    //for( int i = 0; i < oneM; ++i )
+    //    m1[ i ] = 1;
+
+    //cl::Buffer oneMArray( *mContext, CL_MEM_READ_ONLY, sizeof( int ) * oneM );
+    //cl::Kernel* kernel = GetKernel( "Tests" );
+    //kernel->setArg( 0, oneMArray );
+
+    //mQueue->enqueueWriteBuffer( oneMArray, CL_FALSE, 0, sizeof( int ) * oneM, m1 );
+    //mQueue->enqueueNDRangeKernel( *kernel, cl::NullRange, cl::NDRange( 32000, 32 ), cl::NDRange( 32, 32 ) );
+    //mQueue->finish();
+
+    //delete[]  m1;
+    //BENCHEND( 100 )
+
+
+    //const int small = 1024;
+    //int m2[ small ];
+
+    //for( int i = 0; i < small; ++i )
+    //{
+    //    m2[ i ] = 2;
+    //}
+
+    //cl::Buffer smallArray( *mContext, CL_MEM_READ_ONLY, sizeof( int ) * small );
+
+    //qDebug() << "Lots small ============================================";
+    //BENCHSTART( 100000 )
+    //cl::Kernel* kernel2 = GetKernel( "Tests" );
+    //kernel2->setArg( 0, smallArray );
+
+    //mQueue->enqueueWriteBuffer( smallArray, CL_FALSE, 0, sizeof( int ) * small, m2 );
+    //mQueue->enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 32, 32 ), cl::NDRange( 32, 32 ) );
+    //mQueue->finish();
+    //BENCHEND( 100000 )
+
+
+
+
+
+
+    const int iter = 1000;
+
+
+    const int oneM = source->sizeInBytes(); // a 10240 x 10240 image
+    const int BPL = source->bytesPerLine(); // Bytes per line
+
+    //// Mocking an input image of size 32000*32
+    //const int oneM = 419430400; // a 10240 x 10240 image
+    //const int BPL = 40960; // Bytes per line
+    //uchar* m1 = new uchar[ oneM ];
+
+    //for( int i = 0; i < oneM; ++i )
+    //    m1[ i ] = 1;
+
+    cl::Buffer* image = NewBuffer( sizeof( uchar ) * source->sizeInBytes(), CL_MEM_READ_ONLY );
+    mQueue->enqueueWriteBuffer( *image, CL_FALSE, 0, sizeof( uchar ) * oneM, source->bits() );
+
+    // Mocking an output buffer for the gpu to write to
+    cl::Buffer* imageOutput = NewBuffer( sizeof( uchar ) * oneM, CL_MEM_READ_WRITE );
+
+    // Mocking a 3x3 transformation matrix
+    const int nine = 9;
+    float m2[ nine ];
+
+    for( int i = 0; i < nine; ++i )
+        m2[ i ] = 2.F;
+
+    cl::Buffer transfo( *mContext, CL_MEM_READ_ONLY, sizeof( float ) * nine );
+
+
+    //==================================================================================
+    //==================================================================================
+    //==================================================================================
+    //==================================================================================
+
+
+    //// NO OPTIMIZATION :    0.38 -> no access
+    ////                      0.38 -> 8 read access
+    ////                      1.38 -> 4 Write access
+    ////                      3.42 -> 4 Write access + 8 Read access
+
+    //std::chrono::high_resolution_clock::time_point  clock;
+    //clock = std::chrono::high_resolution_clock::now();
+    //for( int i = 0; i< iter; ++i )
+    //{
+
+    //    cl::Kernel* kernel2 = GetKernel( "Tests" );
+    //    kernel2->setArg( 0, *image );
+    //    kernel2->setArg( 1, *imageOutput );
+    //    kernel2->setArg( 2, BPL );
+    //    kernel2->setArg( 3, transfo );
+
+    //    mQueue->enqueueWriteBuffer( transfo, CL_FALSE, 0, sizeof( float ) * nine, m2 );
+    //    cl_int err = mQueue->enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 10240, 10240 ), cl::NDRange( 256, 1 ) );
+    //    if( err != CL_SUCCESS )
+    //        qDebug() << "FAILED KERNEL : " << __FUNCTION__ << err;
+
+    //    mQueue->finish();
+
+    //}
+    //std::chrono::duration< double > timeSpan = std::chrono::duration_cast<std::chrono::duration< double >>( std::chrono::high_resolution_clock::now() - clock );
+    //double time = timeSpan.count();
+    //std::cout << "Time : Total : " << time << " Unit : " << time / iter;
+
+
+    //==================================================================================
+    //==================================================================================
+    //==================================================================================
+    //==================================================================================
+
+
+    // All access and writes are x4 because each kernel has to do 4 pixels
+    // GlobalSize / 4 :     0.11 -> no access
+    //                      0.11 -> 32 read access
+    //                      2.03 -> 16 Write access
+    //                      4.46 -> 16 Write access + 32 Read access ; 3.6 with local_size( 256, 1 )
+    // 4.2
+
+
+    // 2.7
+    // with possible coalescing access (no way to prove it's actually coalised ... but algo is supposed to)
+    // This is the best way so far, achieved by reading componentns side by side : 1 thread reads r value, the next reads the green, the next the blue etc...
+    // Then writing is done the same, the one who read red value writes red component etc...
+    // Each thread reads 4 components, so red, red +256, red +512, red +768, so that it's less thread to spawn
+
+
+    std::chrono::high_resolution_clock::time_point  clock;
+    clock = std::chrono::high_resolution_clock::now();
+    for( int i = 0; i< iter; ++i )
+    {
+
+        cl::Kernel* kernel2 = GetKernel( "Tests" );
+
+        kernel2->setArg( 0, *image );
+        kernel2->setArg( 1, *imageOutput );
+        kernel2->setArg( 2, BPL );
+        kernel2->setArg( 3, transfo );
+
+        mQueue->enqueueWriteBuffer( transfo, CL_FALSE, 0, sizeof( float ) * nine, m2 );
+        cl_int err = mQueue->enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 2048, 1080 ), cl::NDRange( 256,1 ) );
+        if( err != CL_SUCCESS )
+            qDebug() << "FAILED KERNEL : " << __FUNCTION__ << err;
+        mQueue->finish();
+    }
+    std::chrono::duration< double > timeSpan = std::chrono::duration_cast<std::chrono::duration< double >>( std::chrono::high_resolution_clock::now() - clock );
+    double time = timeSpan.count();
+    std::cout << "Time : Total : " << time << " Unit : " << time / iter;
+
+
+    //==================================================================================
+    //==================================================================================
+    //==================================================================================
+    //==================================================================================
+
+
+    //// All access and writes are x4 because each kernel has to do 4 pixels
+    //// GlobalSize / 4 :     0.11 -> no access
+    ////                      0.11 -> 32 read access
+    ////                      2.03 -> 16 Write access
+    ////                      4.46 -> 16 Write access + 32 Read access
+
+    //std::chrono::high_resolution_clock::time_point  clock;
+    //clock = std::chrono::high_resolution_clock::now();
+    //for( int i = 0; i< iter; ++i )
+    //{
+
+    //    cl::Kernel* kernel2 = GetKernel( "Tests" );
+    //    kernel2->setArg( 0, *image );
+    //    kernel2->setArg( 1, *imageOutput );
+    //    kernel2->setArg( 2, BPL );
+    //    kernel2->setArg( 3, transfo );
+
+    //    mQueue->enqueueWriteBuffer( transfo, CL_FALSE, 0, sizeof( float ) * nine, m2 );
+    //    cl_int err = mQueue->enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 10240, 10240 ), cl::NDRange( 4, 256 ) );
+    //    if( err != CL_SUCCESS )
+    //        qDebug() << "FAILED KERNEL : " << __FUNCTION__ << err;
+
+    //    mQueue->finish();
+
+    //}
+    //std::chrono::duration< double > timeSpan = std::chrono::duration_cast<std::chrono::duration< double >>( std::chrono::high_resolution_clock::now() - clock );
+    //double time = timeSpan.count();
+    //std::cout << "Time : Total : " << time << " Unit : " << time / iter;
+
+    mQueue->enqueueReadBuffer( *imageOutput, CL_TRUE, 0, oneM, destination->bits() );
+
+    DeleteBuffer( image );
+    DeleteBuffer( imageOutput );
 }

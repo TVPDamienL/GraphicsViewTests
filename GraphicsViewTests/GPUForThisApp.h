@@ -26,6 +26,7 @@ public:
 
     void  FillImageGPU( QImage* destination, const QRect& area, const QColor& iColor, int iBlendingMode );
 
+    void BlendImages( QImage* source, QImage* destination, const QRect& area, int iBlendingMode );
 
     // GPU Version of standard methods
     void  _TransformNN( cl::Buffer* iInput, int iInputBPL, const QRect& iInputArea,
@@ -54,6 +55,9 @@ public:
     void  LoadBrushTip( const QImage* iBuff );
     void  ClearPaintToolBuffers();
     void  Paint( int iX, int iY, float iPressure, float iRotatio );
+
+    // Benchmarks/Tests
+    void  Bench( QImage* source, QImage* destination );
 
 
 private:

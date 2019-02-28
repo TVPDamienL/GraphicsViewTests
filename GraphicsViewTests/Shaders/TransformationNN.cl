@@ -53,3 +53,5 @@ kernel TransformationNN( global const unsigned char* iInput, global unsigned cha
         oOutput[ pixelIndex + 3 ] = iInput[ inputIndex + 3 ];
     }
 }
+
+

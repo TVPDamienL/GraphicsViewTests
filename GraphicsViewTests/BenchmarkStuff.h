@@ -4,11 +4,11 @@
 #include <QDebug>
 
 
-#define BENCHSTART  Bench::ClockBegin();                       \
-                    for( int i = 0; i< 100; ++i ) {
+#define BENCHSTART( k )  Bench::ClockBegin();                       \
+                    for( int i = 0; i< k; ++i ) {
 
 
-#define BENCHEND    } qDebug() << "Time : " << Bench::ClockEnd();
+#define BENCHEND(k)    } double time = Bench::ClockEnd(); qDebug() << "Time : Total : " << time << " Unit : " << time / k;
 
 
 namespace Bench

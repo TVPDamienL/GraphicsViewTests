@@ -29,7 +29,8 @@ cMainWindow::cMainWindow(QWidget *parent) :
     mAnimationTimer->start( 1000 / 24 );
 
     //mClip = new cClip( 3840, 2160 );
-    mClip = new cClip( 1920, 1080 );
+    //mClip = new cClip( 1920, 1080 );
+    mClip = new cClip( 2048, 1080 );
 
     for( int i = 0; i < 1; ++i )
         mClip->AddLayer();
