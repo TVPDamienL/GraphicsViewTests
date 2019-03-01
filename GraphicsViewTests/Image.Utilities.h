@@ -399,6 +399,86 @@ TransformNearestNeighbourDirectOutput( QImage* iInput, QImage* iOutput, const QT
 
 
 static
+void
+TransformNearestNeighbourDirectOutputNormalBlendAlpha( QImage* iInput, QImage* iOutput, const QTransform& iTransform, const QPoint& iOrigin, QImage* iAlphaMask )
+{
+    const QTransform    inverse = iTransform.inverted();
+    const int           inputWidth = iInput->width();
+    const int           inputHeight = iInput->height();
+    QRect               inputArea = iInput->rect();
+    inputArea.moveTopLeft( iOrigin );
+
+    const int           outputWidth = iOutput->width();
+    const int           outputHeight = iOutput->height();
+
+    QPolygonF           outputRect = MapToPolygonF( iTransform, inputArea );
+    QRect transfoBBox = ExclusiveBoundingBox( outputRect );
+
+    int minX = transfoBBox.left();
+    int minY = transfoBBox.top();
+    int maxX = transfoBBox.right();
+    int maxY = transfoBBox.bottom();
+
+    transfoBBox = transfoBBox.intersected( iOutput->rect() );
+    // If QRect is 0, 0, 1920, 1080, it'll go from 0 to 1919. That's how Qt implements it
+    // So by doing intersection between the output and anything else, we'll have x1/x2 - y1/y2 values between 0 and width/height-1
+    // Which means, in the loop below, we go to <= endX/Y, and not <
+
+    int startX = transfoBBox.left();
+    int startY = transfoBBox.top();
+    int endX = transfoBBox.right();
+    int endY = transfoBBox.bottom();
+
+    uchar* inputData = iInput->bits();
+    const int inputBPL = iInput->bytesPerLine();
+
+    uchar* outputData = iOutput->bits();
+    uchar* outputScanline = outputData;
+    const int outputBPL = iOutput->bytesPerLine();
+
+    uchar* alphaData = iAlphaMask->bits();
+    uchar* alphaScanline = alphaData + 3;
+    const int alphaBPL = iAlphaMask->bytesPerLine();
+
+
+    const int xOffset = startX * 4;
+    uchar* scanXOffset = outputData + xOffset;
+
+    for( int y = startY; y <= endY; ++y )
+    {
+        outputScanline = scanXOffset + y * outputBPL;
+        alphaScanline = alphaData +  y * alphaBPL + startX * 4 + 3;
+
+        for( int x = startX; x <= endX; ++x )
+        {
+            const QPoint xyMapped = inverse.map( QPoint( x, y ) );
+
+            if( !inputArea.contains( xyMapped ) )
+            {
+                BlendPixelNormal( &outputScanline, 0, 0, 0, 0 );
+                continue;
+            }
+
+            int inputIndex = (xyMapped.y() - iOrigin.y()) * inputBPL + (xyMapped.x() - iOrigin.x()) * 4;
+
+            uchar r = inputData[ inputIndex + 2 ];
+            uchar g = inputData[ inputIndex + 1 ];
+            uchar b = inputData[ inputIndex + 0 ];
+            uchar a = inputData[ inputIndex + 3 ];
+
+            int alphaMaskTransparency = *alphaScanline; alphaScanline += 4;
+            r = BlinnMult( r, alphaMaskTransparency );
+            g = BlinnMult( g, alphaMaskTransparency );
+            b = BlinnMult( b, alphaMaskTransparency );
+            a = BlinnMult( a, alphaMaskTransparency );
+
+            BlendPixelNormal( &outputScanline, r, g, b, a );
+        }
+    }
+}
+
+
+static
 QImage*
 TransformBilinearIntoImage( QImage* iInput, const QTransform& iTransform )
 {
@@ -591,5 +671,151 @@ DownscaleBoxAverageIntoImage( QImage* iInput, const QTransform& iTransform )
     return  output;
 }
 
+
+// iTransform should be a downscale, otherwise it's not ment to work
+// This averages pixels to get the condensed pixel
+static
+void
+DownscaleBoxAverageDirectAlpha( QImage* iInput, QImage* iOutput, QImage* iAlphaMask, const QTransform& iTransform, const QPoint& iOrigin )
+{
+    const QTransform inverse = iTransform.inverted();
+    const int inputWidth = iInput->width();
+    const int inputHeight = iInput->height();
+    QRect inputArea = iInput->rect();
+    inputArea.moveTopLeft( iOrigin );
+
+    // Transformed bbox
+    QPolygonF outputRect = MapToPolygonF( iTransform, inputArea );
+    QRect transfoBBox = ExclusiveBoundingBox( outputRect );
+
+    int minX = transfoBBox.left();
+    int minY = transfoBBox.top();
+    int maxX = transfoBBox.right() + 1;
+    int maxY = transfoBBox.bottom() + 1;
+
+    transfoBBox = transfoBBox.intersected( iOutput->rect() );
+
+    int startX = transfoBBox.left();
+    int startY = transfoBBox.top();
+    int endX = transfoBBox.right();
+    int endY = transfoBBox.bottom();
+
+    // Scales
+    const double xScaleFactor = Distance2Points( outputRect[ 0 ], outputRect[ 1 ] ) / double( inputArea.width() );
+    const double yScaleFactor = Distance2Points( outputRect[ 1 ], outputRect[ 2 ] ) / double( inputArea.height() );
+
+    if( xScaleFactor >= 1.0 || yScaleFactor >= 1.0 )
+        return;
+
+    const double xScaleInverse = 1/ xScaleFactor;
+    const double yScaleInverse = 1/ yScaleFactor;
+
+    // Data iteration
+    uchar* inputData = iInput->bits();
+    const int inputBPL = iInput->bytesPerLine();
+    uchar* inputScanline = inputData;
+
+    uchar* outputData = iOutput->bits();
+    uchar* outputScanline = outputData;
+    const int outputBPL = iOutput->bytesPerLine();
+
+    //uchar* alphaData = iAlphaMask->bits();
+    //uchar* alphaScanline = alphaData + 3;
+    //const int alphaBPL = iAlphaMask->bytesPerLine();
+
+    // Pixel averaging variables
+    unsigned int rSum = 0;
+    unsigned int gSum = 0;
+    unsigned int bSum = 0;
+    unsigned int aSum = 0;
+    double surface = 0.0;
+    double xRatio = 1.0;
+    double yRatio = 1.0;
+    double finalRatio = 1.0;
+
+    const int xOffset = startX * 4;
+
+    for( int y = startY; y <= endY; ++y )
+    {
+        outputScanline = outputData + (y-minY) * outputBPL + xOffset;
+        //alphaScanline = alphaData +  (y-minY) * alphaBPL + xOffset + 3;
+
+        for( int x = startX; x <= endX; ++x )
+        {
+            // Get the point in original
+            const QPointF xyMappedF = inverse.map( QPointF( x, y ) );
+            const QPoint xyMapped = QPoint( xyMappedF.x(), xyMappedF.y() );
+
+            if( !inputArea.contains( xyMapped ) )
+            {
+                BlendPixelNone( &outputScanline, 0, 0, 0, 0 );
+                continue;
+            }
+
+            // Get the box to read in original
+            QRectF boxAreaF( xyMapped.x(), xyMapped.y(), xScaleInverse, yScaleInverse );
+            QRect boxArea( xyMapped.x(), xyMapped.y(), int( xScaleInverse ) + 1, int( yScaleInverse ) + 1 );
+
+
+            // Clip to not write oob
+            boxArea = boxArea.intersected( inputArea );
+
+            if( !boxArea.isEmpty() )
+            {
+                // Sum of all pixel values
+                for( int j = boxArea.top(); j <= boxArea.bottom(); ++j )
+                {
+                    double ratio = 1 - (boxAreaF.top() - j);
+                    if( ratio < 1.0 )
+                    {
+                        yRatio = ratio;
+                    }
+                    else
+                    {
+                        yRatio = Min( 1 - (j - boxAreaF.bottom()), 1.0);
+                    }
+
+
+                    inputScanline = inputData + j * inputBPL + boxArea.left() * 4;
+                    for( int i = boxArea.left(); i <= boxArea.right(); ++i )
+                    {
+                        ratio = 1 - (boxAreaF.left() - i);
+                        if( ratio < 1.0 )
+                        {
+                            xRatio = ratio;
+                        }
+                        else
+                        {
+                            xRatio = Min( 1 - (i - boxAreaF.right()), 1.0 );
+                        }
+
+                        finalRatio = xRatio * yRatio;
+
+                        bSum += *inputScanline * finalRatio; ++inputScanline;
+                        gSum += *inputScanline * finalRatio; ++inputScanline;
+                        rSum += *inputScanline * finalRatio; ++inputScanline;
+                        aSum += *inputScanline * finalRatio; ++inputScanline;
+
+                        surface += finalRatio;
+                    }
+                }
+
+                rSum /= surface;
+                gSum /= surface;
+                bSum /= surface;
+                aSum /= surface;
+
+                // Blend
+                BlendPixelNone( &outputScanline, rSum, gSum, bSum, aSum );
+
+                rSum = 0;
+                gSum = 0;
+                bSum = 0;
+                aSum = 0;
+                surface = 0.0;
+            }
+        }
+    }
+}
 
 

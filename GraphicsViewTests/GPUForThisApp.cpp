@@ -654,46 +654,54 @@ GPUForThisApp::Paint( int iX, int iY, float iPressure, float iRotatio )
 void
 GPUForThisApp::Bench( QImage* source, QImage* destination )
 {
-    //qDebug() << "Few Big ============================================";
-    //BENCHSTART( 100 )
     //const int oneM = 1024000;
-    //int* m1 = new int[ oneM ];
+    //uchar* m1 = new uchar[ oneM ];
 
     //for( int i = 0; i < oneM; ++i )
     //    m1[ i ] = 1;
 
-    //cl::Buffer oneMArray( *mContext, CL_MEM_READ_ONLY, sizeof( int ) * oneM );
+    //cl::Buffer oneMArray( *mContext, CL_MEM_READ_ONLY, sizeof( uchar ) * oneM );
+
+
+    //qDebug() << "Few Big ============================================";
+    //BENCHSTART( 1000 )
     //cl::Kernel* kernel = GetKernel( "Tests" );
     //kernel->setArg( 0, oneMArray );
 
-    //mQueue->enqueueWriteBuffer( oneMArray, CL_FALSE, 0, sizeof( int ) * oneM, m1 );
-    //mQueue->enqueueNDRangeKernel( *kernel, cl::NullRange, cl::NDRange( 32000, 32 ), cl::NDRange( 32, 32 ) );
+    //mQueue->enqueueWriteBuffer( oneMArray, CL_FALSE, 0, sizeof( uchar ) * oneM, m1 );
+    //cl_int err = mQueue->enqueueNDRangeKernel( *kernel, cl::NullRange, cl::NDRange( 512, 500 ), cl::NDRange( 512, 2 ) );
+    //if( err != CL_SUCCESS )
+    //    qDebug() << "FAILED KERNEL : " << __FUNCTION__ << err;
+
     //mQueue->finish();
+    //BENCHEND( 1000 )
+
 
     //delete[]  m1;
-    //BENCHEND( 100 )
 
 
     //const int small = 1024;
-    //int m2[ small ];
+    //uchar m2[ small ];
 
     //for( int i = 0; i < small; ++i )
     //{
     //    m2[ i ] = 2;
     //}
 
-    //cl::Buffer smallArray( *mContext, CL_MEM_READ_ONLY, sizeof( int ) * small );
+    //cl::Buffer smallArray( *mContext, CL_MEM_READ_ONLY, sizeof( uchar ) * small );
 
     //qDebug() << "Lots small ============================================";
     //BENCHSTART( 100000 )
     //cl::Kernel* kernel2 = GetKernel( "Tests" );
     //kernel2->setArg( 0, smallArray );
 
-    //mQueue->enqueueWriteBuffer( smallArray, CL_FALSE, 0, sizeof( int ) * small, m2 );
-    //mQueue->enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 32, 32 ), cl::NDRange( 32, 32 ) );
+    //mQueue->enqueueWriteBuffer( smallArray, CL_FALSE, 0, sizeof( uchar ) * small, m2 );
+    //cl_int err = mQueue->enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 256, 4 ), cl::NDRange( 256, 4 ) );
+    //if( err != CL_SUCCESS )
+    //    qDebug() << "FAILED KERNEL : " << __FUNCTION__ << err;
     //mQueue->finish();
-    //BENCHEND( 100000 )
 
+    //BENCHEND( 100000 )
 
 
 
@@ -702,8 +710,17 @@ GPUForThisApp::Bench( QImage* source, QImage* destination )
     const int iter = 1000;
 
 
-    const int oneM = source->sizeInBytes(); // a 10240 x 10240 image
+    const int oneM = source->sizeInBytes();
     const int BPL = source->bytesPerLine(); // Bytes per line
+
+    cl::CommandQueue q1( *mContext, mDevice );
+    cl::CommandQueue q2( *mContext, mDevice );
+    cl::CommandQueue q3( *mContext, mDevice );
+    cl::CommandQueue q4( *mContext, mDevice );
+    cl::CommandQueue q5( *mContext, mDevice );
+    cl::CommandQueue q6( *mContext, mDevice );
+    cl::CommandQueue q7( *mContext, mDevice );
+    cl::CommandQueue q8( *mContext, mDevice );
 
     //// Mocking an input image of size 32000*32
     //const int oneM = 419430400; // a 10240 x 10240 image
@@ -729,96 +746,61 @@ GPUForThisApp::Bench( QImage* source, QImage* destination )
     cl::Buffer transfo( *mContext, CL_MEM_READ_ONLY, sizeof( float ) * nine );
 
 
-    //==================================================================================
-    //==================================================================================
-    //==================================================================================
-    //==================================================================================
+    ////==================================================================================
+    ////==================================================================================
+    ////==================================================================================
+    ////==================================================================================
 
 
-    //// NO OPTIMIZATION :    0.38 -> no access
-    ////                      0.38 -> 8 read access
-    ////                      1.38 -> 4 Write access
-    ////                      3.42 -> 4 Write access + 8 Read access
+    ////// NO OPTIMIZATION :    0.38 -> no access
+    //////                      0.38 -> 8 read access
+    //////                      1.38 -> 4 Write access
+    //////                      3.42 -> 4 Write access + 8 Read access
 
-    //std::chrono::high_resolution_clock::time_point  clock;
-    //clock = std::chrono::high_resolution_clock::now();
-    //for( int i = 0; i< iter; ++i )
-    //{
+    ////std::chrono::high_resolution_clock::time_point  clock;
+    ////clock = std::chrono::high_resolution_clock::now();
+    ////for( int i = 0; i< iter; ++i )
+    ////{
 
-    //    cl::Kernel* kernel2 = GetKernel( "Tests" );
-    //    kernel2->setArg( 0, *image );
-    //    kernel2->setArg( 1, *imageOutput );
-    //    kernel2->setArg( 2, BPL );
-    //    kernel2->setArg( 3, transfo );
+    ////    cl::Kernel* kernel2 = GetKernel( "Tests" );
+    ////    kernel2->setArg( 0, *image );
+    ////    kernel2->setArg( 1, *imageOutput );
+    ////    kernel2->setArg( 2, BPL );
+    ////    kernel2->setArg( 3, transfo );
 
-    //    mQueue->enqueueWriteBuffer( transfo, CL_FALSE, 0, sizeof( float ) * nine, m2 );
-    //    cl_int err = mQueue->enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 10240, 10240 ), cl::NDRange( 256, 1 ) );
-    //    if( err != CL_SUCCESS )
-    //        qDebug() << "FAILED KERNEL : " << __FUNCTION__ << err;
+    ////    mQueue->enqueueWriteBuffer( transfo, CL_FALSE, 0, sizeof( float ) * nine, m2 );
+    ////    cl_int err = mQueue->enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 10240, 10240 ), cl::NDRange( 256, 1 ) );
+    ////    if( err != CL_SUCCESS )
+    ////        qDebug() << "FAILED KERNEL : " << __FUNCTION__ << err;
 
-    //    mQueue->finish();
+    ////    mQueue->finish();
 
-    //}
-    //std::chrono::duration< double > timeSpan = std::chrono::duration_cast<std::chrono::duration< double >>( std::chrono::high_resolution_clock::now() - clock );
-    //double time = timeSpan.count();
-    //std::cout << "Time : Total : " << time << " Unit : " << time / iter;
-
-
-    //==================================================================================
-    //==================================================================================
-    //==================================================================================
-    //==================================================================================
+    ////}
+    ////std::chrono::duration< double > timeSpan = std::chrono::duration_cast<std::chrono::duration< double >>( std::chrono::high_resolution_clock::now() - clock );
+    ////double time = timeSpan.count();
+    ////std::cout << "Time : Total : " << time << " Unit : " << time / iter;
 
 
-    // All access and writes are x4 because each kernel has to do 4 pixels
-    // GlobalSize / 4 :     0.11 -> no access
-    //                      0.11 -> 32 read access
-    //                      2.03 -> 16 Write access
-    //                      4.46 -> 16 Write access + 32 Read access ; 3.6 with local_size( 256, 1 )
-    // 4.2
-
-
-    // 2.7
-    // with possible coalescing access (no way to prove it's actually coalised ... but algo is supposed to)
-    // This is the best way so far, achieved by reading componentns side by side : 1 thread reads r value, the next reads the green, the next the blue etc...
-    // Then writing is done the same, the one who read red value writes red component etc...
-    // Each thread reads 4 components, so red, red +256, red +512, red +768, so that it's less thread to spawn
-
-
-    std::chrono::high_resolution_clock::time_point  clock;
-    clock = std::chrono::high_resolution_clock::now();
-    for( int i = 0; i< iter; ++i )
-    {
-
-        cl::Kernel* kernel2 = GetKernel( "Tests" );
-
-        kernel2->setArg( 0, *image );
-        kernel2->setArg( 1, *imageOutput );
-        kernel2->setArg( 2, BPL );
-        kernel2->setArg( 3, transfo );
-
-        mQueue->enqueueWriteBuffer( transfo, CL_FALSE, 0, sizeof( float ) * nine, m2 );
-        cl_int err = mQueue->enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 2048, 1080 ), cl::NDRange( 256,1 ) );
-        if( err != CL_SUCCESS )
-            qDebug() << "FAILED KERNEL : " << __FUNCTION__ << err;
-        mQueue->finish();
-    }
-    std::chrono::duration< double > timeSpan = std::chrono::duration_cast<std::chrono::duration< double >>( std::chrono::high_resolution_clock::now() - clock );
-    double time = timeSpan.count();
-    std::cout << "Time : Total : " << time << " Unit : " << time / iter;
-
-
-    //==================================================================================
-    //==================================================================================
-    //==================================================================================
-    //==================================================================================
+    ////==================================================================================
+    ////==================================================================================
+    ////==================================================================================
+    ////==================================================================================
 
 
     //// All access and writes are x4 because each kernel has to do 4 pixels
     //// GlobalSize / 4 :     0.11 -> no access
     ////                      0.11 -> 32 read access
     ////                      2.03 -> 16 Write access
-    ////                      4.46 -> 16 Write access + 32 Read access
+    ////                      4.46 -> 16 Write access + 32 Read access ; 3.6 with local_size( 256, 1 )
+    //// 4.2
+
+
+    //// 2.7
+    //// with possible coalescing access (no way to prove it's actually coalised ... but algo is supposed to)
+    //// This is the best way so far, achieved by reading componentns side by side : 1 thread reads r value, the next reads the green, the next the blue etc...
+    //// Then writing is done the same, the one who read red value writes red component etc...
+    //// Each thread reads 4 components, so red, red +256, red +512, red +768, so that it's less thread to spawn
+
 
     //std::chrono::high_resolution_clock::time_point  clock;
     //clock = std::chrono::high_resolution_clock::now();
@@ -826,24 +808,78 @@ GPUForThisApp::Bench( QImage* source, QImage* destination )
     //{
 
     //    cl::Kernel* kernel2 = GetKernel( "Tests" );
+
     //    kernel2->setArg( 0, *image );
     //    kernel2->setArg( 1, *imageOutput );
     //    kernel2->setArg( 2, BPL );
     //    kernel2->setArg( 3, transfo );
 
     //    mQueue->enqueueWriteBuffer( transfo, CL_FALSE, 0, sizeof( float ) * nine, m2 );
-    //    cl_int err = mQueue->enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 10240, 10240 ), cl::NDRange( 4, 256 ) );
+    //    cl_int err = mQueue->enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 2048, 1080 ), cl::NDRange( 256,1 ) );
     //    if( err != CL_SUCCESS )
     //        qDebug() << "FAILED KERNEL : " << __FUNCTION__ << err;
-
     //    mQueue->finish();
-
     //}
     //std::chrono::duration< double > timeSpan = std::chrono::duration_cast<std::chrono::duration< double >>( std::chrono::high_resolution_clock::now() - clock );
     //double time = timeSpan.count();
     //std::cout << "Time : Total : " << time << " Unit : " << time / iter;
 
+
+    ////==================================================================================
+    ////==================================================================================
+    ////==================================================================================
+    ////==================================================================================
+
+
+    // All access and writes are x4 because each kernel has to do 4 pixels
+    // GlobalSize / 4 :     0.11 -> no access
+    //                      0.11 -> 32 read access
+    //                      2.03 -> 16 Write access
+    //                      4.46 -> 16 Write access + 32 Read access
+    cl::Kernel* kernel2 = GetKernel( "Tests" );
+    kernel2->setArg( 0, *image );
+    kernel2->setArg( 1, *imageOutput );
+    kernel2->setArg( 2, BPL );
+
+    std::chrono::high_resolution_clock::time_point  clock;
+    clock = std::chrono::high_resolution_clock::now();
+    for( int i = 0; i< iter/4; ++i )
+    {
+
+        kernel2->setArg( 3, transfo );
+
+        mQueue->enqueueWriteBuffer( transfo, CL_FALSE, 0, sizeof( float ) * nine, m2 );
+
+        //cl_int err = mQueue->enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 2048, 1080 ), cl::NDRange( 256, 1 ) );
+
+
+        cl_int err = q1.enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 2048, 1080 ), cl::NDRange( 256, 1 ) );
+        err = q2.enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 2048, 1080 ), cl::NDRange( 256, 1 ) );
+        err = q3.enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 2048, 1080 ), cl::NDRange( 256, 1 ) );
+        err = q4.enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 2048, 1080 ), cl::NDRange( 256, 1 ) );
+        //err = q5.enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 2048, 1080 ), cl::NDRange( 256, 1 ) );
+        //err = q6.enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 2048, 1080 ), cl::NDRange( 256, 1 ) );
+        //err = q7.enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 2048, 1080 ), cl::NDRange( 256, 1 ) );
+        //err = q8.enqueueNDRangeKernel( *kernel2, cl::NullRange, cl::NDRange( 2048, 1080 ), cl::NDRange( 256, 1 ) );
+
+        if( err != CL_SUCCESS )
+            qDebug() << "FAILED KERNEL : " << __FUNCTION__ << err;
+
+        //mQueue->finish();
+    }
+
+    q1.finish();
+    q2.finish();
+    q3.finish();
+    q4.finish();
+
+    std::chrono::duration< double > timeSpan = std::chrono::duration_cast<std::chrono::duration< double >>( std::chrono::high_resolution_clock::now() - clock );
+    double time = timeSpan.count();
+    std::cout << "Time : Total : " << time << " Unit : " << time / iter << std::endl;
+
+    BENCHSTART( 1 )
     mQueue->enqueueReadBuffer( *imageOutput, CL_TRUE, 0, oneM, destination->bits() );
+    BENCHEND( 1 )
 
     DeleteBuffer( image );
     DeleteBuffer( imageOutput );

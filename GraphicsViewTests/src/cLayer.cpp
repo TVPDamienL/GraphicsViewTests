@@ -4,6 +4,7 @@
 #include "GPUForThisApp.h"
 #include "BenchmarkStuff.h"
 
+#include "Image.Utilities.h"
 
 cLayer::~cLayer()
 {
@@ -16,15 +17,25 @@ cLayer::~cLayer()
 cLayer::cLayer( unsigned int iWidth, unsigned int iHeight ) :
     mCurrentHistoryIndex( 0 )
 {
-    //mImage = new QImage( "Resources/lapinGridBenchmarkSize.png" );
+    mImage = new QImage( "Resources/lapinGridBenchmarkSize.png" );
     //mImage = new QImage( iWidth, iHeight, QImage::Format_ARGB32_Premultiplied );
-    auto qBench = new QImage( "Resources/lapinGridBenchmarkSize.png" );
-    mImage = new QImage( 2048, 1080, QImage::Format_ARGB32_Premultiplied );
-    mImage->fill( Qt::red );
+    //auto qBench = new QImage( "Resources/lapinGridBenchmarkSize.png" );
+    //mImage = new QImage( 2048, 1080, QImage::Format_ARGB32_Premultiplied );
+    //mImage->fill( Qt::red );
 
-    BENCHSTART( 100 )
-    _GPU->BlendImages( qBench, mImage, mImage->rect(), 0 );
-    BENCHEND( 100 )
+    //BENCHSTART( 50 )
+    //DownscaleBoxAverageDirectAlpha( qBench, mImage, 0, QTransform().fromScale( 0.5, 0.5 ), QPoint( 0, 0 ) );
+    //BENCHEND( 50 )
+
+    //BENCHSTART( 50 )
+    //QImage* out = DownscaleBoxAverageIntoImage( qBench, QTransform().fromScale( 0.5, 0.5 ) );
+    //BlendImageNormal( out, mImage, QPoint( 0, 0 ) );
+    //BENCHEND( 50 )
+
+
+    //BENCHSTART( 100 )
+    //_GPU->BlendImages( qBench, mImage, mImage->rect(), 0 );
+    //BENCHEND( 100 )
 
     //_GPU->Bench( qBench, mImage );
     //QImage* output = new QImage( 1920, 1080, QImage::Format_ARGB32_Premultiplied );

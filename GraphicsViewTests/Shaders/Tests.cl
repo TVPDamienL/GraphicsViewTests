@@ -4,50 +4,50 @@ void
 kernel Tests( global const uchar* image, global uchar* output, int BPL, global const float* krnl )
 {
     // Hardest (suposedly) optimizations
-    int localSize = get_local_size( 0 );
-    int workGroupID = get_group_id( 0 );
-    int localID = get_local_id( 0 );
-    int componentNumber = localID % 4;
-    int localPxCut = localID / 4;
-    int localPixel = localPxCut * 4;
-    int localPixel2 = localPixel + localSize;
-    int localPixel3 = localPixel2 + localSize;
-    int localPixel4 = localPixel3 + localSize;
+    // int localSize = get_local_size( 0 );
+    // int workGroupID = get_group_id( 0 );
+    // int localID = get_local_id( 0 );
+    // int componentNumber = localID % 4;
+    // int localPxCut = localID / 4;
+    // int localPixel = localPxCut * 4;
+    // int localPixel2 = localPixel + localSize;
+    // int localPixel3 = localPixel2 + localSize;
+    // int localPixel4 = localPixel3 + localSize;
 
-    int pixX = workGroupID * localSize;
-    int pixY = get_global_id(1);
+    // int pixX = workGroupID * localSize;
+    // int pixY = get_global_id(1);
 
-    int pixelIndex = localPixel + pixY * BPL + pixX*4;
-    int pixelIndex2 = pixelIndex + localSize;
-    int pixelIndex3 = pixelIndex2 + localSize;
-    int pixelIndex4 = pixelIndex3 + localSize;
+    // int pixelIndex = localPixel + pixY * BPL + pixX*4;
+    // int pixelIndex2 = pixelIndex + localSize;
+    // int pixelIndex3 = pixelIndex2 + localSize;
+    // int pixelIndex4 = pixelIndex3 + localSize;
 
-    local uchar inputComps[ 1024 ];
-    inputComps[ localPixel + componentNumber ] = image[ pixelIndex + componentNumber ];
-    inputComps[ localPixel2 + componentNumber ] = image[ pixelIndex2 + componentNumber ];
-    inputComps[ localPixel3 + componentNumber ] = image[ pixelIndex3 + componentNumber ];
-    inputComps[ localPixel4 + componentNumber ] = image[ pixelIndex4 + componentNumber ];
+    // local uchar inputComps[ 1024 ];
+    // inputComps[ localPixel + componentNumber ] = image[ pixelIndex + componentNumber ];
+    // inputComps[ localPixel2 + componentNumber ] = image[ pixelIndex2 + componentNumber ];
+    // inputComps[ localPixel3 + componentNumber ] = image[ pixelIndex3 + componentNumber ];
+    // inputComps[ localPixel4 + componentNumber ] = image[ pixelIndex4 + componentNumber ];
 
-    local uchar outputComps[ 1024 ];
-    outputComps[ localPixel + componentNumber ] = output[ pixelIndex + componentNumber ];
-    outputComps[ localPixel2 + componentNumber ] = output[ pixelIndex2 + componentNumber ];
-    outputComps[ localPixel3 + componentNumber ] = output[ pixelIndex3 + componentNumber ];
-    outputComps[ localPixel4 + componentNumber ] = output[ pixelIndex4 + componentNumber ];
-
-
-    barrier( CLK_LOCAL_MEM_FENCE  );
+    // local uchar outputComps[ 1024 ];
+    // outputComps[ localPixel + componentNumber ] = output[ pixelIndex + componentNumber ];
+    // outputComps[ localPixel2 + componentNumber ] = output[ pixelIndex2 + componentNumber ];
+    // outputComps[ localPixel3 + componentNumber ] = output[ pixelIndex3 + componentNumber ];
+    // outputComps[ localPixel4 + componentNumber ] = output[ pixelIndex4 + componentNumber ];
 
 
-    int transparencyAmountInverse = 255 - inputComps[ localPixel + 3 ];
-    int transparencyAmountInverse2 = 255 - inputComps[ localPixel2 + 3 ];
-    int transparencyAmountInverse3 = 255 - inputComps[ localPixel3 + 3 ];
-    int transparencyAmountInverse4 = 255 - inputComps[ localPixel4 + 3 ];
+    // barrier( CLK_LOCAL_MEM_FENCE  );
 
+
+    // int transparencyAmountInverse = 255 - inputComps[ localPixel + 3 ];
+    // int transparencyAmountInverse2 = 255 - inputComps[ localPixel2 + 3 ];
+    // int transparencyAmountInverse3 = 255 - inputComps[ localPixel3 + 3 ];
+    // int transparencyAmountInverse4 = 255 - inputComps[ localPixel4 + 3 ];
+
+    // // output[ pixelIndex + componentNumber ] = inputComps[ localPixel + componentNumber ]  + outputComps[ localPixel + componentNumber ] * transparencyAmountInverse / 255;
     // output[ pixelIndex + componentNumber ] = inputComps[ localPixel + componentNumber ]  + outputComps[ localPixel + componentNumber ] * transparencyAmountInverse / 255;
-    output[ pixelIndex + componentNumber ] = inputComps[ localPixel + componentNumber ]  + outputComps[ localPixel + componentNumber ] * transparencyAmountInverse / 255;
-    output[ pixelIndex2 + componentNumber ] = inputComps[ localPixel2 + componentNumber ]  + outputComps[ localPixel2 + componentNumber ] * transparencyAmountInverse2 / 255;
-    output[ pixelIndex3 + componentNumber ] = inputComps[ localPixel3 + componentNumber ]  + outputComps[ localPixel3 + componentNumber ] * transparencyAmountInverse3 / 255;
-    output[ pixelIndex4 + componentNumber ] = inputComps[ localPixel4 + componentNumber ]  + outputComps[ localPixel4 + componentNumber ] * transparencyAmountInverse4 / 255;
+    // output[ pixelIndex2 + componentNumber ] = inputComps[ localPixel2 + componentNumber ]  + outputComps[ localPixel2 + componentNumber ] * transparencyAmountInverse2 / 255;
+    // output[ pixelIndex3 + componentNumber ] = inputComps[ localPixel3 + componentNumber ]  + outputComps[ localPixel3 + componentNumber ] * transparencyAmountInverse3 / 255;
+    // output[ pixelIndex4 + componentNumber ] = inputComps[ localPixel4 + componentNumber ]  + outputComps[ localPixel4 + componentNumber ] * transparencyAmountInverse4 / 255;
 
 
     // ======================================================
@@ -103,15 +103,15 @@ kernel Tests( global const uchar* image, global uchar* output, int BPL, global c
 
 
     // // NO optimizations, basic kernel
-    // int pixX = get_global_id(0);
-    // int pixY = get_global_id(1);
-    // int pixelIndex = pixY * BPL + pixX*4;
+    int pixX = get_global_id(0);
+    int pixY = get_global_id(1);
+    int pixelIndex = pixY * BPL + pixX*4;
 
-    // int transparencyAmountInverse = 255 - image[ pixelIndex + 3 ];
-    // output[ pixelIndex + 0 ] = image[ pixelIndex + 0 ]  + output[ pixelIndex + 0 ] * transparencyAmountInverse / 255;
-    // output[ pixelIndex + 1 ] = image[ pixelIndex + 1 ]  + output[ pixelIndex + 1 ] * transparencyAmountInverse / 255;
-    // output[ pixelIndex + 2 ] = image[ pixelIndex + 2 ]  + output[ pixelIndex + 2 ] * transparencyAmountInverse / 255;
-    // output[ pixelIndex + 3 ] = image[ pixelIndex + 3 ]  + output[ pixelIndex + 3 ] * transparencyAmountInverse / 255;
+    int transparencyAmountInverse = 255 - image[ pixelIndex + 3 ];
+    output[ pixelIndex + 0 ] = image[ pixelIndex + 0 ]  + output[ pixelIndex + 0 ] * transparencyAmountInverse / 255;
+    output[ pixelIndex + 1 ] = image[ pixelIndex + 1 ]  + output[ pixelIndex + 1 ] * transparencyAmountInverse / 255;
+    output[ pixelIndex + 2 ] = image[ pixelIndex + 2 ]  + output[ pixelIndex + 2 ] * transparencyAmountInverse / 255;
+    output[ pixelIndex + 3 ] = image[ pixelIndex + 3 ]  + output[ pixelIndex + 3 ] * transparencyAmountInverse / 255;
 
 
     // ======================================================

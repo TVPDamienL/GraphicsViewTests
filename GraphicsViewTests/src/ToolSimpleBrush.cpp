@@ -105,8 +105,6 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
     // This means a LOT of readBuffer -> Not efficient, would need to never read buffer = use some sort of openGL display
 
 
-
-
     //_GPU->Paint( iX, iY, iPressure, iRotation );
 
     //_mToolSizeAfterPressure = Max( mToolSize * iPressure, 1.0F );
@@ -242,7 +240,7 @@ cToolSimpleBrush::EndDrawing( sPointData iPointData )
 float
 cToolSimpleBrush::_GetStepInPixelValue() const
 {
-    return  mStep * _mToolSizeAfterPressure;
+    return  std::max( mStep * _mToolSizeAfterPressure, 1.0F );
 }
 
 

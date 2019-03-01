@@ -8,7 +8,7 @@
                     for( int i = 0; i< k; ++i ) {
 
 
-#define BENCHEND(k)    } double time = Bench::ClockEnd(); qDebug() << "Time : Total : " << time << " Unit : " << time / k;
+#define BENCHEND(k)    } {double time = Bench::ClockEnd(); qDebug() << "Time : Total : " << time << " Unit : " << time / k; }
 
 
 namespace Bench

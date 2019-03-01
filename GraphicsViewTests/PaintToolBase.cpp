@@ -154,6 +154,7 @@ cPaintToolBase::DrawPathFromLastRenderedPoint()
         // ==================================
 
         float remainingDistance = distance; // The distance left of the segment, that still needs split
+        //qDebug() << "Remaining : " << remainingDistance;
         QPoint startingPoint = p1;
 
 
@@ -254,5 +255,5 @@ cPaintToolBase::__DrawDotVectorTruc_RequiresAName_( const QPoint& iStart, const 
 float
 cPaintToolBase::_GetStepInPixelValue() const
 {
-    return  mStep * mToolSize;
+    return  std::max( mStep * mToolSize, 1.0F );
 }
