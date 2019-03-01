@@ -150,6 +150,8 @@
     <ClCompile Include="src\EditableItem.cpp" />
     <ClCompile Include="src\ToolSimpleBrush.cpp" />
     <ClCompile Include="src\Undoable.cpp" />
+    <ClCompile Include="Thread.cpp" />
+    <ClCompile Include="ThreadMachine.cpp" />
     <ClCompile Include="ToolBase.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -159,6 +161,9 @@
     <QtRcc Include="cMainWindow.qrc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Image.UtilitiesMultiThreaded.h" />
+    <ClInclude Include="Thread.h" />
+    <ClInclude Include="ThreadMachine.h" />
     <QtMoc Include="cToolSelectionTest.h">
       <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;.\src;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets</IncludePath>
       <Define Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">UNICODE;_UNICODE;WIN32;WIN64;QT_CORE_LIB;QT_GUI_LIB;QT_WIDGETS_LIB</Define>

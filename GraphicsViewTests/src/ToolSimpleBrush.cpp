@@ -141,16 +141,8 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
     int bytesPerLine = mDrawingContext->bytesPerLine();
 
     _mToolSizeAfterPressure = Max( mToolSize * iPressure, 1.0F );
-    QImage* scaledTip = mTipRendered;
-
-    if( _mToolSizeAfterPressure != mToolSize )
-        scaledTip = DownscaleBoxAverageIntoImage( mTipRendered, QTransform() * QTransform::fromScale( iPressure, iPressure ) );
-
     int diam = mToolSize * iPressure;
     int radius = diam / 2;
-    uchar* dataTip = scaledTip->bits();
-    uchar* dataTipScanline = dataTip;
-    int bytesPerLineTip = scaledTip->bytesPerLine();
 
     int minX = iX - radius;
     int maxX = minX + diam;
@@ -168,53 +160,12 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
     int startingY = minY < 0 ? 0 : minY;
     int endingY = maxY >= mDrawingContext->height() ? mDrawingContext->height() - 1 : maxY;
 
+    auto transfo = QTransform() * QTransform::fromScale( iPressure, iPressure ) * QTransform::fromTranslate( minX, minY );
+
+    DownscaleBoxAverageDirectAlpha( mTipRendered, mDrawingContext, 0, transfo, QPoint( 0, 0 ) );
+
     mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX + 1, endingY - startingY + 1 ) );
-
-    bool useAlphaMask = mAlphaMask && mAlphaMask->width() == mDrawingContext->width() && mAlphaMask->height() == mDrawingContext->height();
-    if( useAlphaMask )
-    {
-        alphaData = mAlphaMask->bits();
-        alphaScanline = alphaData;
-    }
-
-    for( int y = startingY; y < endingY ; ++y )
-    {
-        int offset = y * bytesPerLine + startingX * 4;
-        dataScanline = data +  offset;
-        dataTipScanline = dataTip + (y - minY) * bytesPerLineTip + (startingX - minX ) * 4;
-
-        if( useAlphaMask )
-            alphaScanline = alphaData +  offset + 3;
-
-        for( int x = startingX; x < endingX; ++x )
-        {
-            int srcB = *dataTipScanline; ++dataTipScanline;
-            int srcG = *dataTipScanline; ++dataTipScanline;
-            int srcR = *dataTipScanline; ++dataTipScanline;
-            int srcA = *dataTipScanline; ++dataTipScanline;
-
-            if( useAlphaMask )
-            {
-                int alphaMaskTransparency = *alphaScanline; alphaScanline += 4;
-                srcR = BlinnMult( srcR, alphaMaskTransparency );
-                srcG = BlinnMult( srcG, alphaMaskTransparency );
-                srcB = BlinnMult( srcB, alphaMaskTransparency );
-                srcA = BlinnMult( srcA, alphaMaskTransparency );
-            }
-
-            if( srcA == 0 )
-            {
-                dataScanline += 4;
-            }
-            else
-            {
-                BlendPixelNormal( &dataScanline, srcR, srcG, srcB, srcA );
-            }
-        }
-    }
-
-    if( _mToolSizeAfterPressure != mToolSize )
-        delete  scaledTip;
+    //mDirtyArea = mDirtyArea.united( QRect( startingX-10, startingY-10, startingX + 20, startingY + 20 ) );
 }
 
 

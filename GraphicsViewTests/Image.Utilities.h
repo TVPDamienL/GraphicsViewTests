@@ -674,6 +674,8 @@ DownscaleBoxAverageIntoImage( QImage* iInput, const QTransform& iTransform )
 
 // iTransform should be a downscale, otherwise it's not ment to work
 // This averages pixels to get the condensed pixel
+// PERFORMANCE : Not a huge increase from doing a new allocated image output that we blend afterward and this
+// where we directly draw to output
 static
 void
 DownscaleBoxAverageDirectAlpha( QImage* iInput, QImage* iOutput, QImage* iAlphaMask, const QTransform& iTransform, const QPoint& iOrigin )
@@ -705,7 +707,10 @@ DownscaleBoxAverageDirectAlpha( QImage* iInput, QImage* iOutput, QImage* iAlphaM
     const double yScaleFactor = Distance2Points( outputRect[ 1 ], outputRect[ 2 ] ) / double( inputArea.height() );
 
     if( xScaleFactor >= 1.0 || yScaleFactor >= 1.0 )
+    {
+        BlendImageNormal( iInput, iOutput, QPoint( minX, minY ) );
         return;
+    }
 
     const double xScaleInverse = 1/ xScaleFactor;
     const double yScaleInverse = 1/ yScaleFactor;
@@ -737,7 +742,7 @@ DownscaleBoxAverageDirectAlpha( QImage* iInput, QImage* iOutput, QImage* iAlphaM
 
     for( int y = startY; y <= endY; ++y )
     {
-        outputScanline = outputData + (y-minY) * outputBPL + xOffset;
+        outputScanline = outputData + y * outputBPL + xOffset;
         //alphaScanline = alphaData +  (y-minY) * alphaBPL + xOffset + 3;
 
         for( int x = startX; x <= endX; ++x )
@@ -748,7 +753,6 @@ DownscaleBoxAverageDirectAlpha( QImage* iInput, QImage* iOutput, QImage* iAlphaM
 
             if( !inputArea.contains( xyMapped ) )
             {
-                BlendPixelNone( &outputScanline, 0, 0, 0, 0 );
                 continue;
             }
 
@@ -806,7 +810,7 @@ DownscaleBoxAverageDirectAlpha( QImage* iInput, QImage* iOutput, QImage* iAlphaM
                 aSum /= surface;
 
                 // Blend
-                BlendPixelNone( &outputScanline, rSum, gSum, bSum, aSum );
+                BlendPixelNormal( &outputScanline, rSum, gSum, bSum, aSum );
 
                 rSum = 0;
                 gSum = 0;
