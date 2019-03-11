@@ -7,24 +7,18 @@
 #include <QColor>
 #include <qobject.h>
 
-class cToolSimpleBrush :
+class cToolSmudge :
     public cPaintToolBase
 {
     Q_OBJECT
 
 public:
-    virtual ~cToolSimpleBrush();
-    cToolSimpleBrush( QObject* iParent = Q_NULLPTR );
-
+    virtual ~cToolSmudge();
+    cToolSmudge( QObject* iParent = Q_NULLPTR );
 
 public:
     Qt::ItemFlags   flags( const QModelIndex& iIndex ) const override;
     void  buildTool();
-
-
-public:
-    void  ApplyProfile( bool iApply );
-    bool  ApplyProfile() const;
 
 
 public:
@@ -41,14 +35,20 @@ protected:
 
 
 private:
-    void _DrawDot( QImage* iImage, int x, int y, float iPressure, float iRotation );
+    void _GenerateMask();
+    void _SampleFromCanvas( int ix, int iy, int size );
 
 
 private:
     cCurveBase< float > mProfile;
-    bool                mApplyProfile;
-    QImage*             mTipRendered;
+    float               mForce = 0.5;
+    float*              mAlphaMask = 0;
+    QImage*             mCanvasSample = 0;
 
     float               _mToolSizeAfterPressure;
+
+    QImage*             _mPreviousDrawingContext = 0;
+    float*              _mFloatBuffer = 0;
+    float*              _mFloatExtract = 0;
 };
 

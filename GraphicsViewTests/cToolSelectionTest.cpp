@@ -93,7 +93,7 @@ cToolSelectionTest::DrawDot( int iX, int iY, float iPressure, float iRotation )
 
 
 void
-cToolSelectionTest::DrawLine( int x1, int y1, int x2, int y2 )
+cToolSelectionTest::DrawLine( const QPoint& iP1, const QPoint& iP2, float iPressure1, float iRotation1, float iPressure2, float iRotation2 )
 {
     // nothing
 }

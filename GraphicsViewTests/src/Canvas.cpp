@@ -46,7 +46,7 @@ cCanvas::cCanvas( QWidget *parent ) :
     scene->addItem( mEditableItem );
 
     mGridItem = new cGridItem();
-    scene->addItem( mGridItem );
+    //scene->addItem( mGridItem );
 
     QRectF sceneRect = geometry();
     setSceneRect( sceneRect );

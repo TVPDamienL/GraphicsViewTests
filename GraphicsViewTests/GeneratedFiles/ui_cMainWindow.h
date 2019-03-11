@@ -58,6 +58,7 @@ public:
     QPushButton *buttonToolPaint;
     QPushButton *buttonToolSelect;
     QPushButton *buttonRectangle;
+    QPushButton *buttonSmudge;
     cCanvas *canvas;
     QHBoxLayout *horizontalLayout_4;
     QSpacerItem *horizontalSpacer;
@@ -192,6 +193,11 @@ public:
 
         gridLayout->addWidget(buttonRectangle, 1, 0, 1, 1);
 
+        buttonSmudge = new QPushButton(centralWidget);
+        buttonSmudge->setObjectName(QString::fromUtf8("buttonSmudge"));
+
+        gridLayout->addWidget(buttonSmudge, 1, 1, 1, 1);
+
 
         verticalLayout->addLayout(gridLayout);
 
@@ -280,6 +286,7 @@ public:
         buttonToolPaint->setText(QApplication::translate("cMainWindow", "Paint", nullptr));
         buttonToolSelect->setText(QApplication::translate("cMainWindow", "Select", nullptr));
         buttonRectangle->setText(QApplication::translate("cMainWindow", "Rectangle", nullptr));
+        buttonSmudge->setText(QApplication::translate("cMainWindow", "Smudge", nullptr));
         playButton->setText(QApplication::translate("cMainWindow", "Play", nullptr));
         stopButton->setText(QApplication::translate("cMainWindow", "Stop", nullptr));
     } // retranslateUi

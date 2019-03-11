@@ -201,6 +201,12 @@
     <ClCompile Include="ThreadMachine.cpp">
       <Filter>src\Thread</Filter>
     </ClCompile>
+    <ClCompile Include="ToolPencil.cpp">
+      <Filter>src\ToolModel\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="ToolSmudge.cpp">
+      <Filter>src\ToolModel\Tools</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="cMainWindow.h">
@@ -238,6 +244,12 @@
     </QtMoc>
     <QtMoc Include="Rectangle.h">
       <Filter>src\ToolModel\Shapes</Filter>
+    </QtMoc>
+    <QtMoc Include="ToolPencil.h">
+      <Filter>src\ToolModel\Tools</Filter>
+    </QtMoc>
+    <QtMoc Include="ToolSmudge.h">
+      <Filter>src\ToolModel\Tools</Filter>
     </QtMoc>
   </ItemGroup>
   <ItemGroup>

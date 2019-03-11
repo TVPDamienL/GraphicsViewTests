@@ -515,12 +515,10 @@ GPUForThisApp::ClearSelectionBuffers()
 void
 GPUForThisApp::PerformTransformation( const QTransform& iTransfo, const QPoint& iOrigin )
 {
-    BENCHSTART( 100 )
     _TransformNN( mSelInputBuffer, mInputImage->bytesPerLine(), mInputImage->rect(), mSelOutputBuffer, mOutputImage->bytesPerLine(), mOutputImage->rect(), iTransfo, iOrigin );
     mQueue->finish();
 
     mQueue->enqueueReadBuffer( *mSelOutputBuffer, CL_TRUE, 0, mOutputImage->sizeInBytes(), mOutputImage->bits() );
-    BENCHEND( 100 )
 }
 
 

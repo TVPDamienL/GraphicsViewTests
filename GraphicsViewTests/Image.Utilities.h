@@ -46,6 +46,35 @@ ExclusiveBoundingBox( const QPolygonF& iPolygon )
 }
 
 
+inline
+static
+QRectF
+ExclusiveBoundingBoxF( const QPolygonF& iPolygon )
+{
+    float minX = iPolygon.at( 0 ).x();
+    float minY = iPolygon.at( 0 ).y();
+    float maxX = iPolygon.at( 0 ).x();
+    float maxY = iPolygon.at( 0 ).y();
+
+    for( auto point : iPolygon )
+    {
+        if( point.x() < minX )
+            minX = point.x();
+
+        if( point.y() < minY )
+            minY = point.y();
+
+        if( point.x() > maxX )
+            maxX = point.x();
+
+        if( point.y() > maxY )
+            maxY = point.y();
+    }
+
+    return  QRectF( minX, minY, maxX - minX, maxY - minY );
+}
+
+
 // Sets area with color
 // This is like a memset
 static

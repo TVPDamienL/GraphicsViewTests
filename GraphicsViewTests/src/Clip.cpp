@@ -7,6 +7,7 @@
 #include "Blending.h"
 
 #include "Image.Utilities.h"
+#include "Image.UtilitiesMultiThreaded.h"
 #include "GPUForThisApp.h"
 
 cClip::~cClip()
@@ -128,17 +129,17 @@ cClip::ComposeLayers()
         //REMOVE this when benchmarking
     }
 #else
-    HardFill( mCurrentFrameRendering, mDirtyArea, Qt::transparent );
+    MTHardFill( mCurrentFrameRendering, mDirtyArea, Qt::transparent );
 
     for( auto layer : mLayers )
     {
-        BlendImageNormalSameSizes( layer->Image(), mCurrentFrameRendering, mDirtyArea );
+        MTBlendImageNormalSameSizes( layer->Image(), mCurrentFrameRendering, mDirtyArea );
 
         // REMOVE this when benchmarking
         if( mSelection->IsActive() && layer == mCurrentLayer )
         {
             QRect clippedArea = mDirtyArea.intersected( mSelection->GetTransformationBBox() );
-            BlendImageNormalSameSizes( mSelection->TransformedImage(), mCurrentFrameRendering, clippedArea );
+            MTBlendImageNormalSameSizes( mSelection->TransformedImage(), mCurrentFrameRendering, clippedArea );
 
         }
         // /REMOVE this when benchmarking

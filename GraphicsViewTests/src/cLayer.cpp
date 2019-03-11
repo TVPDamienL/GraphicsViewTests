@@ -23,7 +23,11 @@ cLayer::cLayer( unsigned int iWidth, unsigned int iHeight ) :
     //auto qBench = new QImage( "Resources/lapinGridBenchmarkSize.png" );
     //mImage = new QImage( 2048, 1080, QImage::Format_ARGB32_Premultiplied );
     //mImage->fill( Qt::red );
-    MTHardFill( mImage, QRect( 0, 0, 100, 100 ), Qt::blue );
+
+    //qDebug() << "MT ================";
+    //BENCHSTART( 1000 )
+    //MTBlendImageNormal( qBench, mImage, QPoint( 0, 0 ) );
+    //BENCHEND( 1000 )
 
     //BENCHSTART( 50 )
     //DownscaleBoxAverageDirectAlpha( qBench, mImage, 0, QTransform().fromScale( 0.5, 0.5 ), QPoint( 0, 0 ) );

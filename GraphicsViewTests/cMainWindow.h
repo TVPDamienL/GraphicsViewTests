@@ -13,6 +13,7 @@
 
 class cCustomGraphicsView;
 class cShapeRectangle;
+class cToolSmudge;
 
 class cMainWindow :
     public QMainWindow
@@ -44,6 +45,7 @@ public slots:
     void ToolPaintClicked();
     void ToolSelectClicked();
     void ToolRectangleClicked();
+    void ToolSmudgeClicked();
 
 private:
     Ui::cMainWindow     ui;
@@ -58,6 +60,7 @@ private:
     cPaintToolBase*     mToolSelect;
     cShapeRectangle*    mRectangleShape;
     cShapeRectangle*    mRectangleSelection;
+    cToolSmudge*        mToolSmudge;
 
     cClip*              mClip;
 };

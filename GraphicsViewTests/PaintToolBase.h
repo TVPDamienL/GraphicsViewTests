@@ -36,7 +36,7 @@ public:
 
 public:
     virtual  void   DrawDot( int x, int y, float iPressure, float iRotation ) = 0;
-    virtual  void   DrawLine( int x1, int y1, int x2, int y2 ) = 0;
+    virtual  void   DrawLine( const QPoint& iP1, const QPoint& iP2, float iPressure1, float iRotation1, float iPressure2, float iRotation2 ) = 0;
     virtual  void   DrawFullPath();
     virtual  void   DrawPathFromLastRenderedPoint();
 
@@ -67,7 +67,6 @@ protected:
     const QImage*               mAlphaMask;
     QRect                       mDirtyArea;
 
-private:
     int                         mLastRenderedPathIndex;
     float                       mRequiredStepLength;
 

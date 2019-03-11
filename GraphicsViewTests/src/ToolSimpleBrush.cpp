@@ -4,7 +4,7 @@
 
 #include "BenchmarkStuff.h"
 #include "Image.Utilities.h"
-#include "Math.Fast.h"
+#include "Image.UtilitiesMultiThreaded.h"
 #include "Blending.h"
 #include "GPUForThisApp.h"
 
@@ -141,13 +141,19 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
     int bytesPerLine = mDrawingContext->bytesPerLine();
 
     _mToolSizeAfterPressure = Max( mToolSize * iPressure, 1.0F );
-    int diam = mToolSize * iPressure;
-    int radius = diam / 2;
+    float diam = mToolSize * iPressure;
+    float radius = diam / 2;
 
-    int minX = iX - radius;
-    int maxX = minX + diam;
-    int minY = iY - radius;
-    int maxY = minY + diam;
+    const float minX = iX - radius;
+    const float maxX = minX + diam;
+    const float minY = iY - radius;
+    const float maxY = minY + diam;
+
+    const float minXNoPressure = iX - mToolSize/2;
+    const float minYNoPressure = iY - mToolSize/2;
+
+    const float offetX = minX - minXNoPressure;
+    const float offetY = minY - minYNoPressure;
 
     // Basic out of bounds elimination
     if( minX >= mDrawingContext->width() || minY >= mDrawingContext->height() )
@@ -160,22 +166,20 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
     int startingY = minY < 0 ? 0 : minY;
     int endingY = maxY >= mDrawingContext->height() ? mDrawingContext->height() - 1 : maxY;
 
-    auto transfo = QTransform() * QTransform::fromScale( iPressure, iPressure ) * QTransform::fromTranslate( minX, minY );
+    auto trans = QTransform();
+    trans.scale( iPressure, iPressure );
 
-    DownscaleBoxAverageDirectAlpha( mTipRendered, mDrawingContext, 0, transfo, QPoint( 0, 0 ) );
+    auto transfo = QTransform() * trans * QTransform::fromTranslate( minX, minY );
+
+    MTDownscaleBoxAverageDirectAlpha( mTipRendered, mDrawingContext, 0, transfo, QPoint( 0, 0 ) );
 
     mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX + 1, endingY - startingY + 1 ) );
-    //mDirtyArea = mDirtyArea.united( QRect( startingX-10, startingY-10, startingX + 20, startingY + 20 ) );
 }
 
 
 void
-cToolSimpleBrush::DrawLine( int x1, int y1, int x2, int y2 )
+cToolSimpleBrush::DrawLine( const QPoint& iP1, const QPoint& iP2, float iPressure1, float iRotation1, float iPressure2, float iRotation2 )
 {
-    DrawDot( x1, y1, 1, 0 );
-    DrawDot( x2, y2, 1, 0 );
-
-    // All inbetweens
 }
 
 

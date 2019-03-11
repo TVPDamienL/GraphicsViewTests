@@ -63,7 +63,7 @@ MTHardFill( QImage* dest, const QRect& area, const QColor& color )
                 }
             }
         },
-        cRange( startingX, i * split ), cRange( endingX - startingX + 1, split + correct ), true ) );
+        cRange( startingX, startingY + i * split ), cRange( endingX - startingX + 1, split + correct ), true ) );
     }
 
     for( int i = 0; i < handles.size(); ++i )
@@ -145,109 +145,177 @@ MTHardFill( QImage* dest, const QRect& area, const QColor& color )
 //        }
 //    }
 //}
-//
-//
-//
-//static
-//void
-//BlendImageNormal( QImage* source, QImage* destination, const QPoint& point )
-//{
-//    uchar* sourceData = source->bits();
-//    uchar* sourceScanline;
-//    int sourceBPL = source->bytesPerLine();
-//
-//    uchar* destData = destination->bits();
-//    uchar* destScanline;
-//    int dstBPL = destination->bytesPerLine();
-//
-//    // Source bbox
-//    const int minX = point.x();
-//    const int maxX = minX + source->width() - 1;
-//    const int minY = point.y();
-//    const int maxY = minY + source->height() - 1;
-//
-//    const int startingX = minX < 0 ? 0 : minX;
-//    const int endingX = maxX >= destination->width() ? destination->width() - 1 : maxX;
-//    const int startingY = minY < 0 ? 0 : minY;
-//    const int endingY = maxY >= destination->height() ? destination->height() - 1 : maxY;
-//
-//    for( int y = startingY; y <= endingY; ++y )
-//    {
-//        sourceScanline  = sourceData + (y - minY) * sourceBPL + (startingX - minX) * 4;
-//        destScanline    = destData + y * dstBPL + startingX * 4;
-//
-//        for( int x = startingX; x <= endingX; ++x )
-//        {
-//            uchar alpha = *(sourceScanline+3);
-//            if( alpha == 0 ) // Skip if alpha is nil
-//            {
-//                sourceScanline += 4;
-//                destScanline += 4;
-//                continue;
-//            }
-//
-//            BlendPixelNormal( &destScanline, *(sourceScanline+2), *(sourceScanline+1), *(sourceScanline), alpha );
-//            sourceScanline += 4;
-//        }
-//    }
-//}
-//
-//
-////================================================================
-////================================================================
-////================================================================
-//
-//
-//// Assumes source && dest have same size
-//static
-//void
-//BlendImageNormalSameSizes( QImage* source, QImage* destination, const QRect& area )
-//{
-//    uchar* sourceData = source->bits();
-//    uchar* sourceScanline;
-//    int sourceBPL = source->bytesPerLine();
-//
-//    uchar* destData = destination->bits();
-//    uchar* destScanline;
-//    int dstBPL = destination->bytesPerLine();
-//
-//    assert(sourceBPL == dstBPL);
-//    assert(source->size() == destination->size() );
-//
-//    // area
-//    const int minX = area.left();
-//    const int maxX = area.right();
-//    const int minY = area.top();
-//    const int maxY = area.bottom();
-//
-//    // Clipping
-//    const int startingX = minX < 0 ? 0 : minX;
-//    const int endingX = maxX >= destination->width() ? destination->width() - 1 : maxX;
-//    const int startingY = minY < 0 ? 0 : minY;
-//    const int endingY = maxY >= destination->height() ? destination->height() - 1 : maxY;
-//
-//    for( int y = startingY; y <= endingY; ++y )
-//    {
-//        const int index = y * sourceBPL + startingX * 4;
-//        sourceScanline  = sourceData + index;
-//        destScanline    = destData + index;
-//
-//        for( int x = startingX; x <= endingX; ++x )
-//        {
-//            uchar alpha = *(sourceScanline+3);
-//            if( alpha == 0 ) // Skip if alpha is nil
-//            {
-//                sourceScanline += 4;
-//                destScanline += 4;
-//                continue;
-//            }
-//
-//            BlendPixelNormal( &destScanline, *(sourceScanline+2), *(sourceScanline+1), *(sourceScanline), alpha );
-//            sourceScanline += 4;
-//        }
-//    }
-//}
-//
+
+
+static
+void
+MTBlendImageNormal( QImage* source, QImage* destination, const QPoint& point )
+{
+    uchar* sourceData = source->bits();
+    int sourceBPL = source->bytesPerLine();
+
+    uchar* destData = destination->bits();
+    int dstBPL = destination->bytesPerLine();
+
+    // Source bbox
+    const int minX = point.x();
+    const int maxX = minX + source->width() - 1;
+    const int minY = point.y();
+    const int maxY = minY + source->height() - 1;
+
+    const int startingX = minX < 0 ? 0 : minX;
+    const int endingX = maxX >= destination->width() ? destination->width() - 1 : maxX;
+    const int startingY = minY < 0 ? 0 : minY;
+    const int endingY = maxY >= destination->height() ? destination->height() - 1 : maxY;
+    const int height = endingY - startingY;
+
+    const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
+    const int split = height / threadCount;
+    const int excess = height % threadCount;
+
+    std::vector< cThreadHandle > handles;
+
+    for( int i = 0; i < threadCount; ++i )
+    {
+        int correct = 0;
+        if( i == threadCount-1 )
+            correct = excess;
+
+        handles.push_back( cThreadProcessor::Instance()->AffectFunctionToThreadAndStart(
+            [ sourceData, destData, sourceBPL, dstBPL, minX, minY ]( cRange iOff, cRange iRange )
+        {
+            uchar* sourceScanline = destData;
+            uchar* destScanline = destData;
+
+            const int startY = iOff.mY;
+            const int endY = startY + iRange.mY;
+            const int startX = iOff.mX;
+            const int endX = startX + iRange.mX;
+
+            for( int y = startY; y < endY; ++y )
+            {
+                sourceScanline  = sourceData + (y - minY) * sourceBPL + (startX - minX) * 4;
+                destScanline    = destData + y * dstBPL + startX * 4;
+
+                for( int x = startX; x < endX; ++x )
+                {
+                    uchar alpha = *(sourceScanline+3);
+                    if( alpha == 0 ) // Skip if alpha is nil
+                    {
+                        sourceScanline += 4;
+                        destScanline += 4;
+                        continue;
+                    }
+
+                    BlendPixelNormal( &destScanline, *(sourceScanline+2), *(sourceScanline+1), *(sourceScanline), alpha );
+                    sourceScanline += 4;
+                }
+            }
+        },
+            cRange( startingX, startingY + i * split ), cRange( endingX - startingX + 1, split + correct ), true ) );
+    }
+
+    for( int i = 0; i < handles.size(); ++i )
+    {
+        auto handle = handles[ i ];
+        cThread* t = handle.GetThread();
+        if( t )
+            t->WaitEndOfTask();
+    }
+}
+
+
+//================================================================
+//================================================================
+//================================================================
+
+
+// Assumes source && dest have same size
+static
+void
+MTBlendImageNormalSameSizes( QImage* source, QImage* destination, const QRect& area )
+{
+    uchar* sourceData = source->bits();
+    uchar* sourceScanline;
+    int sourceBPL = source->bytesPerLine();
+
+    uchar* destData = destination->bits();
+    uchar* destScanline;
+    int dstBPL = destination->bytesPerLine();
+
+    assert(sourceBPL == dstBPL);
+    assert(source->size() == destination->size() );
+
+    // area
+    const int minX = area.left();
+    const int maxX = area.right();
+    const int minY = area.top();
+    const int maxY = area.bottom();
+
+    // Clipping
+    const int startingX = minX < 0 ? 0 : minX;
+    const int endingX = maxX >= destination->width() ? destination->width() - 1 : maxX;
+    const int startingY = minY < 0 ? 0 : minY;
+    const int endingY = maxY >= destination->height() ? destination->height() - 1 : maxY;
+    const int height = endingY - startingY;
+
+    const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
+    const int split = height / threadCount;
+    const int excess = height % threadCount;
+
+    std::vector< cThreadHandle > handles;
+
+    for( int i = 0; i < threadCount; ++i )
+    {
+        int correct = 0;
+        if( i == threadCount-1 )
+            correct = excess;
+
+        handles.push_back( cThreadProcessor::Instance()->AffectFunctionToThreadAndStart(
+            [ sourceData, destData, sourceBPL, dstBPL ]( cRange iOff, cRange iRange )
+        {
+            uchar* destScanline;
+            uchar* sourceScanline;
+
+            const int startY = iOff.mY;
+            const int endY = startY + iRange.mY;
+            const int startX = iOff.mX;
+            const int endX = startX + iRange.mX;
+
+            for( int y = startY; y < endY; ++y )
+            {
+                const int index = y * sourceBPL + startX * 4;
+                sourceScanline  = sourceData + index;
+                destScanline    = destData + index;
+
+
+                for( int x = startX; x < endX; ++x )
+                {
+                    uchar alpha = *(sourceScanline+3);
+                    if( alpha == 0 ) // Skip if alpha is nil
+                    {
+                        sourceScanline += 4;
+                        destScanline += 4;
+                        continue;
+                    }
+
+                    BlendPixelNormal( &destScanline, *(sourceScanline+2), *(sourceScanline+1), *(sourceScanline), alpha );
+                    sourceScanline += 4;
+                }
+            }
+        },
+            cRange( startingX, startingY + i * split ), cRange( endingX - startingX + 1, split + correct ), true ) );
+    }
+
+    for( int i = 0; i < handles.size(); ++i )
+    {
+        auto handle = handles[ i ];
+        cThread* t = handle.GetThread();
+        if( t )
+            t->WaitEndOfTask();
+    }
+}
+
 //
 //// ==============================================================================
 //// ==============================================================================
@@ -670,154 +738,189 @@ MTHardFill( QImage* dest, const QRect& area, const QColor& color )
 //}
 //
 //
-//// iTransform should be a downscale, otherwise it's not ment to work
-//// This averages pixels to get the condensed pixel
-//// PERFORMANCE : Not a huge increase from doing a new allocated image output that we blend afterward and this
-//// where we directly draw to output
-//static
-//void
-//DownscaleBoxAverageDirectAlpha( QImage* iInput, QImage* iOutput, QImage* iAlphaMask, const QTransform& iTransform, const QPoint& iOrigin )
-//{
-//    const QTransform inverse = iTransform.inverted();
-//    const int inputWidth = iInput->width();
-//    const int inputHeight = iInput->height();
-//    QRect inputArea = iInput->rect();
-//    inputArea.moveTopLeft( iOrigin );
-//
-//    // Transformed bbox
-//    QPolygonF outputRect = MapToPolygonF( iTransform, inputArea );
-//    QRect transfoBBox = ExclusiveBoundingBox( outputRect );
-//
-//    int minX = transfoBBox.left();
-//    int minY = transfoBBox.top();
-//    int maxX = transfoBBox.right() + 1;
-//    int maxY = transfoBBox.bottom() + 1;
-//
-//    transfoBBox = transfoBBox.intersected( iOutput->rect() );
-//
-//    int startX = transfoBBox.left();
-//    int startY = transfoBBox.top();
-//    int endX = transfoBBox.right();
-//    int endY = transfoBBox.bottom();
-//
-//    // Scales
-//    const double xScaleFactor = Distance2Points( outputRect[ 0 ], outputRect[ 1 ] ) / double( inputArea.width() );
-//    const double yScaleFactor = Distance2Points( outputRect[ 1 ], outputRect[ 2 ] ) / double( inputArea.height() );
-//
-//    if( xScaleFactor >= 1.0 || yScaleFactor >= 1.0 )
-//    {
-//        BlendImageNormal( iInput, iOutput, QPoint( minX, minY ) );
-//        return;
-//    }
-//
-//    const double xScaleInverse = 1/ xScaleFactor;
-//    const double yScaleInverse = 1/ yScaleFactor;
-//
-//    // Data iteration
-//    uchar* inputData = iInput->bits();
-//    const int inputBPL = iInput->bytesPerLine();
-//    uchar* inputScanline = inputData;
-//
-//    uchar* outputData = iOutput->bits();
-//    uchar* outputScanline = outputData;
-//    const int outputBPL = iOutput->bytesPerLine();
-//
-//    //uchar* alphaData = iAlphaMask->bits();
-//    //uchar* alphaScanline = alphaData + 3;
-//    //const int alphaBPL = iAlphaMask->bytesPerLine();
-//
-//    // Pixel averaging variables
-//    unsigned int rSum = 0;
-//    unsigned int gSum = 0;
-//    unsigned int bSum = 0;
-//    unsigned int aSum = 0;
-//    double surface = 0.0;
-//    double xRatio = 1.0;
-//    double yRatio = 1.0;
-//    double finalRatio = 1.0;
-//
-//    const int xOffset = startX * 4;
-//
-//    for( int y = startY; y <= endY; ++y )
-//    {
-//        outputScanline = outputData + y * outputBPL + xOffset;
-//        //alphaScanline = alphaData +  (y-minY) * alphaBPL + xOffset + 3;
-//
-//        for( int x = startX; x <= endX; ++x )
-//        {
-//            // Get the point in original
-//            const QPointF xyMappedF = inverse.map( QPointF( x, y ) );
-//            const QPoint xyMapped = QPoint( xyMappedF.x(), xyMappedF.y() );
-//
-//            if( !inputArea.contains( xyMapped ) )
-//            {
-//                continue;
-//            }
-//
-//            // Get the box to read in original
-//            QRectF boxAreaF( xyMapped.x(), xyMapped.y(), xScaleInverse, yScaleInverse );
-//            QRect boxArea( xyMapped.x(), xyMapped.y(), int( xScaleInverse ) + 1, int( yScaleInverse ) + 1 );
-//
-//
-//            // Clip to not write oob
-//            boxArea = boxArea.intersected( inputArea );
-//
-//            if( !boxArea.isEmpty() )
-//            {
-//                // Sum of all pixel values
-//                for( int j = boxArea.top(); j <= boxArea.bottom(); ++j )
-//                {
-//                    double ratio = 1 - (boxAreaF.top() - j);
-//                    if( ratio < 1.0 )
-//                    {
-//                        yRatio = ratio;
-//                    }
-//                    else
-//                    {
-//                        yRatio = Min( 1 - (j - boxAreaF.bottom()), 1.0);
-//                    }
-//
-//
-//                    inputScanline = inputData + j * inputBPL + boxArea.left() * 4;
-//                    for( int i = boxArea.left(); i <= boxArea.right(); ++i )
-//                    {
-//                        ratio = 1 - (boxAreaF.left() - i);
-//                        if( ratio < 1.0 )
-//                        {
-//                            xRatio = ratio;
-//                        }
-//                        else
-//                        {
-//                            xRatio = Min( 1 - (i - boxAreaF.right()), 1.0 );
-//                        }
-//
-//                        finalRatio = xRatio * yRatio;
-//
-//                        bSum += *inputScanline * finalRatio; ++inputScanline;
-//                        gSum += *inputScanline * finalRatio; ++inputScanline;
-//                        rSum += *inputScanline * finalRatio; ++inputScanline;
-//                        aSum += *inputScanline * finalRatio; ++inputScanline;
-//
-//                        surface += finalRatio;
-//                    }
-//                }
-//
-//                rSum /= surface;
-//                gSum /= surface;
-//                bSum /= surface;
-//                aSum /= surface;
-//
-//                // Blend
-//                BlendPixelNormal( &outputScanline, rSum, gSum, bSum, aSum );
-//
-//                rSum = 0;
-//                gSum = 0;
-//                bSum = 0;
-//                aSum = 0;
-//                surface = 0.0;
-//            }
-//        }
-//    }
-//}
-//
+
+
+// iTransform should be a downscale, otherwise it's not ment to work
+// This averages pixels to get the condensed pixel
+// PERFORMANCE : Not a huge increase from doing a new allocated image output that we blend afterward and this
+// where we directly draw to output
+static
+void
+MTDownscaleBoxAverageDirectAlpha( QImage* iInput, QImage* iOutput, QImage* iAlphaMask, const QTransform& iTransform, const QPoint& iOrigin )
+{
+    const QTransform inverse = iTransform.inverted();
+    const int inputWidth = iInput->width();
+    const int inputHeight = iInput->height();
+    QRect inputArea = iInput->rect();
+    inputArea.moveTopLeft( iOrigin );
+
+    // Transformed bbox
+    QPolygonF outputRect = MapToPolygonF( iTransform, inputArea );
+    QRectF transfoBBox = ExclusiveBoundingBoxF( outputRect );
+
+    int minX = std::round( transfoBBox.left() );
+    int minY = std::round( transfoBBox.top() );
+    int maxX = std::round( transfoBBox.right() + 1 );
+    int maxY = std::round( transfoBBox.bottom() + 1 );
+
+    transfoBBox = transfoBBox.intersected( iOutput->rect() );
+
+    int startingX = transfoBBox.left();
+    int startingY = transfoBBox.top();
+    int endingX = transfoBBox.right();
+    int endingY = transfoBBox.bottom();
+
+    // Scales
+    const double xScaleFactor = Distance2Points( outputRect[ 0 ], outputRect[ 1 ] ) / double( inputArea.width() );
+    const double yScaleFactor = Distance2Points( outputRect[ 1 ], outputRect[ 2 ] ) / double( inputArea.height() );
+
+    if( xScaleFactor >= 1.0 || yScaleFactor >= 1.0 )
+    {
+        MTBlendImageNormal( iInput, iOutput, QPoint( minX, minY ) );
+        return;
+    }
+
+    const double xScaleInverse = 1/ xScaleFactor;
+    const double yScaleInverse = 1/ yScaleFactor;
+
+    // Data iteration
+    uchar* inputData = iInput->bits();
+    const int inputBPL = iInput->bytesPerLine();
+
+    uchar* outputData = iOutput->bits();
+    const int outputBPL = iOutput->bytesPerLine();
+
+    //uchar* alphaData = iAlphaMask->bits();
+    //uchar* alphaScanline = alphaData + 3;
+    //const int alphaBPL = iAlphaMask->bytesPerLine();
+
+
+    const int height = endingY - startingY;
+
+    const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
+    const int split = height / threadCount;
+    const int excess = height % threadCount;
+
+    std::vector< cThreadHandle > handles;
+
+    for( int i = 0; i < threadCount; ++i )
+    {
+        int correct = 0;
+        if( i == threadCount-1 )
+            correct = excess;
+
+        handles.push_back( cThreadProcessor::Instance()->AffectFunctionToThreadAndStart(
+            [ = ]( cRange iOff, cRange iRange )
+        {
+            uchar* outputScanline;
+            uchar* inputScanline;
+
+            const int startY = iOff.mY;
+            const int endY = startY + iRange.mY;
+            const int startX = iOff.mX;
+            const int endX = startX + iRange.mX;
+            const int xOffset = startX * 4;
+
+            // Pixel averaging variables
+            unsigned int rSum = 0;
+            unsigned int gSum = 0;
+            unsigned int bSum = 0;
+            unsigned int aSum = 0;
+            double surface = 0.0;
+            double xRatio = 1.0;
+            double yRatio = 1.0;
+            double finalRatio = 1.0;
+
+            for( int y = startY; y < endY; ++y )
+            {
+                outputScanline = outputData + y * outputBPL + xOffset;
+                //alphaScanline = alphaData +  (y-minY) * alphaBPL + xOffset + 3;
+
+
+                for( int x = startX; x < endX; ++x )
+                {
+                    // Get the point in original
+                    const QPointF xyMappedF = inverse.map( QPointF( x, y ) );
+                    const QPoint xyMapped = QPoint( xyMappedF.x(), xyMappedF.y() );
+
+                    if( !inputArea.contains( xyMapped ) )
+                    {
+                        continue;
+                    }
+
+                    // Get the box to read in original
+                    QRectF boxAreaF( xyMapped.x(), xyMapped.y(), xScaleInverse, yScaleInverse );
+                    QRect boxArea( xyMapped.x(), xyMapped.y(), int( xScaleInverse ) + 1, int( yScaleInverse ) + 1 );
+
+                    boxArea = boxArea.intersected( inputArea );
+
+                    if( !boxArea.isEmpty() )
+                    {
+                        // Sum of all pixel values
+                        for( int j = boxArea.top(); j <= boxArea.bottom(); ++j )
+                        {
+                            double ratio = 1 - (boxAreaF.top() - j);
+                            if( ratio < 1.0 )
+                            {
+                                yRatio = ratio;
+                            }
+                            else
+                            {
+                                yRatio = Min( 1 - (j - boxAreaF.bottom()), 1.0);
+                            }
+
+
+                            inputScanline = inputData + j * inputBPL + boxArea.left() * 4;
+                            for( int i = boxArea.left(); i <= boxArea.right(); ++i )
+                            {
+                                ratio = 1 - (boxAreaF.left() - i);
+                                if( ratio < 1.0 )
+                                {
+                                    xRatio = ratio;
+                                }
+                                else
+                                {
+                                    xRatio = Min( 1 - (i - boxAreaF.right()), 1.0 );
+                                }
+
+                                finalRatio = xRatio * yRatio;
+
+                                bSum += *inputScanline * finalRatio; ++inputScanline;
+                                gSum += *inputScanline * finalRatio; ++inputScanline;
+                                rSum += *inputScanline * finalRatio; ++inputScanline;
+                                aSum += *inputScanline * finalRatio; ++inputScanline;
+
+                                surface += finalRatio;
+                            }
+                        }
+
+                        rSum /= surface;
+                        gSum /= surface;
+                        bSum /= surface;
+                        aSum /= surface;
+
+                        // Blend
+                        BlendPixelNormal( &outputScanline, rSum, gSum, bSum, aSum );
+
+                        rSum = 0;
+                        gSum = 0;
+                        bSum = 0;
+                        aSum = 0;
+                        surface = 0.0;
+                    }
+                }
+            }
+        },
+            cRange( startingX, startingY + i * split ), cRange( endingX - startingX + 1, split + correct ), true ) );
+    }
+
+    for( int i = 0; i < handles.size(); ++i )
+    {
+        auto handle = handles[ i ];
+        cThread* t = handle.GetThread();
+        if( t )
+            t->WaitEndOfTask();
+    }
+}
+
 
