@@ -80,6 +80,20 @@ cPaintToolBase::setStep( float iStep )
 }
 
 
+float
+cPaintToolBase::getOpacity() const
+{
+    return  mOpacity ;
+}
+
+
+void
+cPaintToolBase::setOpacity ( float iOpacity  )
+{
+    mOpacity  = iOpacity ;
+}
+
+
 // ===========================
 
 
@@ -89,6 +103,29 @@ cPaintToolBase::StartDrawing( QImage* iDC, sPointData iPointData )
     mRequiredStepLength = 0;
     mLastRenderedPathIndex = 0;
     mDrawingContext = iDC;
+
+    // If new context, that isn't the same as before, we copy the image data into a float buffer, to enhance precision to the highest amount
+    if( _mPreviousDrawingContext != iDC )
+    {
+        delete[] _mFloatBuffer;
+        _mFloatBuffer = new float[ iDC->bytesPerLine() * iDC->height() ];
+        uchar* data = iDC->bits();
+        uchar* scan = data;
+
+        for( int y = 0; y < iDC->height(); ++y )
+        {
+            scan = data + y * iDC->bytesPerLine();
+            const int floatIndex = y * iDC->width() * 4;
+
+            for( int x = 0; x < iDC->width() * 4; ++x )
+            {
+                uchar comp = *scan;
+                _mFloatBuffer[ floatIndex + x ] = *scan; ++scan;
+            }
+        }
+    }
+
+    _mPreviousDrawingContext = iDC;
 }
 
 

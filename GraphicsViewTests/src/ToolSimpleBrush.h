@@ -42,12 +42,14 @@ protected:
 
 private:
     void _DrawDot( QImage* iImage, int x, int y, float iPressure, float iRotation );
+    void _DrawDotF( int x, int y, float iPressure, float iRotation );
 
 
 private:
     cCurveBase< float > mProfile;
     bool                mApplyProfile;
-    QImage*             mTipRendered;
+    QImage*             mTipRendered = 0;
+    float*              mTipRenderedF = 0;
 
     float               _mToolSizeAfterPressure;
 };

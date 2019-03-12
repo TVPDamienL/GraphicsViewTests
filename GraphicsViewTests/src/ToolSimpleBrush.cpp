@@ -22,6 +22,7 @@ cToolSimpleBrush::cToolSimpleBrush( QObject * iParent ) :
     mToolSize = 10;
     mColor = Qt::red;
     mStep = 0.05;
+    mOpacity = 0.01F;
     mApplyProfile = true;
 
     mTipRendered = 0;
@@ -77,13 +78,22 @@ cToolSimpleBrush::StartDrawing( QImage* iImage, sPointData iPointData )
 
     delete  mTipRendered;
     mTipRendered = new QImage( mToolSize, mToolSize, QImage::Format::Format_RGBA8888_Premultiplied );
-    mTipRendered->fill( Qt::transparent );
+    MTHardFill( mTipRendered, mTipRendered->rect(), Qt::transparent );
     _DrawDot( mTipRendered, mToolSize/2, mToolSize/2, 1.0, 0.0 );
+
+
+    QRect rect( 0, 0, mToolSize, mToolSize );
+    delete  mTipRenderedF;
+    mTipRenderedF = new float[ mToolSize * 4 * mToolSize ];
+    MTHardFillF( mTipRenderedF, mToolSize, mToolSize, rect, Qt::transparent );
+    _DrawDotF( mToolSize/2, mToolSize/2, 1.0, 0.0 );
+
+
     mDirtyArea = QRect( 0, 0, 0, 0 );
 
-    _GPU->LoadPaintContext( mDrawingContext );
+    //_GPU->LoadPaintContext( mDrawingContext );
     //_GPU->LoadPaintAlpha( mAlphaMask );
-    _GPU->LoadBrushTip( mTipRendered );
+    //_GPU->LoadBrushTip( mTipRendered );
 }
 
 
@@ -171,7 +181,11 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
 
     auto transfo = QTransform() * trans * QTransform::fromTranslate( minX, minY );
 
-    MTDownscaleBoxAverageDirectAlpha( mTipRendered, mDrawingContext, 0, transfo, QPoint( 0, 0 ) );
+    MTDownscaleBoxAverageDirectAlphaF( mTipRenderedF, mToolSize, mToolSize,
+                                       _mFloatBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
+                                       0, 0, 0, transfo,
+                                       QPoint( 0, 0 ) );
+    //MTDownscaleBoxAverageDirectAlpha( mTipRendered, mDrawingContext, 0, transfo, QPoint( 0, 0 ) );
 
     mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX + 1, endingY - startingY + 1 ) );
 }
@@ -186,7 +200,7 @@ cToolSimpleBrush::DrawLine( const QPoint& iP1, const QPoint& iP2, float iPressur
 QRect
 cToolSimpleBrush::EndDrawing( sPointData iPointData )
 {
-    _GPU->ClearPaintToolBuffers();
+    //_GPU->ClearPaintToolBuffers();
 
     return  cPaintToolBase::EndDrawing( iPointData );
 }
@@ -206,15 +220,15 @@ cToolSimpleBrush::_DrawDot( QImage * iImage, int iX, int iY, float iPressure, fl
     uchar* pixelRow = data;
     unsigned int width = iImage->width();
     unsigned int height = iImage->height();
-    uint8_t originR = mColor.red();
-    uint8_t originG = mColor.green();
-    uint8_t originB = mColor.blue();
-    uint8_t originA = mColor.alpha();
+    uint8_t originR = mColor.red() * mOpacity;
+    uint8_t originG = mColor.green() * mOpacity;
+    uint8_t originB = mColor.blue() * mOpacity;
+    uint8_t originA = mColor.alpha() * mOpacity;
 
-    uint8_t finalR = mColor.red();
-    uint8_t finalG = mColor.green();
-    uint8_t finalB = mColor.blue();
-    uint8_t finalA = mColor.alpha();
+    uint8_t finalR = originR;
+    uint8_t finalG = originG;
+    uint8_t finalB = originB;
+    uint8_t finalA = originA;
 
     const int bytesPerLine = iImage->bytesPerLine();
 
@@ -261,6 +275,79 @@ cToolSimpleBrush::_DrawDot( QImage * iImage, int iX, int iY, float iPressure, fl
                 }
 
                 BlendPixelNormal( &pixelRow, finalR, finalG, finalB, finalA );
+            }
+            else
+            {
+                pixelRow += 4;
+            }
+        }
+    }
+}
+
+
+void
+cToolSimpleBrush::_DrawDotF( int iX, int iY, float iPressure, float iRotation )
+{
+    float* data = mTipRenderedF;
+    float* pixelRow = data;
+    unsigned int width = mToolSize;
+    unsigned int height = mToolSize;
+
+    float originR = mColor.red() * mOpacity;
+    float originG = mColor.green() * mOpacity;
+    float originB = mColor.blue() * mOpacity;
+    float originA = mColor.alpha() * mOpacity;
+
+    float finalR = originR;
+    float finalG = originG;
+    float finalB = originB;
+    float finalA = originA;
+
+    const int bytesPerLine = mToolSize * 4;
+
+    const int r = (mToolSize/2) * iPressure;
+    const int r2 = r*r;
+
+    int bboxMinX = iX - r;
+    int bboxMaxX = iX + r;
+    int bboxMinY = iY - r;
+    int bboxMaxY = iY + r;
+
+    const float radiusSq = mToolSize * mToolSize / 4;
+
+    bboxMinX = bboxMinX < 0 ? 0 : bboxMinX;
+    bboxMaxX = bboxMaxX >= width ? width - 1 : bboxMaxX;
+
+    bboxMinY = bboxMinY < 0 ? 0 : bboxMinY;
+    bboxMaxY = bboxMaxY >= height ? height - 1 : bboxMaxY;
+
+    const unsigned int iterationCount = (bboxMaxX - bboxMinX) * (bboxMaxY - bboxMinY);
+
+
+    for( int y = bboxMinY; y <= bboxMaxY ; ++y )
+    {
+        pixelRow = data + y * bytesPerLine + bboxMinX * 4;
+
+        for( int x = bboxMinX; x <= bboxMaxX ; ++x )
+        {
+            const int dx = x - iX;
+            const int dy = y - iY;
+            if( dx * dx + dy * dy <= r2 )
+            {
+                int xpos = x*4;
+
+                if( mApplyProfile )
+                {
+                    float distance = Distance2PointsSquared( QPoint( iX, iY ), QPoint( iX + dx, iY + dy ) );
+                    float distanceParam = 1.0F - ( distance / radiusSq ); // 1 - distanceRatio so it goes outwards, otherwise, it's a reversed gradient
+                    float mult = mProfile.GetValueAtTime( distanceParam );
+                    finalR = originR * mult;
+                    finalG = originG * mult;
+                    finalB = originB * mult;
+                    finalA = originA * mult;
+                }
+
+                BlendPixelNormalF( &pixelRow, finalR, finalG, finalB, finalA );
             }
             else
             {

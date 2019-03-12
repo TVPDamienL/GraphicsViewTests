@@ -29,6 +29,9 @@ public:
     float           getStep() const;
     void            setStep( float iStep );
 
+    float           getOpacity() const;
+    void            setOpacity( float iOpacity );
+
 public:
     virtual  void   StartDrawing( QImage* iDC, sPointData iPointData ) override;
     virtual  QRect  MoveDrawing( sPointData iPointData ) override;
@@ -63,6 +66,7 @@ protected:
     QColor                      mColor;
     std::vector< sPointData >   mPath;
     float                       mStep;
+    float                       mOpacity;
 
     const QImage*               mAlphaMask;
     QRect                       mDirtyArea;
@@ -70,4 +74,6 @@ protected:
     int                         mLastRenderedPathIndex;
     float                       mRequiredStepLength;
 
+    QImage*                     _mPreviousDrawingContext = 0;
+    float*                      _mFloatBuffer = 0;
 };

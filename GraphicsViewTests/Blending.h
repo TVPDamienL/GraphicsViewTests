@@ -37,3 +37,42 @@ BlendPixelNormal( uchar** pixelDestination, quint8 r, quint8 g, quint8 b, quint8
 
 
 
+
+// ========================
+// Float Versions
+// ========================
+
+
+
+
+// Raw pixel transfert
+static
+inline
+void
+BlendPixelNoneF( float** pixelDestination, float r, float g, float b, float a )
+{
+    **pixelDestination = b; ++*pixelDestination;
+    **pixelDestination = g; ++*pixelDestination;
+    **pixelDestination = r; ++*pixelDestination;
+    **pixelDestination = a; ++*pixelDestination;
+}
+
+
+
+// Standard alpha blending
+static
+inline
+void
+BlendPixelNormalF( float** pixelDestination, float r, float g, float b, float a )
+{
+    int transparencyAmountInverse = (255.F - a) / 255.F;
+
+    **pixelDestination = b + **pixelDestination * transparencyAmountInverse; ++*pixelDestination;
+    **pixelDestination = g + **pixelDestination * transparencyAmountInverse; ++*pixelDestination;
+    **pixelDestination = r + **pixelDestination * transparencyAmountInverse; ++*pixelDestination;
+    **pixelDestination = a + **pixelDestination * transparencyAmountInverse; ++*pixelDestination;
+}
+
+
+
+

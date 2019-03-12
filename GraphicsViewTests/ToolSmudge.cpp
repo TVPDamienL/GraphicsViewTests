@@ -19,7 +19,7 @@ cToolSmudge::cToolSmudge( QObject * iParent ) :
     cPaintToolBase( iParent )
 {
     // Some debug values to work with
-    mToolSize = 50;
+    mToolSize = 100;
     mColor = Qt::red;
     mStep = 0.0; // Will be clamped to 1 pixel, which is what we want
 
@@ -58,28 +58,6 @@ void
 cToolSmudge::StartDrawing( QImage* iImage, sPointData iPointData )
 {
     cPaintToolBase::StartDrawing( iImage, iPointData );
-
-    if( _mPreviousDrawingContext != iImage )
-    {
-        delete[] _mFloatBuffer;
-        _mFloatBuffer = new float[ iImage->width() * iImage->height() * 4 ];
-        uchar* data = iImage->bits();
-        uchar* scan = data;
-
-        for( int y = 0; y < iImage->height(); ++y )
-        {
-            scan = data + y * iImage->bytesPerLine();
-            const int floatIndex = y * iImage->width() * 4;
-
-            for( int x = 0; x < iImage->width() * 4; ++x )
-            {
-                uchar comp = *scan;
-                _mFloatBuffer[ floatIndex + x ] = *scan; ++scan;
-            }
-        }
-    }
-
-    _mPreviousDrawingContext = iImage;
 
     delete  mAlphaMask;
     mAlphaMask = new float[ mToolSize * mToolSize ];
@@ -159,18 +137,25 @@ cToolSmudge::DrawDot( int iX, int iY, float iPressure, float iRotation )
                 float newBlue   = *(sampleScanline+0) * alpha;
                 float newAlpha  = *(sampleScanline+3) * alpha;
 
-                uchar r = newRed;
-                uchar g = newGreen;
-                uchar b = newBlue;
-                uchar a = newAlpha;
-
-                BlendPixelNormal( &dataScanline, r, g, b, a );
-
                 float transparencyAmountInverse = (255.F - newAlpha) / 255.F;
-                *floatScanline = newBlue    + *floatScanline * transparencyAmountInverse; ++floatScanline;
-                *floatScanline = newGreen   + *floatScanline * transparencyAmountInverse; ++floatScanline;
-                *floatScanline = newRed     + *floatScanline * transparencyAmountInverse; ++floatScanline;
-                *floatScanline = newAlpha   + *floatScanline * transparencyAmountInverse; ++floatScanline;
+
+                *floatScanline = newBlue    + *floatScanline * transparencyAmountInverse;
+                uchar b = std::round( *floatScanline );
+                ++floatScanline;
+
+                *floatScanline = newGreen   + *floatScanline * transparencyAmountInverse;
+                uchar g = std::round( *floatScanline );
+                ++floatScanline;
+
+                *floatScanline = newRed     + *floatScanline * transparencyAmountInverse;
+                uchar r = std::round( *floatScanline );
+                ++floatScanline;
+
+                *floatScanline = newAlpha   + *floatScanline * transparencyAmountInverse;
+                uchar a = std::round( *floatScanline );
+                ++floatScanline;
+
+                BlendPixelNone( &dataScanline, r, g, b, a );
 
                 sampleScanline += 4;
                 ++alphaScanline;
@@ -213,6 +198,7 @@ cToolSmudge::_GetStepInPixelValue() const
 void
 cToolSmudge::_GenerateMask()
 {
+    qDebug() << "MASK";
     float* pixelRow = mAlphaMask;
 
     const uint width = mToolSize;

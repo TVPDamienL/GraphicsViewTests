@@ -41,14 +41,12 @@ private:
 
 private:
     cCurveBase< float > mProfile;
-    float               mForce = 0.5;
+    float               mForce = 0.7;
     float*              mAlphaMask = 0;
     QImage*             mCanvasSample = 0;
 
     float               _mToolSizeAfterPressure;
 
-    QImage*             _mPreviousDrawingContext = 0;
-    float*              _mFloatBuffer = 0;
     float*              _mFloatExtract = 0;
 };
 
