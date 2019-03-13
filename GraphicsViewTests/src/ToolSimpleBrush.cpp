@@ -24,7 +24,7 @@ cToolSimpleBrush::cToolSimpleBrush( QObject * iParent ) :
     mColor = Qt::red;
     mStep = 0.05;
     mOpacity = 0.01F;
-    mApplyProfile = false;
+    mApplyProfile = true;
 
     mTipRendered = 0;
     buildTool();
@@ -79,6 +79,7 @@ cToolSimpleBrush::StartDrawing( QImage* iImage, sPointData iPointData )
 
     delete  mTipRendered;
     mTipRendered = new QImage( mToolSize, mToolSize, QImage::Format::Format_RGBA8888_Premultiplied );
+    //mTipRendered->fill( Qt::transparent );
     MTHardFill( mTipRendered, mTipRendered->rect(), Qt::transparent );
     _DrawDot( mTipRendered, mToolSize/2, mToolSize/2, 1.0, 0.0 );
 
@@ -143,14 +144,6 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
 
     //return;
 
-    uchar* data = mDrawingContext->bits();
-    uchar* dataScanline = data;
-
-    const uchar* alphaData = 0;
-    const uchar* alphaScanline = 0;
-
-    int bytesPerLine = mDrawingContext->bytesPerLine();
-
     _mToolSizeAfterPressure = Max( mToolSize * iPressure, 1.0F );
     float diam = mToolSize * iPressure;
     float radius = diam / 2;
@@ -176,12 +169,11 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
 
     auto transfo = QTransform() * trans * QTransform::fromTranslate( minX, minY );
 
-    //MTDownscaleBoxAverageDirectAlphaF( mTipRenderedF, mToolSize, mToolSize,
-    //                                   _mFloatBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
-    //                                   mDrawingContext,
-    //                                   0, 0, 0, transfo,
-    //                                   QPoint( 0, 0 ) );
-    DownscaleBoxAverageDirectAlpha( mTipRendered, mDrawingContext, 0, transfo, QPoint( 0, 0 ) );
+    MTDownscaleBoxAverageDirectAlphaF( mTipRenderedF, mToolSize, mToolSize,
+                                       _mFloatBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
+                                       mDrawingContext,
+                                       0, 0, 0, transfo,
+                                       QPoint( 0, 0 ) );
 
     mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX + 1, endingY - startingY + 1 ) );
 }
@@ -289,10 +281,10 @@ cToolSimpleBrush::_DrawDotF( int iX, int iY, float iPressure, float iRotation )
     unsigned int width = mToolSize;
     unsigned int height = mToolSize;
 
-    float originR = mColor.red()    ;//* mOpacity;
-    float originG = mColor.green()  ;//* mOpacity;
-    float originB = mColor.blue()   ;//* mOpacity;
-    float originA = mColor.alpha()  ;//* mOpacity;
+    float originR = mColor.red()    * mOpacity;
+    float originG = mColor.green()  * mOpacity;
+    float originB = mColor.blue()   * mOpacity;
+    float originA = mColor.alpha()  * mOpacity;
 
     float finalR = originR;
     float finalG = originG;

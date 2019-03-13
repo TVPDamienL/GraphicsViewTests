@@ -38,7 +38,7 @@ MTBlendImageNormalF( float* source, const int iSourceWidth, const int iSourceHei
     const int endingX = maxX >= iDestWidth ? iDestWidth - 1 : maxX;
     const int startingY = minY < 0 ? 0 : minY;
     const int endingY = maxY >= iDestHeight ? iDestHeight - 1 : maxY;
-    const int height = endingY - startingY;
+    const int height = endingY - startingY + 1;
 
     const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
     const int split = height / threadCount;
@@ -64,15 +64,15 @@ MTBlendImageNormalF( float* source, const int iSourceWidth, const int iSourceHei
             const int startX = iOff.mX;
             const int endX = startX + iRange.mX;
 
-            for( int y = startY; y <= endY; ++y )
+            for( int y = startY; y < endY; ++y )
             {
                 sourceScanline  = sourceData + (y - minY) * sourceBPL + (startX - minX) * 4;
                 destScanline    = destData + y * dstBPL + startX * 4;
                 parallelScanline    = parallelData + y * parallelBPL + startX * 4;
 
-                for( int x = startX; x <= endX; ++x )
+                for( int x = startX; x < endX; ++x )
                 {
-                    uchar alpha = *(sourceScanline + 3);
+                    float alpha = *(sourceScanline + 3);
                     if( alpha == 0 ) // Skip if alpha is nil
                     {
                         sourceScanline += 4;
@@ -81,31 +81,27 @@ MTBlendImageNormalF( float* source, const int iSourceWidth, const int iSourceHei
                         continue;
                     }
 
-                    int transparencyAmountInverse = (255.F - alpha) / 255.F;
+                    float transparencyAmountInverse = (255.F - alpha) / 255.F;
 
                     *destScanline = *sourceScanline + *destScanline * transparencyAmountInverse;
-                    uchar b = uchar( *destScanline );
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
                     ++parallelScanline;
                     ++sourceScanline;
 
                     *destScanline = *sourceScanline + *destScanline * transparencyAmountInverse;
-                    uchar g = uchar( *destScanline );
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
                     ++parallelScanline;
                     ++sourceScanline;
 
                     *destScanline = *sourceScanline + *destScanline * transparencyAmountInverse;
-                    uchar r = uchar( *destScanline );
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
                     ++parallelScanline;
                     ++sourceScanline;
 
                     *destScanline = alpha + *destScanline * transparencyAmountInverse;
-                    uchar a = uchar( *destScanline );
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
                     ++parallelScanline;
@@ -113,7 +109,7 @@ MTBlendImageNormalF( float* source, const int iSourceWidth, const int iSourceHei
                 }
             }
         },
-            cRange( startingX, startingY + i * split ), cRange( endingX - startingX, split + correct ), true ) );
+            cRange( startingX, startingY + i * split ), cRange( endingX - startingX + 1, split + correct ), true ) );
     }
 
     for( int i = 0; i < handles.size(); ++i )

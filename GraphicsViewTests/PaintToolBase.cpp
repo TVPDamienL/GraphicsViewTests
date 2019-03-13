@@ -119,7 +119,6 @@ cPaintToolBase::StartDrawing( QImage* iDC, sPointData iPointData )
 
             for( int x = 0; x < iDC->width() * 4; ++x )
             {
-                uchar comp = *scan;
                 _mFloatBuffer[ floatIndex + x ] = *scan; ++scan;
             }
         }

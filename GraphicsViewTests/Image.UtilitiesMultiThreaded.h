@@ -23,7 +23,7 @@ MTHardFill( QImage* dest, const QRect& area, const QColor& color )
     const int endingX = area.right() > dest->width() - 1 ? dest->width() - 1 : area.right();
     const int startingY = area.top() < 0 ? 0 : area.top();
     const int endingY = area.bottom() > dest->height() - 1 ? dest->height() - 1 : area.bottom();
-    const int height = endingY - startingY;
+    const int height = endingY - startingY + 1;
 
     const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
     const int split = height / threadCount;
@@ -88,7 +88,7 @@ MTHardFillF( float* dest, const int iWidth, const int iHeight, const QRect& area
     const int endingX = area.right() > iWidth - 1 ? iWidth - 1 : area.right();
     const int startingY = area.top() < 0 ? 0 : area.top();
     const int endingY = area.bottom() > iHeight - 1 ? iHeight - 1 : area.bottom();
-    const int height = endingY - startingY;
+    const int height = endingY - startingY + 1;
 
     const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
     const int split = height / threadCount;
@@ -231,7 +231,7 @@ MTBlendImageNormal( QImage* source, QImage* destination, const QPoint& point )
     const int endingX = maxX >= destination->width() ? destination->width() - 1 : maxX;
     const int startingY = minY < 0 ? 0 : minY;
     const int endingY = maxY >= destination->height() ? destination->height() - 1 : maxY;
-    const int height = endingY - startingY;
+    const int height = endingY - startingY + 1;
 
     const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
     const int split = height / threadCount;
@@ -256,12 +256,12 @@ MTBlendImageNormal( QImage* source, QImage* destination, const QPoint& point )
             const int startX = iOff.mX;
             const int endX = startX + iRange.mX;
 
-            for( int y = startY; y <= endY; ++y )
+            for( int y = startY; y < endY; ++y )
             {
                 sourceScanline  = sourceData + (y - minY) * sourceBPL + (startX - minX) * 4;
                 destScanline    = destData + y * dstBPL + startX * 4;
 
-                for( int x = startX; x <= endX; ++x )
+                for( int x = startX; x < endX; ++x )
                 {
                     uchar alpha = *(sourceScanline+3);
                     if( alpha == 0 ) // Skip if alpha is nil
@@ -276,7 +276,7 @@ MTBlendImageNormal( QImage* source, QImage* destination, const QPoint& point )
                 }
             }
         },
-            cRange( startingX, startingY + i * split ), cRange( endingX - startingX, split + correct ), true ) );
+            cRange( startingX, startingY + i * split ), cRange( endingX - startingX + 1, split + correct ), true ) );
     }
 
     for( int i = 0; i < handles.size(); ++i )
@@ -321,7 +321,7 @@ MTBlendImageNormalSameSizes( QImage* source, QImage* destination, const QRect& a
     const int endingX = maxX >= destination->width() ? destination->width() - 1 : maxX;
     const int startingY = minY < 0 ? 0 : minY;
     const int endingY = maxY >= destination->height() ? destination->height() - 1 : maxY;
-    const int height = endingY - startingY;
+    const int height = endingY - startingY + 1;
 
     const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
     const int split = height / threadCount;
