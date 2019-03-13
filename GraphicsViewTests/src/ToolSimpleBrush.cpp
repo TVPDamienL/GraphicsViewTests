@@ -20,7 +20,7 @@ cToolSimpleBrush::cToolSimpleBrush( QObject * iParent ) :
     cPaintToolBase( iParent )
 {
     // Some debug values to work with
-    mToolSize = 10;
+    mToolSize = 25;
     mColor = Qt::red;
     mStep = 0.05;
     mOpacity = 0.01F;
@@ -160,12 +160,6 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
     const float minY = iY - radius;
     const float maxY = minY + diam;
 
-    const float minXNoPressure = iX - mToolSize/2;
-    const float minYNoPressure = iY - mToolSize/2;
-
-    const float offetX = minX - minXNoPressure;
-    const float offetY = minY - minYNoPressure;
-
     // Basic out of bounds elimination
     if( minX >= mDrawingContext->width() || minY >= mDrawingContext->height() )
         return;
@@ -187,7 +181,7 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
     //                                   mDrawingContext,
     //                                   0, 0, 0, transfo,
     //                                   QPoint( 0, 0 ) );
-    MTDownscaleBoxAverageDirectAlpha( mTipRendered, mDrawingContext, 0, transfo, QPoint( 0, 0 ) );
+    DownscaleBoxAverageDirectAlpha( mTipRendered, mDrawingContext, 0, transfo, QPoint( 0, 0 ) );
 
     mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX + 1, endingY - startingY + 1 ) );
 }

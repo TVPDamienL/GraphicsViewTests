@@ -256,12 +256,12 @@ MTBlendImageNormal( QImage* source, QImage* destination, const QPoint& point )
             const int startX = iOff.mX;
             const int endX = startX + iRange.mX;
 
-            for( int y = startY; y < endY; ++y )
+            for( int y = startY; y <= endY; ++y )
             {
                 sourceScanline  = sourceData + (y - minY) * sourceBPL + (startX - minX) * 4;
                 destScanline    = destData + y * dstBPL + startX * 4;
 
-                for( int x = startX; x < endX; ++x )
+                for( int x = startX; x <= endX; ++x )
                 {
                     uchar alpha = *(sourceScanline+3);
                     if( alpha == 0 ) // Skip if alpha is nil
@@ -276,7 +276,7 @@ MTBlendImageNormal( QImage* source, QImage* destination, const QPoint& point )
                 }
             }
         },
-            cRange( startingX, startingY + i * split ), cRange( endingX - startingX + 1, split + correct ), true ) );
+            cRange( startingX, startingY + i * split ), cRange( endingX - startingX, split + correct ), true ) );
     }
 
     for( int i = 0; i < handles.size(); ++i )
@@ -822,10 +822,10 @@ MTDownscaleBoxAverageDirectAlpha( QImage* iInput, QImage* iOutput, QImage* iAlph
     QPolygonF outputRect = MapToPolygonF( iTransform, inputArea );
     QRectF transfoBBox = ExclusiveBoundingBoxF( outputRect );
 
-    int minX = std::round( transfoBBox.left() );
-    int minY = std::round( transfoBBox.top() );
-    int maxX = std::round( transfoBBox.right() + 1 );
-    int maxY = std::round( transfoBBox.bottom() + 1 );
+    int minX = transfoBBox.left();
+    int minY = transfoBBox.top();
+    int maxX = transfoBBox.right() + 1;
+    int maxY = transfoBBox.bottom() + 1;
 
     transfoBBox = transfoBBox.intersected( iOutput->rect() );
 

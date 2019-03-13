@@ -113,7 +113,7 @@ MTBlendImageNormalF( float* source, const int iSourceWidth, const int iSourceHei
                 }
             }
         },
-            cRange( startingX, startingY + i * split ), cRange( endingX - startingX + 1, split + correct ), true ) );
+            cRange( startingX, startingY + i * split ), cRange( endingX - startingX, split + correct ), true ) );
     }
 
     for( int i = 0; i < handles.size(); ++i )
@@ -148,10 +148,10 @@ MTDownscaleBoxAverageDirectAlphaF( float* iInput, const int iInputWidth, const i
     QPolygonF outputRect = MapToPolygonF( iTransform, inputArea );
     QRectF transfoBBox = ExclusiveBoundingBoxF( outputRect );
 
-    int minX = std::round( transfoBBox.left() );
-    int minY = std::round( transfoBBox.top() );
-    int maxX = std::round( transfoBBox.right() + 1 );
-    int maxY = std::round( transfoBBox.bottom() + 1 );
+    int minX = transfoBBox.left();
+    int minY = transfoBBox.top();
+    int maxX = transfoBBox.right() + 1;
+    int maxY = transfoBBox.bottom() + 1;
 
     transfoBBox = transfoBBox.intersected( QRect( 0, 0, iOutputWidth, iOutputHeight ) );
 
