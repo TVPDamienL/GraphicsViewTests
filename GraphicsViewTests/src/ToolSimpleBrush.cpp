@@ -5,6 +5,7 @@
 #include "BenchmarkStuff.h"
 #include "Image.Utilities.h"
 #include "Image.UtilitiesMultiThreaded.h"
+#include "Image.ToolPaintUtilities.h"
 #include "Blending.h"
 #include "GPUForThisApp.h"
 
@@ -23,7 +24,7 @@ cToolSimpleBrush::cToolSimpleBrush( QObject * iParent ) :
     mColor = Qt::red;
     mStep = 0.05;
     mOpacity = 0.01F;
-    mApplyProfile = true;
+    mApplyProfile = false;
 
     mTipRendered = 0;
     buildTool();
@@ -181,11 +182,12 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
 
     auto transfo = QTransform() * trans * QTransform::fromTranslate( minX, minY );
 
-    MTDownscaleBoxAverageDirectAlphaF( mTipRenderedF, mToolSize, mToolSize,
-                                       _mFloatBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
-                                       0, 0, 0, transfo,
-                                       QPoint( 0, 0 ) );
-    //MTDownscaleBoxAverageDirectAlpha( mTipRendered, mDrawingContext, 0, transfo, QPoint( 0, 0 ) );
+    //MTDownscaleBoxAverageDirectAlphaF( mTipRenderedF, mToolSize, mToolSize,
+    //                                   _mFloatBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
+    //                                   mDrawingContext,
+    //                                   0, 0, 0, transfo,
+    //                                   QPoint( 0, 0 ) );
+    MTDownscaleBoxAverageDirectAlpha( mTipRendered, mDrawingContext, 0, transfo, QPoint( 0, 0 ) );
 
     mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX + 1, endingY - startingY + 1 ) );
 }
@@ -220,10 +222,10 @@ cToolSimpleBrush::_DrawDot( QImage * iImage, int iX, int iY, float iPressure, fl
     uchar* pixelRow = data;
     unsigned int width = iImage->width();
     unsigned int height = iImage->height();
-    uint8_t originR = mColor.red() * mOpacity;
-    uint8_t originG = mColor.green() * mOpacity;
-    uint8_t originB = mColor.blue() * mOpacity;
-    uint8_t originA = mColor.alpha() * mOpacity;
+    uint8_t originR = mColor.red()      ;//* mOpacity;
+    uint8_t originG = mColor.green()    ;//* mOpacity;
+    uint8_t originB = mColor.blue()     ;//* mOpacity;
+    uint8_t originA = mColor.alpha()    ;//* mOpacity;
 
     uint8_t finalR = originR;
     uint8_t finalG = originG;
@@ -293,10 +295,10 @@ cToolSimpleBrush::_DrawDotF( int iX, int iY, float iPressure, float iRotation )
     unsigned int width = mToolSize;
     unsigned int height = mToolSize;
 
-    float originR = mColor.red() * mOpacity;
-    float originG = mColor.green() * mOpacity;
-    float originB = mColor.blue() * mOpacity;
-    float originA = mColor.alpha() * mOpacity;
+    float originR = mColor.red()    ;//* mOpacity;
+    float originG = mColor.green()  ;//* mOpacity;
+    float originB = mColor.blue()   ;//* mOpacity;
+    float originA = mColor.alpha()  ;//* mOpacity;
 
     float finalR = originR;
     float finalG = originG;

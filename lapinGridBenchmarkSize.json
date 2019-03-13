@@ -1,0 +1,105 @@
+{
+    "version": {
+        "major": 5,
+        "minor": 0
+    },
+    "project": {
+        "format": {
+            "extension": "png"
+        },
+        "camera": {
+            "width": 2048,
+            "height": 1080,
+            "field": 0,
+            "framerate": 30.0,
+            "pixelaspectratio": 1.0,
+            "antialiasing": 1
+        },
+        "clip": {
+            "name": "lapinGridBenchmarkSize",
+            "width": 2048,
+            "height": 1080,
+            "framerate": 30.0,
+            "pixelaspectratio": 1.0,
+            "image-count": 4,
+            "bg": {
+                "red": 255,
+                "green": 255,
+                "blue": 255
+            },
+            "camera": {
+                "mode": 2,
+                "profile": "2 0 1 0 0 1 1 ",
+                "motion-blur": 0.0,
+                "lock-all": false,
+                "lock-x": false,
+                "lock-y": false,
+                "lock-angle": false,
+                "lock-scale": false,
+                "points": [],
+                "positions": [
+                    {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "angle": 0.0,
+                        "scale": 1.0
+                    },
+                    {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "angle": 0.0,
+                        "scale": 1.0
+                    },
+                    {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "angle": 0.0,
+                        "scale": 1.0
+                    },
+                    {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "angle": 0.0,
+                        "scale": 1.0
+                    }
+                ]
+            },
+            "layers": [
+                {
+                    "name": "lapinGridBenchmarkSize",
+                    "visible": true,
+                    "position": 0,
+                    "opacity": 255,
+                    "start": 0,
+                    "end": 3,
+                    "pre-behavior": 0,
+                    "post-behavior": 0,
+                    "blending-mode": "Color",
+                    "group": {
+                        "red": 0,
+                        "green": 0,
+                        "blue": 0
+                    },
+                    "link": [
+                        {
+                            "instance-index": 0,
+                            "instance-name": "1",
+                            "file": "[000] lapinGridBenchmarkSize/[0000] lapinGridBenchmarkSize.png",
+                            "images": [
+                                0
+                            ]
+                        },
+                        {
+                            "instance-index": 3,
+                            "instance-name": "2",
+                            "file": "[000] lapinGridBenchmarkSize/[0003] lapinGridBenchmarkSize.png",
+                            "images": [
+                                3
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

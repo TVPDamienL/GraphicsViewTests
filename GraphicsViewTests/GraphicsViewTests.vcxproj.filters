@@ -345,6 +345,9 @@
     <ClInclude Include="Image.UtilitiesMultiThreaded.h">
       <Filter>src\Image</Filter>
     </ClInclude>
+    <ClInclude Include="Image.ToolPaintUtilities.h">
+      <Filter>src\Image</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="cMainWindow.ui">
