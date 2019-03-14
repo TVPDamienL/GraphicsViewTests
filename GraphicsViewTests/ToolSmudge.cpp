@@ -89,7 +89,7 @@ cToolSmudge::DrawDot( int iX, int iY, float iPressure, float iRotation )
 
         float* floatData = _mFloatBuffer;
         float* floatScanline = 0;
-        const int floatBPL = mDrawingContext->width() * 4;
+        const int floatCompCount = mDrawingContext->width() * 4;
 
 
 
@@ -127,7 +127,7 @@ cToolSmudge::DrawDot( int iX, int iY, float iPressure, float iRotation )
             sampleScanline = sampleData + (y - minY) * sampleBPL;
             alphaScanline = mAlphaMask + (y - minY) * alphaBPL;
             dataScanline = data + y * dataBPL + offset;
-            floatScanline = floatData + y * floatBPL + offset;
+            floatScanline = floatData + y * floatCompCount + offset;
 
             for( int x = startingX; x < endingX; ++x )
             {

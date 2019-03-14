@@ -8,6 +8,7 @@
 #include "Image.ToolPaintUtilities.h"
 #include "Blending.h"
 #include "GPUForThisApp.h"
+#include "ImageDebugger.h"
 
 
 cToolSimpleBrush::~cToolSimpleBrush()
@@ -23,7 +24,7 @@ cToolSimpleBrush::cToolSimpleBrush( QObject * iParent ) :
     mToolSize = 25;
     mColor = Qt::red;
     mStep = 0.05;
-    mOpacity = 0.01F;
+    mOpacity = 1.F;
     mApplyProfile = true;
 
     mTipRendered = 0;
@@ -78,7 +79,7 @@ cToolSimpleBrush::StartDrawing( QImage* iImage, sPointData iPointData )
     cPaintToolBase::StartDrawing( iImage, iPointData );
 
     delete  mTipRendered;
-    mTipRendered = new QImage( mToolSize, mToolSize, QImage::Format::Format_RGBA8888_Premultiplied );
+    mTipRendered = new QImage( mToolSize, mToolSize, QImage::Format::Format_ARGB32_Premultiplied );
     //mTipRendered->fill( Qt::transparent );
     MTHardFill( mTipRendered, mTipRendered->rect(), Qt::transparent );
     _DrawDot( mTipRendered, mToolSize/2, mToolSize/2, 1.0, 0.0 );
@@ -91,6 +92,7 @@ cToolSimpleBrush::StartDrawing( QImage* iImage, sPointData iPointData )
     _DrawDotF( mToolSize/2, mToolSize/2, 1.0, 0.0 );
 
 
+    _BuildMipMap();
     mDirtyArea = QRect( 0, 0, 0, 0 );
 
     //_GPU->LoadPaintContext( mDrawingContext );
@@ -208,10 +210,10 @@ cToolSimpleBrush::_DrawDot( QImage * iImage, int iX, int iY, float iPressure, fl
     uchar* pixelRow = data;
     unsigned int width = iImage->width();
     unsigned int height = iImage->height();
-    uint8_t originR = mColor.red()      ;//* mOpacity;
-    uint8_t originG = mColor.green()    ;//* mOpacity;
-    uint8_t originB = mColor.blue()     ;//* mOpacity;
-    uint8_t originA = mColor.alpha()    ;//* mOpacity;
+    uint8_t originR = mColor.red()      * mOpacity;
+    uint8_t originG = mColor.green()    * mOpacity;
+    uint8_t originB = mColor.blue()     * mOpacity;
+    uint8_t originA = mColor.alpha()    * mOpacity;
 
     uint8_t finalR = originR;
     uint8_t finalG = originG;
@@ -249,8 +251,6 @@ cToolSimpleBrush::_DrawDot( QImage * iImage, int iX, int iY, float iPressure, fl
             const int dy = y - iY;
             if( dx * dx + dy * dy <= r2 )
             {
-                int xpos = x*4;
-
                 if( mApplyProfile )
                 {
                     float distance = Distance2PointsSquared( QPoint( iX, iY ), QPoint( iX + dx, iY + dy ) );
@@ -322,8 +322,6 @@ cToolSimpleBrush::_DrawDotF( int iX, int iY, float iPressure, float iRotation )
             const int dy = y - iY;
             if( dx * dx + dy * dy <= r2 )
             {
-                int xpos = x*4;
-
                 if( mApplyProfile )
                 {
                     float distance = Distance2PointsSquared( QPoint( iX, iY ), QPoint( iX + dx, iY + dy ) );
@@ -343,6 +341,43 @@ cToolSimpleBrush::_DrawDotF( int iX, int iY, float iPressure, float iRotation )
             }
         }
     }
+}
+
+
+void
+cToolSimpleBrush::_BuildMipMap()
+{
+    for( auto* image : mMipMapF )
+    {
+        delete[] image;
+    }
+
+    mMipMapF.clear();
+
+    QVector< int > ws;
+    QVector< int > hs;
+
+
+    int width = mToolSize;
+    int height = mToolSize;
+    QTransform t = QTransform::fromScale( 0.5, 0.5 );
+
+    float* tipRenderedCopy = new float[ mToolSize * 4 * mToolSize ];
+    memcpy( tipRenderedCopy, mTipRenderedF, sizeof( float ) * mToolSize * 4 * mToolSize );
+
+    mMipMapF.push_back( tipRenderedCopy );
+    ws.push_back( width );
+    hs.push_back( height );
+
+    while( width > 1 && height > 1 )
+    {
+        mMipMapF.push_back( DownscaleBoxAverageIntoImageF( mMipMapF.last(), width, height, t, &width, &height ) );
+
+        ws.push_back( width );
+        hs.push_back( height );
+    }
+
+    IMAGEDEBUG->ShowImages( mMipMapF, ws, hs );
 }
 
 

@@ -701,6 +701,153 @@ DownscaleBoxAverageIntoImage( QImage* iInput, const QTransform& iTransform )
 }
 
 
+
+// iTransform should be a downscale, otherwise it's not ment to work
+// This averages pixels to get the condensed pixel
+static
+float*
+DownscaleBoxAverageIntoImageF( const float* iInput, int width, int height, const QTransform& iTransform, int* oWidth, int* oHeight )
+{
+    float* output = 0;
+
+    const QTransform inverse = iTransform.inverted();
+    const int inputWidth = width;
+    const int inputHeight = height;
+    const QRect inputArea = QRect( 0, 0, width, height );
+
+    // Transformed bbox
+    QPolygonF outputRect = MapToPolygonF( iTransform, inputArea );
+    QRect transfoBBox = ExclusiveBoundingBox( outputRect );
+
+    int minX = transfoBBox.left();
+    int minY = transfoBBox.top();
+    int maxX = transfoBBox.right() + 1;
+    int maxY = transfoBBox.bottom() + 1;
+
+    // Scales
+    const double xScaleFactor = Distance2Points( outputRect[ 0 ], outputRect[ 1 ] ) / double( inputArea.width() );
+    const double yScaleFactor = Distance2Points( outputRect[ 1 ], outputRect[ 2 ] ) / double( inputArea.height() );
+
+    if( xScaleFactor >= 1.0 || yScaleFactor >= 1.0 )
+    {
+        output = new float[ width * 4 * height ];
+        memcpy( output, iInput, sizeof( float ) * width * 4 * height );
+        *oWidth = width;
+        *oHeight = height;
+
+        return  output;
+    }
+
+    const double xScaleInverse = 1/ xScaleFactor;
+    const double yScaleInverse = 1/ yScaleFactor;
+
+    // The output image
+    output = new float[ (transfoBBox.width()) * 4 * (transfoBBox.height()) ];
+    *oWidth = transfoBBox.width();
+    *oHeight = transfoBBox.height();
+
+    // Data iteration
+    const int inputBPL = width * 4;
+    const float* inputScanline = iInput;
+
+    float* outputScanline = output;
+    const int outputBPL = *oWidth * 4;
+
+    // Pixel averaging variables
+    float rSum = 0;
+    float gSum = 0;
+    float bSum = 0;
+    float aSum = 0;
+    double surface = 0.0;
+    double xRatio = 1.0;
+    double yRatio = 1.0;
+    double finalRatio = 1.0;
+
+    for( int y = minY; y < maxY; ++y )
+    {
+        outputScanline = output + (y-minY) * outputBPL;
+
+        for( int x = minX; x < maxX; ++x )
+        {
+            // Get the point in original
+            const QPointF xyMappedF = inverse.map( QPointF( x, y ) );
+            const QPoint xyMapped = QPoint( xyMappedF.x(), xyMappedF.y() );
+
+            if( !inputArea.contains( xyMapped ) )
+            {
+                BlendPixelNoneF( &outputScanline, 0, 0, 0, 0 );
+                continue;
+            }
+
+            // Get the box to read in original
+            QRectF boxAreaF( xyMapped.x(), xyMapped.y(), xScaleInverse, yScaleInverse );
+            QRect boxArea( xyMapped.x(), xyMapped.y(), int( xScaleInverse ) + 1, int( yScaleInverse ) + 1 );
+
+
+            // Clip to not write oob
+            boxArea = boxArea.intersected( inputArea );
+
+            if( !boxArea.isEmpty() )
+            {
+                // Sum of all pixel values
+                for( int j = boxArea.top(); j <= boxArea.bottom(); ++j )
+                {
+                    double ratio = 1 - (boxAreaF.top() - j);
+                    if( ratio < 1.0 )
+                    {
+                        yRatio = ratio;
+                    }
+                    else
+                    {
+                        yRatio = Min( 1 - (j - boxAreaF.bottom()), 1.0);
+                    }
+
+
+                    inputScanline = iInput + j * inputBPL + boxArea.left() * 4;
+                    for( int i = boxArea.left(); i <= boxArea.right(); ++i )
+                    {
+                        ratio = 1 - (boxAreaF.left() - i);
+                        if( ratio < 1.0 )
+                        {
+                            xRatio = ratio;
+                        }
+                        else
+                        {
+                            xRatio = Min( 1 - (i - boxAreaF.right()), 1.0 );
+                        }
+
+                        finalRatio = xRatio * yRatio;
+
+                        bSum += *inputScanline * finalRatio; ++inputScanline;
+                        gSum += *inputScanline * finalRatio; ++inputScanline;
+                        rSum += *inputScanline * finalRatio; ++inputScanline;
+                        aSum += *inputScanline * finalRatio; ++inputScanline;
+
+                        surface += finalRatio;
+                    }
+                }
+
+                rSum /= surface;
+                gSum /= surface;
+                bSum /= surface;
+                aSum /= surface;
+
+                // Blend
+                BlendPixelNoneF( &outputScanline, rSum, gSum, bSum, aSum );
+
+                rSum = 0;
+                gSum = 0;
+                bSum = 0;
+                aSum = 0;
+                surface = 0.0;
+            }
+        }
+    }
+
+    return  output;
+}
+
+
 // iTransform should be a downscale, otherwise it's not ment to work
 // This averages pixels to get the condensed pixel
 // PERFORMANCE : Not a huge increase from doing a new allocated image output that we blend afterward and this

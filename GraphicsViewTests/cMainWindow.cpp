@@ -12,6 +12,7 @@
 #include "cLayer.h"
 
 #include "ColorSwatch.h"
+#include "ImageDebugger.h"
 
 
 cMainWindow::cMainWindow(QWidget *parent) :
@@ -79,6 +80,8 @@ cMainWindow::cMainWindow(QWidget *parent) :
     dynamic_cast< cToolSelectionTest* >( mToolSelect )->SetSelection( mClip->GetSelection() );
     mRectangleShape->SetPaintTool( mToolPaint );
     mRectangleSelection->SetPaintTool( mToolSelect );
+
+    cImageDebugger::Instance( this );
 }
 
 

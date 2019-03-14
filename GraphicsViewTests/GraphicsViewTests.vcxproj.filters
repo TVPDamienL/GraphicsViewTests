@@ -207,6 +207,9 @@
     <ClCompile Include="ToolSmudge.cpp">
       <Filter>src\ToolModel\Tools</Filter>
     </ClCompile>
+    <ClCompile Include="ImageDebugger.cpp">
+      <Filter>src\Gadget</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="cMainWindow.h">
@@ -250,6 +253,9 @@
     </QtMoc>
     <QtMoc Include="ToolSmudge.h">
       <Filter>src\ToolModel\Tools</Filter>
+    </QtMoc>
+    <QtMoc Include="ImageDebugger.h">
+      <Filter>src\Gadget</Filter>
     </QtMoc>
   </ItemGroup>
   <ItemGroup>

@@ -43,13 +43,19 @@ protected:
 private:
     void _DrawDot( QImage* iImage, int x, int y, float iPressure, float iRotation );
     void _DrawDotF( int x, int y, float iPressure, float iRotation );
+    void _BuildMipMap();
 
 
 private:
     cCurveBase< float > mProfile;
     bool                mApplyProfile;
     QImage*             mTipRendered = 0;
-    float*              mTipRenderedF = 0;
+
+    QVector< QImage* > mMipMap;
+    QVector< const float* >  mMipMapF;
+
+    // Float images
+    float*                  mTipRenderedF = 0;
 
     float               _mToolSizeAfterPressure;
 };
