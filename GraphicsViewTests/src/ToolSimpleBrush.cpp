@@ -114,14 +114,15 @@ cToolSimpleBrush::MoveDrawing( sPointData iPointData )
 void
 cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
 {
+    iPressure = 0.30;
     _mToolSizeAfterPressure = Max( mToolSize * iPressure, 1.0F );
-    float diam = mToolSize * iPressure;
-    float radius = diam / 2;
+    int diam = std::round( mToolSize * iPressure );
+    int radius = diam / 2;
 
-    const float minX = iX - radius;
-    const float maxX = minX + diam;
-    const float minY = iY - radius;
-    const float maxY = minY + diam;
+    const int minX = iX - radius;
+    const int maxX = minX + diam;
+    const int minY = iY - radius;
+    const int maxY = minY + diam;
 
     // Basic out of bounds elimination
     if( minX >= mDrawingContext->width() || minY >= mDrawingContext->height() )
@@ -143,9 +144,13 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
     trans.scale( remainingScale, remainingScale );
     auto transfo = QTransform() * trans * QTransform::fromTranslate( minX, minY );
 
-    TransformNearestNeighbourDirectOutputNormalBlendFParallel( mMipMapF[ indexMip ], mToolSize * startingScale, mToolSize * startingScale,
+    //TransformNearestNeighbourDirectOutputNormalBlendFParallel( mMipMapF[ indexMip ], mToolSize * startingScale, mToolSize * startingScale,
+    //                                                           _mFloatBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
+    //                                                           mDrawingContext, transfo, QPoint( 0, 0 ) );
+    MTDownscaleBoxAverageDirectAlphaF( mMipMapF[ indexMip ], mToolSize * startingScale, mToolSize * startingScale,
                                                                _mFloatBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
-                                                               mDrawingContext, transfo, QPoint( 0, 0 ) );
+                                                               mDrawingContext,
+                                                                0, 0, 0, transfo, QPoint( 0, 0 ) );
 
     mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX + 1, endingY - startingY + 1 ) );
 }
