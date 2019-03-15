@@ -114,38 +114,6 @@ cToolSimpleBrush::MoveDrawing( sPointData iPointData )
 void
 cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
 {
-    // Can't work because too many calls :
-    // If step is small and mouse moves are large : each move = 100+ dots, plus a lot of moves per seconds, this means hundreds of calls per seconds
-    // This means a LOT of readBuffer -> Not efficient, would need to never read buffer = use some sort of openGL display
-
-
-    //_GPU->Paint( iX, iY, iPressure, iRotation );
-
-    //_mToolSizeAfterPressure = Max( mToolSize * iPressure, 1.0F );
-
-    //int diam = mToolSize * iPressure;
-    //int radius = diam / 2;
-
-    //int minX = iX - radius;
-    //int maxX = minX + diam;
-    //int minY = iY - radius;
-    //int maxY = minY + diam;
-
-    //// Basic out of bounds elimination
-    //if( minX >= mDrawingContext->width() || minY >= mDrawingContext->height() )
-    //    return;
-    //if( maxX < 0 || maxY < 0 )
-    //    return;
-
-    //int startingX = minX < 0 ? 0 : minX;
-    //int endingX = maxX >= mDrawingContext->width() ? mDrawingContext->width() - 1 : maxX;
-    //int startingY = minY < 0 ? 0 : minY;
-    //int endingY = maxY >= mDrawingContext->height() ? mDrawingContext->height() - 1 : maxY;
-
-    //mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX + 1, endingY - startingY + 1 ) );
-
-    //return;
-
     _mToolSizeAfterPressure = Max( mToolSize * iPressure, 1.0F );
     float diam = mToolSize * iPressure;
     float radius = diam / 2;
@@ -167,16 +135,17 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
     int endingY = maxY >= mDrawingContext->height() ? mDrawingContext->height() - 1 : maxY;
 
     auto trans = QTransform();
-    trans.scale( iPressure, iPressure );
+    int indexMip = std::min( log2( 1/iPressure ), float( mMipMapF.count() - 1 ) );
 
+    float startingScale = indexMip == 0 ? 1 : std::pow( 0.5, indexMip );
+    float remainingScale = iPressure / startingScale;
+
+    trans.scale( remainingScale, remainingScale );
     auto transfo = QTransform() * trans * QTransform::fromTranslate( minX, minY );
 
-    MTDownscaleBoxAverageDirectAlphaF( mTipRenderedF, mToolSize, mToolSize,
-                                       _mFloatBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
-                                       mDrawingContext,
-                                       0, 0, 0, transfo,
-                                       QPoint( 0, 0 ) );
-    //MTDownscaleBoxAverageDirectAlpha( mTipRendered, mDrawingContext, 0, transfo, QPoint( 0, 0 ) );
+    TransformNearestNeighbourDirectOutputNormalBlendFParallel( mMipMapF[ indexMip ], mToolSize * startingScale, mToolSize * startingScale,
+                                                               _mFloatBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
+                                                               mDrawingContext, transfo, QPoint( 0, 0 ) );
 
     mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX + 1, endingY - startingY + 1 ) );
 }

@@ -8,7 +8,7 @@
 #include <QTransform>
 #include <QPolygon>
 
-
+#include "ImageDebugger.h"
 
 
 
@@ -306,3 +306,169 @@ MTDownscaleBoxAverageDirectAlphaF( float* iInput, const int iInputWidth, const i
     //        t->WaitEndOfTask();
     //}
 }
+
+
+
+
+
+static
+void
+TransformNearestNeighbourDirectOutputNormalBlendAlphaFParallel( const float* source, const int iSourceWidth, const int iSourceHeight,
+                                                                float* destination, const int iDestWidth, const int iDestHeight,
+                                                                QImage* iParallelRender,
+                                                                const QTransform& iTransform, const QPoint& iOrigin, const QImage* iAlphaMask )
+{
+    const QTransform    inverse = iTransform.inverted();
+    const int           inputWidth = iSourceWidth;
+    const int           inputHeight = iSourceHeight;
+    QRect               inputArea = QRect( 0, 0, iSourceWidth, iSourceHeight );
+    inputArea.moveTopLeft( iOrigin );
+
+    const int           outputWidth = iDestWidth;
+    const int           outputHeight = iDestHeight;
+
+    QPolygonF           outputRect = MapToPolygonF( iTransform, inputArea );
+    QRect transfoBBox = ExclusiveBoundingBox( outputRect );
+
+    int minX = transfoBBox.left();
+    int minY = transfoBBox.top();
+    int maxX = transfoBBox.right();
+    int maxY = transfoBBox.bottom();
+
+    transfoBBox = transfoBBox.intersected( QRect( 0, 0, iDestWidth, iDestHeight ) );
+    // If QRect is 0, 0, 1920, 1080, it'll go from 0 to 1919. That's how Qt implements it
+    // So by doing intersection between the output and anything else, we'll have x1/x2 - y1/y2 values between 0 and width/height-1
+    // Which means, in the loop below, we go to <= endX/Y, and not <
+
+    int startX = transfoBBox.left();
+    int startY = transfoBBox.top();
+    int endX = transfoBBox.right();
+    int endY = transfoBBox.bottom();
+
+    const float* inputData = source;
+    const int inputBPL = iSourceWidth * 4;
+
+    float* outputData = destination;
+    float* outputScanline = outputData;
+    const int outputBPL = iDestWidth * 4;
+
+    const uchar* alphaData = iAlphaMask->bits();
+    const uchar* alphaScanline = alphaData + 3;
+    const int alphaBPL = iAlphaMask->bytesPerLine();
+
+    uchar* parallelData = iParallelRender->bits();
+    uchar* parallelScanline = parallelData;
+    const int parallelBPL = iParallelRender->bytesPerLine();
+
+    const int xOffset = startX * 4;
+    float* scanXOffset = outputData + xOffset;
+
+    for( int y = startY; y <= endY; ++y )
+    {
+        outputScanline = scanXOffset + y * outputBPL;
+        alphaScanline = alphaData +  y * alphaBPL + startX * 4 + 3;
+
+        for( int x = startX; x <= endX; ++x )
+        {
+            const QPoint xyMapped = inverse.map( QPoint( x, y ) );
+
+            if( !inputArea.contains( xyMapped ) )
+            {
+                BlendPixelNormalFParrallel( &outputScanline, &parallelScanline, 0, 0, 0, 0 );
+                continue;
+            }
+
+            int inputIndex = (xyMapped.y() - iOrigin.y()) * inputBPL + (xyMapped.x() - iOrigin.x()) * 4;
+
+            float alphaMaskTransparency = *alphaScanline / 255.F; alphaScanline += 4;
+            float r = inputData[ inputIndex + 2 ] * alphaMaskTransparency;
+            float g = inputData[ inputIndex + 1 ] * alphaMaskTransparency;
+            float b = inputData[ inputIndex + 0 ] * alphaMaskTransparency;
+            float a = inputData[ inputIndex + 3 ] * alphaMaskTransparency;
+
+            BlendPixelNormalFParrallel( &outputScanline, &parallelScanline, r, g, b, a );
+        }
+    }
+}
+
+
+
+
+static
+void
+TransformNearestNeighbourDirectOutputNormalBlendFParallel( const float* source, const int iSourceWidth, const int iSourceHeight,
+                                                                float* destination, const int iDestWidth, const int iDestHeight,
+                                                                QImage* iParallelRender,
+                                                                const QTransform& iTransform, const QPoint& iOrigin )
+{
+    const QTransform    inverse = iTransform.inverted();
+    const int           inputWidth = iSourceWidth;
+    const int           inputHeight = iSourceHeight;
+    QRect               inputArea = QRect( 0, 0, iSourceWidth, iSourceHeight );
+    inputArea.moveTopLeft( iOrigin );
+
+    const int           outputWidth = iDestWidth;
+    const int           outputHeight = iDestHeight;
+
+    QPolygonF           outputRect = MapToPolygonF( iTransform, inputArea );
+    QRect transfoBBox = ExclusiveBoundingBox( outputRect );
+
+    int minX = transfoBBox.left();
+    int minY = transfoBBox.top();
+    int maxX = transfoBBox.right();
+    int maxY = transfoBBox.bottom();
+
+    transfoBBox = transfoBBox.intersected( QRect( 0, 0, iDestWidth, iDestHeight ) );
+    // If QRect is 0, 0, 1920, 1080, it'll go from 0 to 1919. That's how Qt implements it
+    // So by doing intersection between the output and anything else, we'll have x1/x2 - y1/y2 values between 0 and width/height-1
+    // Which means, in the loop below, we go to <= endX/Y, and not <
+
+    int startX = transfoBBox.left();
+    int startY = transfoBBox.top();
+    int endX = transfoBBox.right();
+    int endY = transfoBBox.bottom();
+
+    const float* inputData = source;
+    const int inputBPL = iSourceWidth * 4;
+
+    float* outputData = destination;
+    float* outputScanline = outputData;
+    const int outputBPL = iDestWidth * 4;
+
+    uchar* parallelData = iParallelRender->bits();
+    uchar* parallelScanline = parallelData;
+    const int parallelBPL = iParallelRender->bytesPerLine();
+
+    const int xOffset = startX * 4;
+    float* scanXOffset = outputData + xOffset;
+    uchar* pScanXOffset = parallelData + xOffset;
+
+    for( int y = startY; y <= endY; ++y )
+    {
+        outputScanline = scanXOffset + y * outputBPL;
+        parallelScanline = pScanXOffset + y * parallelBPL;
+
+        for( int x = startX; x <= endX; ++x )
+        {
+            const QPoint xyMapped = inverse.map( QPoint( x, y ) );
+
+            if( !inputArea.contains( xyMapped ) )
+            {
+                BlendPixelNormalFParrallel( &outputScanline, &parallelScanline, 0, 0, 0, 0 );
+                continue;
+            }
+
+            int inputIndex = (xyMapped.y() - iOrigin.y()) * inputBPL + (xyMapped.x() - iOrigin.x()) * 4;
+
+            float r = inputData[ inputIndex + 2 ];
+            float g = inputData[ inputIndex + 1 ];
+            float b = inputData[ inputIndex + 0 ];
+            float a = inputData[ inputIndex + 3 ];
+
+            BlendPixelNormalFParrallel( &outputScanline, &parallelScanline, r, g, b, a );
+        }
+    }
+
+    //IMAGEDEBUG->ShowImage( source, iSourceWidth, iSourceHeight );
+}
+
