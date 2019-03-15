@@ -27,7 +27,7 @@ kernel TransformationNN( global const unsigned char* iInput, global unsigned cha
 {
     int pixX = get_global_id(0);
     int pixY = get_global_id(1);
-    if( pixX >= iOutputRight || pixY >= iOutputBottom )
+    if( pixX > iOutputRight || pixY > iOutputBottom )
         return;
 
     int pixelIndex = pixY * iOutputBPL + pixX * 4;

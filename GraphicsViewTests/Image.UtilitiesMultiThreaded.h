@@ -824,15 +824,13 @@ MTDownscaleBoxAverageDirectAlpha( QImage* iInput, QImage* iOutput, QImage* iAlph
 
     int minX = transfoBBox.left();
     int minY = transfoBBox.top();
-    int maxX = transfoBBox.right() + 1;
-    int maxY = transfoBBox.bottom() + 1;
 
     transfoBBox = transfoBBox.intersected( iOutput->rect() );
 
     int startingX = transfoBBox.left();
     int startingY = transfoBBox.top();
-    int endingX = transfoBBox.right();
-    int endingY = transfoBBox.bottom();
+    int endingX = transfoBBox.right() >= iOutput->width() ? iOutput->width() - 1 : transfoBBox.right();
+    int endingY = transfoBBox.bottom() >= iOutput->height() ? iOutput->height() - 1 : transfoBBox.bottom();
 
     // Scales
     const double xScaleFactor = Distance2Points( outputRect[ 0 ], outputRect[ 1 ] ) / double( inputArea.width() );
@@ -859,7 +857,7 @@ MTDownscaleBoxAverageDirectAlpha( QImage* iInput, QImage* iOutput, QImage* iAlph
     //const int alphaBPL = iAlphaMask->bytesPerLine();
 
 
-    const int height = endingY - startingY;
+    const int height = endingY - startingY + 1;
 
     const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
     const int split = height / threadCount;
@@ -975,7 +973,7 @@ MTDownscaleBoxAverageDirectAlpha( QImage* iInput, QImage* iOutput, QImage* iAlph
                 }
             }
         },
-            cRange( startingX, startingY + i * split ), cRange( endingX - startingX + 1, split + correct ), true ) );
+            cRange( startingX, startingY + i * split ), cRange( endingX - startingX, split + correct ), true ) );
     }
 
     for( int i = 0; i < handles.size(); ++i )

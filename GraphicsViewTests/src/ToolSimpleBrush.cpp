@@ -176,6 +176,7 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
                                        mDrawingContext,
                                        0, 0, 0, transfo,
                                        QPoint( 0, 0 ) );
+    //MTDownscaleBoxAverageDirectAlpha( mTipRendered, mDrawingContext, 0, transfo, QPoint( 0, 0 ) );
 
     mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX + 1, endingY - startingY + 1 ) );
 }
@@ -354,9 +355,8 @@ cToolSimpleBrush::_BuildMipMap()
 
     mMipMapF.clear();
 
-    QVector< int > ws;
-    QVector< int > hs;
-
+    //QVector< int > ws;
+    //QVector< int > hs;
 
     int width = mToolSize;
     int height = mToolSize;
@@ -366,18 +366,15 @@ cToolSimpleBrush::_BuildMipMap()
     memcpy( tipRenderedCopy, mTipRenderedF, sizeof( float ) * mToolSize * 4 * mToolSize );
 
     mMipMapF.push_back( tipRenderedCopy );
-    ws.push_back( width );
-    hs.push_back( height );
+    //ws.push_back( width );
+    //hs.push_back( height );
 
     while( width > 1 && height > 1 )
     {
         mMipMapF.push_back( DownscaleBoxAverageIntoImageF( mMipMapF.last(), width, height, t, &width, &height ) );
-
-        ws.push_back( width );
-        hs.push_back( height );
+        //ws.push_back( width );
+        //hs.push_back( height );
     }
-
-    IMAGEDEBUG->ShowImages( mMipMapF, ws, hs );
 }
 
 

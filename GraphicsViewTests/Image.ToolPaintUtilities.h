@@ -146,15 +146,13 @@ MTDownscaleBoxAverageDirectAlphaF( float* iInput, const int iInputWidth, const i
 
     int minX = transfoBBox.left();
     int minY = transfoBBox.top();
-    int maxX = transfoBBox.right() + 1;
-    int maxY = transfoBBox.bottom() + 1;
 
-    transfoBBox = transfoBBox.intersected( QRect( 0, 0, iOutputWidth, iOutputHeight ) );
+    transfoBBox = transfoBBox.intersected( QRect( 0, 0, iOutputWidth, iOutputHeight ) ); // Intersected here will be inclusive, so intersection with 1080 and 1086 = 1080 for x2
 
     int startingX = transfoBBox.left();
     int startingY = transfoBBox.top();
-    int endingX = transfoBBox.right();
-    int endingY = transfoBBox.bottom();
+    int endingX = transfoBBox.right() >= iOutputWidth ? iOutputWidth - 1 : transfoBBox.right();
+    int endingY = transfoBBox.bottom() >= iOutputHeight ? iOutputHeight - 1 : transfoBBox.bottom();
 
     // Scales
     const double xScaleFactor = Distance2Points( outputRect[ 0 ], outputRect[ 1 ] ) / double( inputArea.width() );

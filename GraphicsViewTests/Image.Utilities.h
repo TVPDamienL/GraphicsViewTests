@@ -536,11 +536,11 @@ TransformBilinearIntoImage( QImage* iInput, const QTransform& iTransform )
     const int outputBPL = output->bytesPerLine();
 
 
-    for( int y = minY; y < maxY; ++y )
+    for( int y = minY; y <= maxY; ++y )
     {
         outputScanline = outputData + (y-minY) * outputBPL;
 
-        for( int x = minX; x < maxX; ++x )
+        for( int x = minX; x <= maxX; ++x )
         {
             const QPoint xyMapped = inverse.map( QPoint( x, y ) );
 
@@ -570,10 +570,10 @@ DownscaleBoxAverageIntoImage( QImage* iInput, const QTransform& iTransform )
 {
     QImage* output = 0;
 
-    const QTransform inverse = iTransform.inverted();
-    const int inputWidth = iInput->width();
-    const int inputHeight = iInput->height();
-    const QRect inputArea = iInput->rect();
+    const QTransform    inverse = iTransform.inverted();
+    const int           inputWidth = iInput->width();
+    const int           inputHeight = iInput->height();
+    const QRect         inputArea = iInput->rect();
 
     // Transformed bbox
     QPolygonF outputRect = MapToPolygonF( iTransform, inputArea );
@@ -581,8 +581,8 @@ DownscaleBoxAverageIntoImage( QImage* iInput, const QTransform& iTransform )
 
     int minX = transfoBBox.left();
     int minY = transfoBBox.top();
-    int maxX = transfoBBox.right() + 1;
-    int maxY = transfoBBox.bottom() + 1;
+    int maxX = transfoBBox.right();
+    int maxY = transfoBBox.bottom();
 
     // Scales
     const double xScaleFactor = Distance2Points( outputRect[ 0 ], outputRect[ 1 ] ) / double( inputArea.width() );
@@ -595,7 +595,7 @@ DownscaleBoxAverageIntoImage( QImage* iInput, const QTransform& iTransform )
     const double yScaleInverse = 1/ yScaleFactor;
 
     // The output image
-    output = new QImage( transfoBBox.width()+1, transfoBBox.height()+1, QImage::Format::Format_ARGB32_Premultiplied );
+    output = new QImage( transfoBBox.width(), transfoBBox.height(), QImage::Format::Format_ARGB32_Premultiplied );
 
     // Data iteration
     uchar* inputData = iInput->bits();
@@ -721,8 +721,8 @@ DownscaleBoxAverageIntoImageF( const float* iInput, int width, int height, const
 
     int minX = transfoBBox.left();
     int minY = transfoBBox.top();
-    int maxX = transfoBBox.right() + 1;
-    int maxY = transfoBBox.bottom() + 1;
+    int maxX = transfoBBox.right();
+    int maxY = transfoBBox.bottom();
 
     // Scales
     const double xScaleFactor = Distance2Points( outputRect[ 0 ], outputRect[ 1 ] ) / double( inputArea.width() );
@@ -763,11 +763,11 @@ DownscaleBoxAverageIntoImageF( const float* iInput, int width, int height, const
     double yRatio = 1.0;
     double finalRatio = 1.0;
 
-    for( int y = minY; y < maxY; ++y )
+    for( int y = minY; y <= maxY; ++y )
     {
         outputScanline = output + (y-minY) * outputBPL;
 
-        for( int x = minX; x < maxX; ++x )
+        for( int x = minX; x <= maxX; ++x )
         {
             // Get the point in original
             const QPointF xyMappedF = inverse.map( QPointF( x, y ) );
@@ -868,8 +868,8 @@ DownscaleBoxAverageDirectAlpha( QImage* iInput, QImage* iOutput, QImage* iAlphaM
 
     int minX = transfoBBox.left();
     int minY = transfoBBox.top();
-    int maxX = transfoBBox.right() + 1;
-    int maxY = transfoBBox.bottom() + 1;
+    int maxX = transfoBBox.right();
+    int maxY = transfoBBox.bottom();
 
     transfoBBox = transfoBBox.intersected( iOutput->rect() );
 
