@@ -292,9 +292,9 @@ MapToPolygonF( const QTransform& iTransfo, const QRectF& iRect )
     QPolygonF output;
 
     output.append( iTransfo.map( iRect.topLeft() ) );
-    output.append( iTransfo.map( iRect  .topRight() ) );
-    output.append( iTransfo.map( iRect  .bottomRight() ) );
-    output.append( iTransfo.map( iRect  .bottomLeft() ) );
+    output.append( iTransfo.map( iRect.topRight() ) );
+    output.append( iTransfo.map( iRect.bottomRight() ) );
+    output.append( iTransfo.map( iRect.bottomLeft() ) );
 
     return  output;
 }

@@ -237,6 +237,7 @@ cPaintToolBase::EndDrawing( sPointData iPointData )
 void
 cPaintToolBase::PathAddPoint( sPointData iPoint )
 {
+    //iPoint.mPosition.setY( 950 );
     mPath.push_back( iPoint );
 }
 

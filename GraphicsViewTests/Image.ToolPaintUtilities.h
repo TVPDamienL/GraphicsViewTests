@@ -134,7 +134,9 @@ MTDownscaleBoxAverageDirectAlphaF( const float* iInput, const int iInputWidth, c
                                    float* iAlphaMask,  const int iAlphaWidth, const int iAlphaHeight,
                                    const QTransform& iTransform, const QPoint& iOrigin )
 {
-    const QTransform inverse = iTransform.inverted();
+    QTransform transfoFinal = iTransform;
+
+
     const int inputWidth = iInputWidth;
     const int inputHeight = iInputHeight;
     QRect inputArea = QRect( 0, 0, iInputWidth, iInputHeight );
@@ -142,6 +144,12 @@ MTDownscaleBoxAverageDirectAlphaF( const float* iInput, const int iInputWidth, c
 
     // Transformed bbox
     QPolygonF outputRect = MapToPolygonF( iTransform, inputArea );
+    for( auto& point : outputRect )
+    {
+        point.setX( std::round( point.x() ) );
+        point.setY( std::round( point.y() ) );
+    }
+
     QRect transfoBBox = ExclusiveBoundingBox( outputRect );
 
     int minX = transfoBBox.left();
@@ -154,18 +162,40 @@ MTDownscaleBoxAverageDirectAlphaF( const float* iInput, const int iInputWidth, c
     int endingX = transfoBBox.right() >= iOutputWidth ? iOutputWidth - 1 : transfoBBox.right();
     int endingY = transfoBBox.bottom() >= iOutputHeight ? iOutputHeight - 1 : transfoBBox.bottom();
 
-    // Scales
-    const double xScaleFactor = Distance2Points( outputRect[ 0 ], outputRect[ 1 ] ) / double( inputArea.width() );
-    const double yScaleFactor = Distance2Points( outputRect[ 1 ], outputRect[ 2 ] ) / double( inputArea.height() );
+    auto check = endingX - startingX + 1;
+    if( check % 2 == 0 )
+        int bp = 5;
 
-    if( xScaleFactor >= 1.0 || yScaleFactor >= 1.0 )
+    // Scales
+    const float transfoWidth = Distance2Points( outputRect[ 0 ], outputRect[ 1 ] );
+    const float transfoHeight = Distance2Points( outputRect[ 1 ], outputRect[ 2 ] );
+
+    const double xScaleFactorOriginal = transfoWidth / double( inputArea.width() );
+    const double yScaleFactorOriginal = transfoHeight / double( inputArea.height() );
+    const double xScaleFactorRounded = int(transfoWidth) / double( inputArea.width() );
+    const double yScaleFactorRounded = int(transfoHeight) / double( inputArea.height() );
+
+    if( xScaleFactorOriginal >= 1.0 || yScaleFactorOriginal >= 1.0 )
     {
         MTBlendImageNormalF( iInput, iInputWidth, iInputHeight, iOutput, iOutputWidth, iOutputHeight, iParallelRender, QPoint( minX, minY ) );
         return;
     }
 
-    const double xScaleInverse = 1/ xScaleFactor;
-    const double yScaleInverse = 1/ yScaleFactor;
+    // We decide to work with ratios resulting from the rounded result
+    // Any scale would provide a floating output size, let's say 4.48 for example
+    // Final result will be 4 pixels wide, not 4.48, as we need int values.
+    // Now, dividing the image in 4.48 will result in missing datas (because for loop below will go 4 iterations, not 4.48,, and 4*X < 4.48*X),
+    // and thus, uneven results at lower sizes
+    // So we take the final int size, compute the scale this represents, and set this one as the transformation scale, so we can evenly cover the original image
+    transfoFinal = QTransform::fromScale( 1/xScaleFactorOriginal, 1/yScaleFactorOriginal ) * QTransform::fromScale( xScaleFactorRounded, yScaleFactorRounded ) * transfoFinal;
+    QTransform inverse = transfoFinal.inverted();
+
+
+    //const double xScaleInverse = 1/ xScaleFactor;
+    //const double yScaleInverse = 1/ yScaleFactor;
+
+    const float floatBoxWidth = float(inputArea.width()) / float(transfoWidth);
+    const float floatBoxHeight = float(inputArea.height()) / float(transfoHeight);
 
     // Data iteration
     const float * inputData = iInput;
@@ -218,10 +248,10 @@ MTDownscaleBoxAverageDirectAlphaF( const float* iInput, const int iInputWidth, c
             float gSum = 0;
             float bSum = 0;
             float aSum = 0;
-            double surface = 0.0;
-            double xRatio = 1.0;
-            double yRatio = 1.0;
-            double finalRatio = 1.0;
+            float surface = 0.0;
+            float xRatio = 1.0;
+            float yRatio = 1.0;
+            float finalRatio = 1.0;
 
             for( int y = startY; y <= endY; ++y )
             {
@@ -233,7 +263,7 @@ MTDownscaleBoxAverageDirectAlphaF( const float* iInput, const int iInputWidth, c
                 for( int x = startX; x <= endX; ++x )
                 {
                     // Get the point in original
-                    const QPointF xyMappedF = inverse.map( QPointF( x, y ) );
+                    const QPointF xyMappedF = inverse.map( QPointF( x, y ) ); // To use this wee need to tune the transformation with new scale
                     const QPoint xyMapped = QPoint( xyMappedF.x(), xyMappedF.y() );
 
                     if( !inputArea.contains( xyMapped ) )
@@ -242,8 +272,8 @@ MTDownscaleBoxAverageDirectAlphaF( const float* iInput, const int iInputWidth, c
                     }
 
                     // Get the box to read in original
-                    QRectF boxAreaF( xyMappedF.x(), xyMappedF.y(), xScaleInverse, yScaleInverse );
-                    QRect boxArea( xyMapped.x(), xyMapped.y(), int( xScaleInverse ) + 1, int( yScaleInverse ) + 1 );
+                    QRectF boxAreaF( xyMappedF.x(), xyMappedF.y(), floatBoxWidth, floatBoxHeight );
+                    QRect boxArea( xyMapped.x(), xyMapped.y(), int( floatBoxWidth ) + 1, int( floatBoxHeight ) + 1 );
 
                     boxArea = boxArea.intersected( inputArea );
 
@@ -252,28 +282,28 @@ MTDownscaleBoxAverageDirectAlphaF( const float* iInput, const int iInputWidth, c
                         // Sum of all pixel values
                         for( int j = boxArea.top(); j <= boxArea.bottom(); ++j )
                         {
-                            double ratio = 1 - (boxAreaF.top() - j);
+                            float ratio = 1 - (boxAreaF.top() - j);
                             if( ratio < 1.0 )
                             {
                                 yRatio = ratio;
                             }
                             else
                             {
-                                yRatio = Min( 1 - (j - boxAreaF.bottom()), 1.0);
+                                yRatio = std::min( 1.F - (float(j+1) - float(boxAreaF.bottom())), 1.F);
                             }
 
 
                             inputScanline = inputData + j * inputBPL + boxArea.left() * 4;
                             for( int i = boxArea.left(); i <= boxArea.right(); ++i )
                             {
-                                ratio = 1 - (boxAreaF.left() - i);
+                                ratio = 1.F - (boxAreaF.left() - i);
                                 if( ratio < 1.0 )
                                 {
                                     xRatio = ratio;
                                 }
                                 else
                                 {
-                                    xRatio = Min( 1 - (i - boxAreaF.right()), 1.0 );
+                                    xRatio = std::min( 1.F - (float(i+1) - float(boxAreaF.right())), 1.F );
                                 }
 
                                 finalRatio = xRatio * yRatio;
