@@ -14,13 +14,17 @@
 
 static
 void
-MTBlendImageNormalF( const float* source, const int iSourceWidth, const int iSourceHeight,
-                     float* destination, const int iDestWidth, const int iDestHeight,
+MTBlendImageNormalF( const float* source, const int iSourceWidth, const int iSourceHeight,  // Source we will blend
+                     const float* background, const int iBGWidth, const int iBGHeight,      // The background over which we blend
+                     float* destination, const int iDestWidth, const int iDestHeight,       // The output result buffer, can be the same as background
                      QImage* iParallelRender,
                      const QPoint& point )
 {
     const float* sourceData = source;
     const int sourceBPL = iSourceWidth * 4;
+
+    const float* bgData = background;
+    const int bgBPL = iBGWidth * 4;
 
     float* destData = destination;
     const int dstBPL = iDestWidth * 4;
@@ -53,9 +57,10 @@ MTBlendImageNormalF( const float* source, const int iSourceWidth, const int iSou
             correct = excess;
 
         handles.push_back( cThreadProcessor::Instance()->AffectFunctionToThreadAndStart(
-            [ sourceData, destData, parallelData, sourceBPL, dstBPL, parallelBPL, minX, minY ]( cRange iOff, cRange iRange )
+            [ = ]( cRange iOff, cRange iRange )
         {
             const float* sourceScanline = sourceData;
+            const float* bgScanline = bgData;
             float* destScanline = destData;
             uchar* parallelScanline = parallelData;
 
@@ -63,12 +68,14 @@ MTBlendImageNormalF( const float* source, const int iSourceWidth, const int iSou
             const int endY = startY + iRange.mY;
             const int startX = iOff.mX;
             const int endX = startX + iRange.mX;
+            const int xOffset = startX * 4;
 
             for( int y = startY; y < endY; ++y )
             {
                 sourceScanline  = sourceData + (y - minY) * sourceBPL + (startX - minX) * 4;
-                destScanline    = destData + y * dstBPL + startX * 4;
-                parallelScanline    = parallelData + y * parallelBPL + startX * 4;
+                bgScanline  = bgData + y * bgBPL + xOffset;
+                destScanline    = destData + y * dstBPL + xOffset;
+                parallelScanline    = parallelData + y * parallelBPL + xOffset;
 
                 for( int x = startX; x < endX; ++x )
                 {
@@ -76,6 +83,7 @@ MTBlendImageNormalF( const float* source, const int iSourceWidth, const int iSou
                     if( alpha == 0 ) // Skip if alpha is nil
                     {
                         sourceScanline += 4;
+                        bgScanline += 4;
                         parallelScanline += 4;
                         destScanline += 4;
                         continue;
@@ -83,27 +91,31 @@ MTBlendImageNormalF( const float* source, const int iSourceWidth, const int iSou
 
                     float transparencyAmountInverse = (255.F - alpha) / 255.F;
 
-                    *destScanline = *sourceScanline + *destScanline * transparencyAmountInverse;
+                    *destScanline = *sourceScanline + *bgScanline * transparencyAmountInverse;
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
+                    ++bgScanline;
                     ++parallelScanline;
                     ++sourceScanline;
 
-                    *destScanline = *sourceScanline + *destScanline * transparencyAmountInverse;
+                    *destScanline = *sourceScanline + *bgScanline * transparencyAmountInverse;
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
+                    ++bgScanline;
                     ++parallelScanline;
                     ++sourceScanline;
 
-                    *destScanline = *sourceScanline + *destScanline * transparencyAmountInverse;
+                    *destScanline = *sourceScanline + *bgScanline * transparencyAmountInverse;
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
+                    ++bgScanline;
                     ++parallelScanline;
                     ++sourceScanline;
 
-                    *destScanline = alpha + *destScanline * transparencyAmountInverse;
+                    *destScanline = alpha + *bgScanline * transparencyAmountInverse;
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
+                    ++bgScanline;
                     ++parallelScanline;
                     ++sourceScanline;
                 }
@@ -122,17 +134,164 @@ MTBlendImageNormalF( const float* source, const int iSourceWidth, const int iSou
 }
 
 
+
+
+
+
+static
+void
+MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int iSourceHeight,  // Source we will blend
+                        const float* drybuffer, const int iWidth, const int iHeight,      // The background over which we blend
+                        float* stampbuffer,
+
+                        float* destination,         // The float output result buffer
+                        QImage* iParallelRender,    // The 8bit output buffer
+                        const QPoint& point,
+                        const float maxAlpha )
+{
+    const uchar maxAlphaRanged = maxAlpha * 255.F;
+    const int sourceBPL = iSourceWidth * 4;
+    const int buffersBPL = iWidth * 4;
+
+    uchar* parallelData = iParallelRender->bits();
+    const int parallelBPL = iParallelRender->bytesPerLine();
+
+    // Source bbox
+    const int minX = point.x();
+    const int maxX = minX + iSourceWidth - 1;
+    const int minY = point.y();
+    const int maxY = minY + iSourceHeight - 1;
+
+    const int startingX = minX < 0 ? 0 : minX;
+    const int endingX = maxX >= iWidth ? iWidth - 1 : maxX;
+    const int startingY = minY < 0 ? 0 : minY;
+    const int endingY = maxY >= iHeight ? iHeight - 1 : maxY;
+    const int height = endingY - startingY + 1;
+
+    const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
+    const int split = height / threadCount;
+    const int excess = height % threadCount;
+
+    std::vector< cThreadHandle > handles;
+
+    for( int i = 0; i < threadCount; ++i )
+    {
+        int correct = 0;
+        if( split == 0 )
+            i = threadCount-1;
+
+        if( i == threadCount-1 )
+            correct = excess;
+
+        handles.push_back( cThreadProcessor::Instance()->AffectFunctionToThreadAndStart(
+            [ = ]( cRange iOff, cRange iRange )
+        {
+            const float* sourceScanline = source;
+            const float* dryScan = drybuffer;
+            float* stampScan = stampbuffer;
+            float* destScanline = destination;
+            uchar* parallelScanline = parallelData;
+
+            const int startY = iOff.mY;
+            const int endY = startY + iRange.mY;
+            const int startX = iOff.mX;
+            const int endX = startX + iRange.mX;
+            const int xOffset = startX * 4;
+
+            for( int y = startY; y < endY; ++y )
+            {
+                sourceScanline  = source + (y - minY) * sourceBPL + (startX - minX) * 4;
+                const int indexOffset = y * buffersBPL + xOffset;
+                dryScan  = drybuffer + indexOffset;
+                stampScan = stampbuffer + indexOffset;
+                destScanline    = destination + indexOffset;
+                parallelScanline    = parallelData + y * parallelBPL + xOffset;
+
+                for( int x = startX; x < endX; ++x )
+                {
+                    float alpha = *(sourceScanline + 3);
+                    if( alpha == 0 ) // Skip if alpha is nil
+                    {
+                        sourceScanline += 4;
+                        dryScan += 4;
+                        stampScan += 4;
+                        destScanline += 4;
+                        parallelScanline += 4;
+                        continue;
+                    }
+
+                    const float inverseCeiled = 1 - (alpha / maxAlphaRanged);
+
+                    float* gPtr = stampScan + 1;
+                    float* rPtr = stampScan + 2;
+                    float* alphaPtr = stampScan + 3;
+
+                    *stampScan  = *sourceScanline + *stampScan  * inverseCeiled; ++sourceScanline;
+                    *gPtr       = *sourceScanline + *gPtr       * inverseCeiled; ++sourceScanline;
+                    *rPtr       = *sourceScanline + *rPtr       * inverseCeiled; ++sourceScanline;
+                    *alphaPtr   = *sourceScanline + *alphaPtr   * inverseCeiled; ++sourceScanline;
+
+                    const float transparencyAmountInverse = 1 - *alphaPtr / 255.F;
+
+                    *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
+                    *parallelScanline = uchar( *destScanline );
+                    ++destScanline;
+                    ++dryScan;
+                    ++parallelScanline;
+                    ++stampScan;
+
+                    *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
+                    *parallelScanline = uchar( *destScanline );
+                    ++destScanline;
+                    ++dryScan;
+                    ++parallelScanline;
+                    ++stampScan;
+
+                    *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
+                    *parallelScanline = uchar( *destScanline );
+                    ++destScanline;
+                    ++dryScan;
+                    ++parallelScanline;
+                    ++stampScan;
+
+                    *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
+                    *parallelScanline = uchar( *destScanline );
+                    ++destScanline;
+                    ++dryScan;
+                    ++parallelScanline;
+                    ++stampScan;
+                }
+            }
+        },
+            cRange( startingX, startingY + i * split ), cRange( endingX - startingX + 1, split + correct ), true ) );
+    }
+
+    for( int i = 0; i < handles.size(); ++i )
+    {
+        auto handle = handles[ i ];
+        cThread* t = handle.GetThread();
+        if( t )
+            t->WaitEndOfTask();
+    }
+}
+
+
+
+
+
+
 // iTransform should be a downscale, otherwise it's not ment to work
 // This averages pixels to get the condensed pixel
 // PERFORMANCE : Not a huge increase from doing a new allocated image output that we blend afterward and this
 // where we directly draw to output
 static
 void
-MTDownscaleBoxAverageDirectAlphaF( const float* iInput, const int iInputWidth, const int iInputHeight,
-                                   float* iOutput, const int iOutputWidth, const int iOutputHeight,
-                                   QImage* iParallelRender,
-                                   float* iAlphaMask,  const int iAlphaWidth, const int iAlphaHeight,
-                                   const QTransform& iTransform, const QPoint& iOrigin )
+MTDownscaleBoxAverageDirectAlphaF( const float* iInput, const int iInputWidth, const int iInputHeight,  // Source we will blend
+                                   const float* background, const int iBGWidth, const int iBGHeight,    // The background over which we blend
+                                   float* iOutput, const int iOutputWidth, const int iOutputHeight,     // The output result buffer, can be the same as background
+                                   QImage* iParallelRender,                                             // The uchar buffer we wanna write to at the same time
+                                   float* iAlphaMask,  const int iAlphaWidth, const int iAlphaHeight,   // An alpha mask to apply to the blend
+                                   const QTransform& iTransform, const QPoint& iOrigin )                // Transform and its origin to apply
 {
     QTransform transfoFinal = iTransform;
 
@@ -177,7 +336,7 @@ MTDownscaleBoxAverageDirectAlphaF( const float* iInput, const int iInputWidth, c
 
     if( xScaleFactorOriginal >= 1.0 || yScaleFactorOriginal >= 1.0 )
     {
-        MTBlendImageNormalF( iInput, iInputWidth, iInputHeight, iOutput, iOutputWidth, iOutputHeight, iParallelRender, QPoint( minX, minY ) );
+        MTBlendImageNormalF( iInput, iInputWidth, iInputHeight, background, iBGWidth, iBGHeight, iOutput, iOutputWidth, iOutputHeight, iParallelRender, QPoint( minX, minY ) );
         return;
     }
 
@@ -343,6 +502,83 @@ MTDownscaleBoxAverageDirectAlphaF( const float* iInput, const int iInputWidth, c
         cThread* t = handle.GetThread();
         if( t )
             t->WaitEndOfTask();
+    }
+}
+
+
+
+
+// ============================================================
+// ============================================================
+// ============================================================
+// ============================================================
+// ============================================================
+// ============================================================
+
+
+
+
+// iTransform should be a downscale, otherwise it's not ment to work
+// This averages pixels to get the condensed pixel
+// PERFORMANCE : Not a huge increase from doing a new allocated image output that we blend afterward and this
+// where we directly draw to output
+static
+void                                                                // All float images MUST be the same size, this allows faster access
+MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, const int iHeight,     // Source we will blend
+
+                                    const float* background, const int iOutputBuffersWidth, const int iOutputBuffersHeight,    // The background over which we blend
+                                    float* stampBuffer,                                              // The buffer holding the current tool line
+
+                                    float* iOutput,                                                  // The output result buffer, can be the same as background
+                                    QImage* iParallelRender,                                             // The uchar buffer we wanna write to at the same time
+                                    float* iAlphaMask,  const int iAlphaWidth, const int iAlphaHeight,   // An alpha mask to apply to the blend
+                                    const QTransform& iTransform, const QPoint& iOrigin,
+                                    const float maxalpha)                // Transform and its origin to apply
+{
+    QTransform transfoFinal = iTransform;
+
+    const int inputWidth = iWidth;
+    const int inputHeight = iHeight;
+    QRect inputArea = QRect( 0, 0, iWidth, iHeight );
+    inputArea.moveTopLeft( iOrigin );
+
+    // Transformed bbox
+    QPolygonF outputRect = MapToPolygonF( iTransform, inputArea );
+    for( auto& point : outputRect )
+    {
+        point.setX( std::round( point.x() ) );
+        point.setY( std::round( point.y() ) );
+    }
+
+    QRect transfoBBox = ExclusiveBoundingBox( outputRect );
+
+    int minX = transfoBBox.left();
+    int minY = transfoBBox.top();
+
+    transfoBBox = transfoBBox.intersected( QRect( 0, 0, iWidth, iHeight ) ); // Intersected here will be inclusive, so intersection with 1080 and 1086 = 1080 for x2
+
+    int startingX = transfoBBox.left();
+    int startingY = transfoBBox.top();
+    int endingX = transfoBBox.right() >= iWidth ? iWidth - 1 : transfoBBox.right();
+    int endingY = transfoBBox.bottom() >= iHeight ? iHeight - 1 : transfoBBox.bottom();
+
+    auto check = endingX - startingX + 1;
+    if( check % 2 == 0 )
+        int bp = 5;
+
+    // Scales
+    const float transfoWidth = Distance2Points( outputRect[ 0 ], outputRect[ 1 ] );
+    const float transfoHeight = Distance2Points( outputRect[ 1 ], outputRect[ 2 ] );
+
+    const double xScaleFactorOriginal = transfoWidth / double( inputArea.width() );
+    const double yScaleFactorOriginal = transfoHeight / double( inputArea.height() );
+    const double xScaleFactorRounded = int(transfoWidth) / double( inputArea.width() );
+    const double yScaleFactorRounded = int(transfoHeight) / double( inputArea.height() );
+
+    if( xScaleFactorOriginal >= 1.0 || yScaleFactorOriginal >= 1.0 )
+    {
+        MTBlendImageNormalFDry( iInput, iWidth, iHeight, background, iOutputBuffersWidth, iOutputBuffersHeight, stampBuffer, iOutput, iParallelRender, QPoint( minX, minY ), maxalpha );
+        return;
     }
 }
 

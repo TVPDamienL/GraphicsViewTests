@@ -13,7 +13,6 @@
 
 cToolSimpleBrush::~cToolSimpleBrush()
 {
-    delete  mTipRendered;
 }
 
 
@@ -24,10 +23,9 @@ cToolSimpleBrush::cToolSimpleBrush( QObject * iParent ) :
     mToolSize = 50;
     mColor = Qt::red;
     mStep = 1.5;
-    mOpacity = 1.F;
+    mOpacity = 0.5F;
     mApplyProfile = true;
 
-    mTipRendered = 0;
     buildTool();
 }
 
@@ -80,18 +78,37 @@ cToolSimpleBrush::StartDrawing( QImage* iImage, sPointData iPointData )
 
     int toolDiameter = mToolSize * 2 + 1; // To get an odd diameter, so center is a single pixel
 
-    delete  mTipRendered;
-    mTipRendered = new QImage( toolDiameter, toolDiameter, QImage::Format::Format_ARGB32_Premultiplied );
-    //mTipRendered->fill( Qt::transparent );
-    MTHardFill( mTipRendered, mTipRendered->rect(), Qt::transparent );
-    _DrawDot( mTipRendered, mToolSize, mToolSize, 1.0, 0.0 );
-
-
     QRect rect( 0, 0, toolDiameter, toolDiameter );
     delete  mTipRenderedF;
     mTipRenderedF = new float[ toolDiameter * 4 * toolDiameter ];
     MTHardFillF( mTipRenderedF, toolDiameter, toolDiameter, rect, Qt::transparent );
-    _DrawDotF( mToolSize, mToolSize, 1.0, 0.0 );
+    _RenderTip( mToolSize, mToolSize, 1.0, 0.0 );
+
+
+    const int imageSize = iImage->bytesPerLine() * iImage->height();
+
+    // Initialize DryBuffer
+    delete[] mDryBuffer;
+    mDryBuffer = new float[ imageSize ];
+    float* data = _mFloatBuffer;
+    float* scan = data;
+
+    for( int y = 0; y < iImage->height(); ++y )
+    {
+        scan = data + y * iImage->bytesPerLine();
+        const int floatIndex = y * iImage->width() * 4;
+
+        for( int x = 0; x < iImage->width() * 4; ++x )
+        {
+            mDryBuffer[ floatIndex + x ] = *scan; ++scan;
+        }
+    }
+
+    // Initialize StampBuffer
+    delete[] mStampBuffer;
+    mStampBuffer = new float[ imageSize ];
+    QRect rect2( 0, 0, iImage->bytesPerLine()/4, iImage->height() );
+    MTHardFillF( mStampBuffer, iImage->bytesPerLine()/4, iImage->height(), rect2, Qt::transparent );
 
 
     _BuildMipMap();
@@ -154,6 +171,9 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
         remainingScale = float(finalSize + 1) / float(mipMapSizeAtIndex);
 
     trans.scale( remainingScale, remainingScale );
+    //trans.scale( scale, scale );
+
+
     auto transfo = QTransform() * trans * QTransform::fromTranslate( minX, minY );
 
     //TransformNearestNeighbourDirectOutputNormalBlendFParallel( mMipMapF[ indexMip ], mToolSize * startingScale, mToolSize * startingScale,
@@ -162,10 +182,29 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
 
 
 
-    MTDownscaleBoxAverageDirectAlphaF( mMipMapF[ indexMip ], baseDiameter * startingScale, baseDiameter * startingScale,
-                                                               _mFloatBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
-                                                               mDrawingContext,
-                                                                0, 0, 0, transfo, QPoint( 0, 0 ) );
+    MTDownscaleBoxAverageDirectAlphaFDry( mMipMapF[ indexMip ], mipMapSizeAtIndex, mipMapSizeAtIndex,
+                                       mDryBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
+                                       mStampBuffer,
+                                       _mFloatBuffer,
+                                       mDrawingContext,
+                                       0, 0, 0, transfo, QPoint( 0, 0 ), mOpacity );
+
+    // Normal drawing
+    //BENCHSTART( 10 )
+    //MTDownscaleBoxAverageDirectAlphaF( mMipMapF[ indexMip ], mipMapSizeAtIndex, mipMapSizeAtIndex,
+    //                                   _mFloatBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
+    //                                   _mFloatBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
+    //                                   mDrawingContext,
+    //                                   0, 0, 0, transfo, QPoint( 0, 0 ) );
+    //BENCHEND( 10 )
+
+
+    //BENCHSTART( 10 )
+    //MTDownscaleBoxAverageDirectAlphaF( mTipRenderedF, baseDiameter, baseDiameter,
+    //                                                           _mFloatBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
+    //                                                           mDrawingContext,
+    //                                                            0, 0, 0, transfo, QPoint( 0, 0 ) );
+    //BENCHEND( 10 )
 
     mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX + 1, endingY - startingY + 1 ) );
 }
@@ -181,6 +220,7 @@ QRect
 cToolSimpleBrush::EndDrawing( sPointData iPointData )
 {
     //_GPU->ClearPaintToolBuffers();
+    //IMAGEDEBUG->ShowImage( _mFloatBuffer, mDrawingContext->width(), mDrawingContext->height() );
 
     return  cPaintToolBase::EndDrawing( iPointData );
 }
@@ -194,77 +234,7 @@ cToolSimpleBrush::_GetStepInPixelValue() const
 
 
 void
-cToolSimpleBrush::_DrawDot( QImage * iImage, int iX, int iY, float iPressure, float iRotation )
-{
-    uchar* data = iImage->bits();
-    uchar* pixelRow = data;
-    unsigned int width = iImage->width();
-    unsigned int height = iImage->height();
-    uint8_t originR = mColor.red()      * mOpacity;
-    uint8_t originG = mColor.green()    * mOpacity;
-    uint8_t originB = mColor.blue()     * mOpacity;
-    uint8_t originA = mColor.alpha()    * mOpacity;
-
-    uint8_t finalR = originR;
-    uint8_t finalG = originG;
-    uint8_t finalB = originB;
-    uint8_t finalA = originA;
-
-    const int bytesPerLine = iImage->bytesPerLine();
-
-    const int r = (mToolSize/2) * iPressure;
-    const int r2 = r*r;
-
-    int bboxMinX = iX - r;
-    int bboxMaxX = iX + r;
-    int bboxMinY = iY - r;
-    int bboxMaxY = iY + r;
-
-    const float radiusSq = mToolSize * mToolSize / 4;
-
-    bboxMinX = bboxMinX < 0 ? 0 : bboxMinX;
-    bboxMaxX = bboxMaxX >= width ? width - 1 : bboxMaxX;
-
-    bboxMinY = bboxMinY < 0 ? 0 : bboxMinY;
-    bboxMaxY = bboxMaxY >= height ? height - 1 : bboxMaxY;
-
-    const unsigned int iterationCount = (bboxMaxX - bboxMinX) * (bboxMaxY - bboxMinY);
-
-
-    for( int y = bboxMinY; y <= bboxMaxY ; ++y )
-    {
-        pixelRow = data + y * bytesPerLine + bboxMinX * 4;
-
-        for( int x = bboxMinX; x <= bboxMaxX ; ++x )
-        {
-            const int dx = x - iX;
-            const int dy = y - iY;
-            if( dx * dx + dy * dy <= r2 )
-            {
-                if( mApplyProfile )
-                {
-                    float distance = Distance2PointsSquared( QPoint( iX, iY ), QPoint( iX + dx, iY + dy ) );
-                    float distanceParam = 1.0F - ( distance / radiusSq ); // 1 - distanceRatio so it goes outwards, otherwise, it's a reversed gradient
-                    uint8_t mult = mProfile.GetValueAtTime( distanceParam ) * 255.F;
-                    finalR = BlinnMult( originR, mult );
-                    finalG = BlinnMult( originG, mult );
-                    finalB = BlinnMult( originB, mult );
-                    finalA = BlinnMult( originA, mult );
-                }
-
-                BlendPixelNormal( &pixelRow, finalR, finalG, finalB, finalA );
-            }
-            else
-            {
-                pixelRow += 4;
-            }
-        }
-    }
-}
-
-
-void
-cToolSimpleBrush::_DrawDotF( int iX, int iY, float iPressure, float iRotation )
+cToolSimpleBrush::_RenderTip( int iX, int iY, float iPressure, float iRotation )
 {
     float* data = mTipRenderedF;
     float* pixelRow = data;
@@ -283,14 +253,14 @@ cToolSimpleBrush::_DrawDotF( int iX, int iY, float iPressure, float iRotation )
 
     const int bytesPerLine = width * 4;
 
-    const int r = mToolSize * iPressure;
+    const int r = mToolSize;
 
     int bboxMinX = iX - r;
     int bboxMaxX = iX + r;
     int bboxMinY = iY - r;
     int bboxMaxY = iY + r;
 
-    const float radiusSq = mToolSize * mToolSize / 4;
+    const float radiusSq = r*r;
 
     bboxMinX = bboxMinX < 0 ? 0 : bboxMinX;
     bboxMaxX = bboxMaxX >= width ? width - 1 : bboxMaxX;
