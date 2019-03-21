@@ -47,6 +47,8 @@ public slots:
     void ToolRectangleClicked();
     void ToolSmudgeClicked();
 
+    void VectorialChanged( int );
+
 private:
     Ui::cMainWindow     ui;
 

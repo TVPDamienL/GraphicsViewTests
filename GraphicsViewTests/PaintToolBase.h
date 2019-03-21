@@ -44,6 +44,7 @@ public:
     virtual  void   DrawPathFromLastRenderedPoint();
 
     void            PathAddPoint( sPointData iPoint );
+    const std::vector< sPointData >& Path() const;
     QRect           GetDirtyArea() const;
     QRect           GetDirtyAreaAndReset();
 
@@ -59,7 +60,6 @@ protected:
     // It's a percentage of the toolsize, and can be rederivated to include pressure
     // Because step is always depending on size
     virtual  float   _GetStepInPixelValue() const;
-
 
 protected:
     int                         mToolSize;

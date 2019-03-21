@@ -210,6 +210,9 @@
     <ClCompile Include="ImageDebugger.cpp">
       <Filter>src\Gadget</Filter>
     </ClCompile>
+    <ClCompile Include="HUD.Path.cpp">
+      <Filter>src\HUD</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="cMainWindow.h">
@@ -353,6 +356,12 @@
     </ClInclude>
     <ClInclude Include="Image.ToolPaintUtilities.h">
       <Filter>src\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="Image.LineSimplification.h">
+      <Filter>src\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="HUD.Path.h">
+      <Filter>src\HUD</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

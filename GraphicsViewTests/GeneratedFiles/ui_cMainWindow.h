@@ -52,6 +52,8 @@ public:
     QSpinBox *stepSpinBox;
     QLabel *opacityLabel;
     QSpinBox *opacitySpinBox;
+    QLabel *vectorialLabel;
+    QCheckBox *vectorialCB;
     QSpacerItem *verticalSpacer;
     QLabel *label_3;
     QGridLayout *gridLayout;
@@ -162,6 +164,16 @@ public:
         opacitySpinBox->setMaximum(100);
 
         formLayout->setWidget(4, QFormLayout::FieldRole, opacitySpinBox);
+
+        vectorialLabel = new QLabel(centralWidget);
+        vectorialLabel->setObjectName(QString::fromUtf8("vectorialLabel"));
+
+        formLayout->setWidget(5, QFormLayout::LabelRole, vectorialLabel);
+
+        vectorialCB = new QCheckBox(centralWidget);
+        vectorialCB->setObjectName(QString::fromUtf8("vectorialCB"));
+
+        formLayout->setWidget(5, QFormLayout::FieldRole, vectorialCB);
 
 
         verticalLayout->addLayout(formLayout);
@@ -282,6 +294,7 @@ public:
         colorSwatch->setText(QString());
         stepLabel->setText(QApplication::translate("cMainWindow", "Step", nullptr));
         opacityLabel->setText(QApplication::translate("cMainWindow", "Opacity", nullptr));
+        vectorialLabel->setText(QApplication::translate("cMainWindow", "Vectorial", nullptr));
         label_3->setText(QApplication::translate("cMainWindow", "Tools", nullptr));
         buttonToolPaint->setText(QApplication::translate("cMainWindow", "Paint", nullptr));
         buttonToolSelect->setText(QApplication::translate("cMainWindow", "Select", nullptr));

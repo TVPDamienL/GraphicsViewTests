@@ -100,6 +100,7 @@ cPaintToolBase::setOpacity ( float iOpacity  )
 void
 cPaintToolBase::StartDrawing( QImage* iDC, sPointData iPointData )
 {
+    mPath.clear();
     mRequiredStepLength = 0;
     mLastRenderedPathIndex = 0;
     mDrawingContext = iDC;
@@ -226,7 +227,6 @@ cPaintToolBase::DrawPathFromLastRenderedPoint()
 QRect
 cPaintToolBase::EndDrawing( sPointData iPointData )
 {
-    mPath.clear();
     return  mDirtyArea;
 }
 
@@ -237,8 +237,18 @@ cPaintToolBase::EndDrawing( sPointData iPointData )
 void
 cPaintToolBase::PathAddPoint( sPointData iPoint )
 {
+    if( mPath.size() > 0 && iPoint == mPath.back() )
+        return;
+
     //iPoint.mPosition.setY( 950 );
     mPath.push_back( iPoint );
+}
+
+
+const std::vector<sPointData>&
+cPaintToolBase::Path() const
+{
+    return  mPath;
 }
 
 

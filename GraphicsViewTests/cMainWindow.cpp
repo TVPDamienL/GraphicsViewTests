@@ -73,6 +73,9 @@ cMainWindow::cMainWindow(QWidget *parent) :
     connect( ui.buttonSmudge, &QPushButton::clicked, this, &cMainWindow::ToolSmudgeClicked );
 
 
+    connect( ui.vectorialCB, &QCheckBox::stateChanged, this, &cMainWindow::VectorialChanged );
+
+
     CurrentFrameChanged( 0 );
 
     // Tools setups
@@ -214,6 +217,13 @@ void
 cMainWindow::ToolSmudgeClicked()
 {
     ui.canvas->SetToolModel( mToolSmudge );
+}
+
+
+void
+cMainWindow::VectorialChanged( int state )
+{
+    mToolPaint->Vectorial( state );
 }
 
 

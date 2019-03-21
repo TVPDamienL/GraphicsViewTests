@@ -13,13 +13,14 @@ cHUDHandle::~cHUDHandle()
 cHUDHandle::cHUDHandle( cHUDView* iParentView, cHUDObject* iParentObject ) :
     cHUDObject( iParentView, iParentObject )
 {
+    mColor = Qt::red;
 }
 
 
 void
 cHUDHandle::Draw( QPainter* iPainter )
 {
-    QPen pen( Qt::red );
+    QPen pen( mColor );
     pen.setWidth( 1 );
     iPainter->setPen( pen );
 

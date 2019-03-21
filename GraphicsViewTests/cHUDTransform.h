@@ -34,7 +34,6 @@ private:
     void            TransformImage() const;
 
 private:
-    int             mHandleSize = 10;
     cHUDHandle*     mPivot;
 
     cHUDHandle*     mFocusedHandle = 0;

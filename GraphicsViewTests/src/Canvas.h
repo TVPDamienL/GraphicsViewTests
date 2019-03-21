@@ -9,6 +9,7 @@
 #include "cHUDItem.h"
 #include "cHUDView.h"
 #include "cHUDTransform.h"
+#include "HUD.Path.h"
 
 class cEditableItem;
 class cHUDShapeTool;
@@ -96,6 +97,8 @@ private:
     cHUDView*           mHUDView = 0;
     cHUDItem*           mHUDSelection = 0;
     cHUDTransform*      mHUDTransform = 0;
+    cHUDPath*           mHUDPath = 0;
+    cHUDPath*           mHUDPath2 = 0;
     cHUDShapeTool*      mHUDShape = 0;
 
     // Transform

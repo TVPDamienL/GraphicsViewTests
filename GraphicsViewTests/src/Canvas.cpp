@@ -6,6 +6,7 @@
 #include "colorPickerDialog.h"
 
 #include "cLayer.h"
+#include "Image.LineSimplification.h"
 
 #include "ShapeBase.h"
 #include "cHUDShapeTool.h"
@@ -51,7 +52,7 @@ cCanvas::cCanvas( QWidget *parent ) :
     QRectF sceneRect = geometry();
     setSceneRect( sceneRect );
 
-    setStyleSheet( "background-color: #555555");
+    setStyleSheet( "background-color: #555555" );
 
     __DebugAlphaMaskTest__ = new QImage( ":/cMainWindow/Resources/AlphaMask.png" );
 
@@ -422,6 +423,28 @@ cCanvas::MouseUp( const QPoint& iPos, double iPressure, double iRotation )
         {
             mClip->CurrentLayer()->WriteUndoHistory();
             //currentFrameGotPainted( *mEditableItem->mpixmap );
+
+            auto toolPaint = dynamic_cast< cPaintToolBase* >( mTool );
+            if( toolPaint )
+            {
+                mHUDView->RemoveHUDObject( mHUDPath );
+                delete  mHUDPath;
+
+                mHUDPath = new cHUDPath( mHUDView, 0, toolPaint->Path() );
+                mHUDView->AddHUDObject( mHUDPath );
+                mHUDPath->Visible( true );
+
+
+
+
+                mHUDView->RemoveHUDObject( mHUDPath2 );
+                delete  mHUDPath2;
+
+                mHUDPath2 = new cHUDPath( mHUDView, 0, SimplifyLine( toolPaint->Path(), 20000000, 0.1 ) );
+                mHUDPath2->SetHandleColor( Qt::green );
+                mHUDView->AddHUDObject( mHUDPath2 );
+                mHUDPath2->Visible( true );
+            }
         }
         else
         {

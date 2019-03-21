@@ -15,6 +15,11 @@ struct sPointData
     QPoint mPosition;
     float  mPressure;
     float  mRotation;
+
+    bool operator ==( const sPointData& rhs )
+    {
+        return  mPosition == rhs.mPosition && mPressure == rhs.mPressure && mRotation == rhs.mRotation;
+    }
 };
 
 
@@ -32,6 +37,10 @@ public:
 public:
     QImage*         DrawingContext();
 
+    bool            Vectorial() const { return  mVectorial; }
+    void            Vectorial( bool n ) { mVectorial = n; }
+
+
 
 public:
     virtual  void   StartDrawing( QImage* iDC, sPointData iPointData ) = 0;
@@ -40,6 +49,7 @@ public:
 
 protected:
     QImage*     mDrawingContext = 0;
+    bool        mVectorial = false;
 };
 
 

@@ -14,5 +14,8 @@ public:
 public:
     virtual  void Draw( QPainter* iPainter ) override;
     virtual  bool  Event( QEvent* iEvent ) override;
+
+public:
+    QColor mColor;
 };
 
