@@ -9,6 +9,7 @@
 #include "Blending.h"
 #include "GPUForThisApp.h"
 #include "ImageDebugger.h"
+#include "Image.LineSimplification.h"
 
 
 cToolSimpleBrush::~cToolSimpleBrush()
@@ -57,6 +58,65 @@ cToolSimpleBrush::buildTool()
 }
 
 
+int
+cToolSimpleBrush::getSize() const
+{
+    return  cPaintToolBase::getSize();
+}
+
+
+void
+cToolSimpleBrush::setSize( int iSize )
+{
+    cPaintToolBase::setSize( iSize );
+    PrepareTool();
+}
+
+
+QColor
+cToolSimpleBrush::getColor() const
+{
+    return  cPaintToolBase::getColor();
+}
+
+
+void
+cToolSimpleBrush::setColor( const QColor & iColor )
+{
+    cPaintToolBase::setColor( iColor );
+    PrepareTool();
+}
+
+
+float
+cToolSimpleBrush::getStep() const
+{
+    return  cPaintToolBase::getStep();
+}
+
+
+void
+cToolSimpleBrush::setStep( float iStep )
+{
+    cPaintToolBase::setStep( iStep );
+}
+
+
+float
+cToolSimpleBrush::getOpacity() const
+{
+    return  cPaintToolBase::getOpacity();
+}
+
+
+void
+cToolSimpleBrush::setOpacity( float iOpacity )
+{
+    cPaintToolBase::setOpacity( iOpacity );
+    PrepareTool();
+}
+
+
 void
 cToolSimpleBrush::ApplyProfile( bool iApply )
 {
@@ -75,15 +135,6 @@ void
 cToolSimpleBrush::StartDrawing( QImage* iImage, sPointData iPointData )
 {
     cPaintToolBase::StartDrawing( iImage, iPointData );
-
-    int toolDiameter = mToolSize * 2 + 1; // To get an odd diameter, so center is a single pixel
-
-    QRect rect( 0, 0, toolDiameter, toolDiameter );
-    delete  mTipRenderedF;
-    mTipRenderedF = new float[ toolDiameter * 4 * toolDiameter ];
-    MTHardFillF( mTipRenderedF, toolDiameter, toolDiameter, rect, Qt::transparent );
-    _RenderTip( mToolSize, mToolSize, 1.0, 0.0 );
-
 
     const int imageSize = iImage->bytesPerLine() * iImage->height();
 
@@ -110,8 +161,8 @@ cToolSimpleBrush::StartDrawing( QImage* iImage, sPointData iPointData )
     QRect rect2( 0, 0, iImage->bytesPerLine()/4, iImage->height() );
     MTHardFillF( mStampBuffer, iImage->bytesPerLine()/4, iImage->height(), rect2, Qt::transparent );
 
+    PrepareTool();
 
-    _BuildMipMap();
     mDirtyArea = QRect( 0, 0, 0, 0 );
 
     //_GPU->LoadPaintContext( mDrawingContext );
@@ -222,7 +273,37 @@ cToolSimpleBrush::EndDrawing( sPointData iPointData )
     //_GPU->ClearPaintToolBuffers();
     //IMAGEDEBUG->ShowImage( _mFloatBuffer, mDrawingContext->width(), mDrawingContext->height() );
 
+    if( Vectorial() )
+    {
+        mPath = SimplifyLine( mPath, 20000000, 0.1 );
+        DrawFullPath();
+    }
+
     return  cPaintToolBase::EndDrawing( iPointData );
+}
+
+
+void
+cToolSimpleBrush::CancelDrawing()
+{
+    float* scan = mDryBuffer;
+    float* scanFloat = _mFloatBuffer;
+    uchar* dcScan = mDrawingContext->bits();
+
+    // Resetting float buffer and output image
+    for( int y = 0; y < mDrawingContext->height(); ++y )
+    {
+        for( int x = 0; x < mDrawingContext->width() * 4; ++x )
+        {
+            *scanFloat = *scan; ++scanFloat;
+            *dcScan = uchar( *scan ); ++scan; ++dcScan;
+        }
+    }
+
+    // Initialize StampBuffer
+    MTHardFillF( mStampBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(), mDrawingContext->rect(), Qt::transparent );
+
+    mDirtyArea = mDrawingContext->rect();
 }
 
 
@@ -230,6 +311,20 @@ float
 cToolSimpleBrush::_GetStepInPixelValue() const
 {
     return  std::max( mStep * _mToolSizeAfterPressure, 1.0F );
+}
+
+
+void
+cToolSimpleBrush::PrepareTool()
+{
+    int toolDiameter = mToolSize * 2 + 1; // To get an odd diameter, so center is a single pixel
+
+    QRect rect( 0, 0, toolDiameter, toolDiameter );
+    delete  mTipRenderedF;
+    mTipRenderedF = new float[ toolDiameter * 4 * toolDiameter ];
+    MTHardFillF( mTipRenderedF, toolDiameter, toolDiameter, rect, Qt::transparent );
+    _RenderTip( mToolSize, mToolSize, 1.0, 0.0 );
+    _BuildMipMap();
 }
 
 

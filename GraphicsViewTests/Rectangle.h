@@ -33,6 +33,7 @@ public:
     virtual  void       StartDrawing( QImage* iImage, sPointData iPointData ) override;
     virtual  QRect      MoveDrawing( sPointData iPointData ) override;
     virtual  QRect      EndDrawing( sPointData iPointData ) override;
+    virtual  void       CancelDrawing() override;
 
 public:
     void    SetMode( eMode iMode );

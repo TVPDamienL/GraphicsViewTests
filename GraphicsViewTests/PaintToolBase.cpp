@@ -34,14 +34,12 @@ int
 cPaintToolBase::getSize() const
 {
     return  mToolSize;
-    //return  itemFromIndex( index( 0, 0 ) )->data().toInt();
 }
 
 
 void
 cPaintToolBase::setSize( int iSize )
 {
-    //itemFromIndex( index( 0, 0 ) )->setData( iSize );
     mToolSize = iSize;
 }
 
@@ -49,18 +47,13 @@ cPaintToolBase::setSize( int iSize )
 QColor
 cPaintToolBase::getColor() const
 {
-    // This is so much easier in the end ...
     return  mColor;
-
-    //QVariant dataColor = itemFromIndex( index( 1, 0 ) )->data();
-    //return  dataColor.value< QColor >();
 }
 
 
 void
 cPaintToolBase::setColor( const QColor & iColor )
 {
-    //itemFromIndex( index( 1, 0 ) )->setData( iColor );
     mColor = iColor;
 }
 
@@ -76,7 +69,6 @@ void
 cPaintToolBase::setStep( float iStep )
 {
     mStep = iStep;
-    //itemFromIndex( index( 2, 0 ) )->setData( iStep );
 }
 
 
@@ -146,26 +138,32 @@ cPaintToolBase::DrawFullPath()
     mLastRenderedPathIndex = 0;
 
     DrawPathFromLastRenderedPoint();
-
-    mPath.clear(); // We draw the path, we clear it
 }
 
 
 void
 cPaintToolBase::DrawPathFromLastRenderedPoint()
 {
-    if( mPath.size() <= 0 )
+    DrawPathFromPointToPoint( mLastRenderedPathIndex, mPath.size() - 1 );
+    mLastRenderedPathIndex = mPath.size() - 1;
+}
+
+
+void
+cPaintToolBase::DrawPathFromPointToPoint( int a, int b )
+{
+    if( mPath.size() <= 1 )
         return;
 
-    for( mLastRenderedPathIndex; mLastRenderedPathIndex < mPath.size() - 1; ++mLastRenderedPathIndex )
+    for( int i = a; i < b; ++i )
     {
         // Setting base variables : starting point, ending point and their distance
-        QPoint p1 = mPath[ mLastRenderedPathIndex ].mPosition;
-        QPoint p2 = mPath[ mLastRenderedPathIndex + 1 ].mPosition;
-        float  pressure_p1 = mPath[ mLastRenderedPathIndex ].mPressure;
-        float  pressure_p2 = mPath[ mLastRenderedPathIndex + 1 ].mPressure;
-        float  rotation_p1 = mPath[ mLastRenderedPathIndex ].mRotation;
-        float  rotation_p2 = mPath[ mLastRenderedPathIndex + 1 ].mRotation;
+        QPoint p1 = mPath[ i ].mPosition;
+        QPoint p2 = mPath[ i + 1 ].mPosition;
+        float  pressure_p1 = mPath[ i ].mPressure;
+        float  pressure_p2 = mPath[ i + 1 ].mPressure;
+        float  rotation_p1 = mPath[ i ].mRotation;
+        float  rotation_p2 = mPath[ i + 1 ].mRotation;
         float distance = Distance2Points( p1, p2 );
         float subPression = pressure_p2 - pressure_p1;
         float subRotation = rotation_p2 - rotation_p1;
@@ -191,7 +189,7 @@ cPaintToolBase::DrawPathFromLastRenderedPoint()
         // ==================================
 
         float remainingDistance = distance; // The distance left of the segment, that still needs split
-        //qDebug() << "Remaining : " << remainingDistance;
+                                            //qDebug() << "Remaining : " << remainingDistance;
         QPoint startingPoint = p1;
 
 
@@ -231,6 +229,12 @@ cPaintToolBase::EndDrawing( sPointData iPointData )
 }
 
 
+void
+cPaintToolBase::CancelDrawing()
+{
+}
+
+
 // ===========================
 
 
@@ -249,6 +253,20 @@ const std::vector<sPointData>&
 cPaintToolBase::Path() const
 {
     return  mPath;
+}
+
+
+void
+cPaintToolBase::SetPath( const std::vector<sPointData>& iPath )
+{
+    mPath = iPath;
+}
+
+
+void
+cPaintToolBase::PathSetPoint( int index, sPointData & point )
+{
+    mPath[ index ] = point;
 }
 
 

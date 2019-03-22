@@ -2,25 +2,11 @@
 
 
 #include "cBaseData.h"
+#include "PointData.h"
 #include <QStandardItemModel>
 
 #include <cmath>
 
-
-
-
-// Pressure, azimut, angle, rotation etc...
-struct sPointData
-{
-    QPoint mPosition;
-    float  mPressure;
-    float  mRotation;
-
-    bool operator ==( const sPointData& rhs )
-    {
-        return  mPosition == rhs.mPosition && mPressure == rhs.mPressure && mRotation == rhs.mRotation;
-    }
-};
 
 
 
@@ -46,6 +32,7 @@ public:
     virtual  void   StartDrawing( QImage* iDC, sPointData iPointData ) = 0;
     virtual  QRect  MoveDrawing( sPointData iPointData ) = 0;
     virtual  QRect  EndDrawing( sPointData iPointData) = 0;
+    virtual  void   CancelDrawing() = 0;
 
 protected:
     QImage*     mDrawingContext = 0;

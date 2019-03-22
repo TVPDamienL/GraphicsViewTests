@@ -111,6 +111,12 @@ cShapeRectangle::EndDrawing( sPointData iPointData )
 
 
 void
+cShapeRectangle::CancelDrawing()
+{
+}
+
+
+void
 cShapeRectangle::SetMode( eMode iMode )
 {
     mMode = iMode;

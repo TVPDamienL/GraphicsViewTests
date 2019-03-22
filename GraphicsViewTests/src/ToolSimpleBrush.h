@@ -21,6 +21,19 @@ public:
     Qt::ItemFlags   flags( const QModelIndex& iIndex ) const override;
     void  buildTool();
 
+public:
+    virtual  int    getSize() const;
+    virtual  void   setSize( int iSize );
+
+    virtual  QColor getColor() const;
+    virtual  void   setColor( const QColor& iColor );
+
+    virtual  float  getStep() const;
+    virtual  void   setStep( float iStep );
+
+    virtual  float  getOpacity() const;
+    virtual  void   setOpacity( float iOpacity );
+
 
 public:
     void  ApplyProfile( bool iApply );
@@ -34,10 +47,12 @@ public:
     virtual  void  DrawDot( int x, int y, float iPressure, float iRotation ) override;
     virtual  void  DrawLine( const QPoint& iP1, const QPoint& iP2, float iPressure1, float iRotation1, float iPressure2, float iRotation2 ) override;
     virtual  QRect  EndDrawing( sPointData iPointData ) override;
+    virtual  void   CancelDrawing() override;
 
 
 protected:
     virtual  float   _GetStepInPixelValue() const;
+    void            PrepareTool();
 
 
 private:

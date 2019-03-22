@@ -20,33 +20,40 @@ public:
     cPaintToolBase( QObject* iParent = Q_NULLPTR );
 
 public:
-    int             getSize() const;
-    void            setSize( int iSize );
+    virtual  int    getSize() const;
+    virtual  void   setSize( int iSize );
 
-    QColor          getColor() const;
-    void            setColor( const QColor& iColor );
+    virtual  QColor getColor() const;
+    virtual  void   setColor( const QColor& iColor );
 
-    float           getStep() const;
-    void            setStep( float iStep );
+    virtual  float  getStep() const;
+    virtual  void   setStep( float iStep );
 
-    float           getOpacity() const;
-    void            setOpacity( float iOpacity );
+    virtual  float  getOpacity() const;
+    virtual  void   setOpacity( float iOpacity );
 
 public:
     virtual  void   StartDrawing( QImage* iDC, sPointData iPointData ) override;
     virtual  QRect  MoveDrawing( sPointData iPointData ) override;
     virtual  QRect  EndDrawing( sPointData iPointData ) override;
+    virtual  void   CancelDrawing() override;
 
 public:
     virtual  void   DrawDot( int x, int y, float iPressure, float iRotation ) = 0;
     virtual  void   DrawLine( const QPoint& iP1, const QPoint& iP2, float iPressure1, float iRotation1, float iPressure2, float iRotation2 ) = 0;
     virtual  void   DrawFullPath();
     virtual  void   DrawPathFromLastRenderedPoint();
+    virtual  void   DrawPathFromPointToPoint( int a, int b );
 
     void            PathAddPoint( sPointData iPoint );
     const std::vector< sPointData >& Path() const;
+    void            SetPath( const std::vector< sPointData >& iPath );
+    void            PathSetPoint( int index, sPointData& point );
+
+
     QRect           GetDirtyArea() const;
     QRect           GetDirtyAreaAndReset();
+
 
 
 public:

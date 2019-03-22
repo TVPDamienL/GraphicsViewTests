@@ -430,20 +430,20 @@ cCanvas::MouseUp( const QPoint& iPos, double iPressure, double iRotation )
                 mHUDView->RemoveHUDObject( mHUDPath );
                 delete  mHUDPath;
 
-                mHUDPath = new cHUDPath( mHUDView, 0, toolPaint->Path() );
+                mHUDPath = new cHUDPath( mHUDView, 0, toolPaint->Path(), toolPaint, mClip );
                 mHUDView->AddHUDObject( mHUDPath );
                 mHUDPath->Visible( true );
 
 
 
 
-                mHUDView->RemoveHUDObject( mHUDPath2 );
-                delete  mHUDPath2;
+                //mHUDView->RemoveHUDObject( mHUDPath2 );
+                //delete  mHUDPath2;
 
-                mHUDPath2 = new cHUDPath( mHUDView, 0, SimplifyLine( toolPaint->Path(), 20000000, 0.1 ) );
-                mHUDPath2->SetHandleColor( Qt::green );
-                mHUDView->AddHUDObject( mHUDPath2 );
-                mHUDPath2->Visible( true );
+                //mHUDPath2 = new cHUDPath( mHUDView, 0, SimplifyLine( toolPaint->Path(), 20000000, 0.1 ) );
+                //mHUDPath2->SetHandleColor( Qt::green );
+                //mHUDView->AddHUDObject( mHUDPath2 );
+                //mHUDPath2->Visible( true );
             }
         }
         else

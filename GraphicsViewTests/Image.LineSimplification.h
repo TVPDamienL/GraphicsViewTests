@@ -2,11 +2,11 @@
 
 
 
-#include "PaintToolBase.h"
+#include "PointData.h"
 #include "Math.Fast.h"
 
 
-
+static
 std::vector< sPointData >
 SimplifyLine( const std::vector< sPointData >& InputLine, float iCurvatureThreshold, float iPressureThreshold )
 {

@@ -6,10 +6,14 @@ cHUDPath::~cHUDPath()
 }
 
 
-cHUDPath::cHUDPath( cHUDView* iParentView, cHUDObject* iParentObject, const std::vector< sPointData >& iPath ) :
+cHUDPath::cHUDPath( cHUDView* iParentView, cHUDObject* iParentObject, const std::vector< sPointData >& iPath, cPaintToolBase* tool, cClip* clip ) :
     cHUDObject( iParentView, iParentObject )
 {
     mPath = iPath;
+    mTool = tool;
+    mClip = clip;
+
+
     for( auto& point : iPath )
     {
 		mChildrenHUDs.push_back( new cHUDHandle( iParentView, this ) );
@@ -60,19 +64,40 @@ cHUDPath::Event( QEvent * iEvent )
     // then keep tracking the mouse during all that on the handle ......
     QMouseEvent* eventAsMouse = 0;
 
-    switch( iEvent->type() )
+    if( iEvent->type() == QEvent::MouseButtonPress )
     {
-        case QEvent::MouseButtonPress :
-            return  true;
+        eventAsMouse = dynamic_cast< QMouseEvent* >( iEvent );
+        mOriginClickPos = eventAsMouse->pos();
+        mOriginHandle = _GetHandleAtPoint( &mHandleIndex, eventAsMouse->pos() );
+        mOriginHandleFrame = mOriginHandle->GetFrame();
+        return  true;
+    }
+    else if( iEvent->type() == QEvent::MouseMove )
+    {
+        eventAsMouse = dynamic_cast< QMouseEvent* >( iEvent );
 
-        case QEvent::MouseMove :
-            return  true;
+        QPointF offset = FromHUDCoords( eventAsMouse->pos() ) - FromHUDCoords( mOriginClickPos );
+        QRectF frame = mOriginHandleFrame;
+        frame.moveCenter( frame.center() + offset );
+        mOriginHandle->SetFrame( frame );
 
-        case QEvent::MouseButtonRelease:
-            return  true;
+        auto center = frame.center();
 
-        default:
-            return  false;
+        sPointData p;
+        p.mPosition = QPoint( center.x(), center.y() );
+        p.mPressure = 1.0;
+        p.mRotation = 0.0;
+
+        mTool->PathSetPoint( mHandleIndex, p );
+        mTool->CancelDrawing();
+        mTool->DrawFullPath();
+        mClip->DirtyAll();
+
+        return  true;
+    }
+    else if( iEvent->type() == QEvent::MouseButtonRelease )
+    {
+        return  true;
     }
 
     return false;

@@ -363,6 +363,9 @@
     <ClInclude Include="HUD.Path.h">
       <Filter>src\HUD</Filter>
     </ClInclude>
+    <ClInclude Include="PointData.h">
+      <Filter>src\ToolModel\Tools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="cMainWindow.ui">

@@ -4,13 +4,14 @@
 
 #include "cHUDHandle.h"
 #include "PaintToolBase.h"
+#include "Clip.h"
 
 class cHUDPath :
     public cHUDObject
 {
 public:
     virtual ~cHUDPath();
-    cHUDPath( cHUDView* iParentView, cHUDObject* iParentObject, const std::vector< sPointData >& iPath );
+    cHUDPath( cHUDView* iParentView, cHUDObject* iParentObject, const std::vector< sPointData >& iPath, cPaintToolBase* tool, cClip* clip );
 
 public:
     virtual  void   Draw( QPainter* iPainter ) override;
@@ -30,5 +31,13 @@ private:
     cHUDHandle*     mFocusedHandle = 0;
 
     std::vector< sPointData > mPath;
+    cPaintToolBase*     mTool;
+    cClip*              mClip;
+
+
+    QPoint      mOriginClickPos;
+    QRectF      mOriginHandleFrame;
+    cHUDHandle* mOriginHandle;
+    int         mHandleIndex = -1;
 };
 
