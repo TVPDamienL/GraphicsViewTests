@@ -270,6 +270,13 @@ cPaintToolBase::PathSetPoint( int index, sPointData & point )
 }
 
 
+const sPointData&
+cPaintToolBase::PathGetPoint( int index )
+{
+    return  mPath[ index ];
+}
+
+
 QRect
 cPaintToolBase::GetDirtyArea() const
 {

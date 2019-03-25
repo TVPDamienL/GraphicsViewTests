@@ -45,10 +45,11 @@ public:
     virtual  void   DrawPathFromLastRenderedPoint();
     virtual  void   DrawPathFromPointToPoint( int a, int b );
 
-    void            PathAddPoint( sPointData iPoint );
-    const std::vector< sPointData >& Path() const;
-    void            SetPath( const std::vector< sPointData >& iPath );
-    void            PathSetPoint( int index, sPointData& point );
+    void                                PathAddPoint( sPointData iPoint );
+    const std::vector< sPointData >&    Path() const;
+    void                                SetPath( const std::vector< sPointData >& iPath );
+    void                                PathSetPoint( int index, sPointData& point );
+    const sPointData&                   PathGetPoint( int index );
 
 
     QRect           GetDirtyArea() const;

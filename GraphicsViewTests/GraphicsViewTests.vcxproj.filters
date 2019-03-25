@@ -213,6 +213,9 @@
     <ClCompile Include="HUD.Path.cpp">
       <Filter>src\HUD</Filter>
     </ClCompile>
+    <ClCompile Include="HUDHandlePath.cpp">
+      <Filter>src\HUD</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="cMainWindow.h">
@@ -365,6 +368,9 @@
     </ClInclude>
     <ClInclude Include="PointData.h">
       <Filter>src\ToolModel\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="HUDHandlePath.h">
+      <Filter>src\HUD</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

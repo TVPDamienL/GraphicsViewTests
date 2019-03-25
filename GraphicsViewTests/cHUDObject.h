@@ -60,6 +60,7 @@ public:
 
 
     virtual bool ContainsPoint( const QPointF& iPoint ) const;
+    cHUDObject* GetObjectAtPoint( const QPointF& iPoint );
 
     virtual  cHUDObject* GetVisibleHUDObjectAtPos( const QPointF& iPoint );
 

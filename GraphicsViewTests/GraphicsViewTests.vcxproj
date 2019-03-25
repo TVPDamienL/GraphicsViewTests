@@ -134,6 +134,7 @@
     <ClCompile Include="GPUController.cpp" />
     <ClCompile Include="GPUForThisApp.cpp" />
     <ClCompile Include="HUD.Path.cpp" />
+    <ClCompile Include="HUDHandlePath.cpp" />
     <ClCompile Include="ImageDebugger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PaintToolBase.cpp" />
@@ -166,6 +167,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HUD.Path.h" />
+    <ClInclude Include="HUDHandlePath.h" />
     <ClInclude Include="Image.LineSimplification.h" />
     <ClInclude Include="Image.UtilitiesMultiThreaded.h" />
     <QtMoc Include="ImageDebugger.h">

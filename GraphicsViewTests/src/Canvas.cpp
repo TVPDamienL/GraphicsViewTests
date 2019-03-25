@@ -425,7 +425,7 @@ cCanvas::MouseUp( const QPoint& iPos, double iPressure, double iRotation )
             //currentFrameGotPainted( *mEditableItem->mpixmap );
 
             auto toolPaint = dynamic_cast< cPaintToolBase* >( mTool );
-            if( toolPaint )
+            if( toolPaint && toolPaint->Vectorial() )
             {
                 mHUDView->RemoveHUDObject( mHUDPath );
                 delete  mHUDPath;
@@ -436,7 +436,7 @@ cCanvas::MouseUp( const QPoint& iPos, double iPressure, double iRotation )
 
 
 
-
+                // To show a before/after line simplification
                 //mHUDView->RemoveHUDObject( mHUDPath2 );
                 //delete  mHUDPath2;
 

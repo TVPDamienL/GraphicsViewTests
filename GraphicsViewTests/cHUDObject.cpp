@@ -264,6 +264,23 @@ cHUDObject::ContainsPoint( const QPointF & iPoint ) const
 
 
 cHUDObject*
+cHUDObject::GetObjectAtPoint( const QPointF& iPoint )
+{
+    for( auto child : mChildrenHUDs )
+    {
+        auto found = child->GetObjectAtPoint( iPoint );
+        if( found )
+            return  found;
+    }
+
+    if( ContainsPoint( iPoint ) )
+        return  this;
+
+    return  nullptr;
+}
+
+
+cHUDObject*
 cHUDObject::GetVisibleHUDObjectAtPos( const QPointF & iPoint )
 {
     // Deepest child first

@@ -272,6 +272,7 @@ cToolSimpleBrush::EndDrawing( sPointData iPointData )
 {
     //_GPU->ClearPaintToolBuffers();
     //IMAGEDEBUG->ShowImage( _mFloatBuffer, mDrawingContext->width(), mDrawingContext->height() );
+    //IMAGEDEBUG->ShowImage( mStampBuffer, mDrawingContext->width(), mDrawingContext->height() );
 
     if( Vectorial() )
     {

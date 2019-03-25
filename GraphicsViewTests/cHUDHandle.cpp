@@ -24,10 +24,16 @@ cHUDHandle::Draw( QPainter* iPainter )
     pen.setWidth( 1 );
     iPainter->setPen( pen );
 
-    ResetTransformation();
-    CenterScale( mOriginalFrame.center(), 1/GlobalXScale(), 1/GlobalYScale() );
+    QRectF frameTransf = GetFinalTransform().mapRect( mOriginalFrame );
 
-    iPainter->drawRect( GetFinalTransform().mapRect( mOriginalFrame ) );
+    float offsetX = (frameTransf.width() - HANDLESIZE) / 2;
+    float offsetY = (frameTransf.height() - HANDLESIZE) / 2;
+
+    frameTransf.setWidth( HANDLESIZE );
+    frameTransf.setHeight( HANDLESIZE );
+    frameTransf.translate( QPointF( offsetX, offsetY ) );
+
+    iPainter->drawRect( frameTransf );
 }
 
 
