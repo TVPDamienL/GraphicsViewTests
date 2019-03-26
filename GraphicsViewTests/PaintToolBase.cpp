@@ -195,58 +195,22 @@ cPaintToolBase::DrawPathFromPointToPoint( int a, int b )
                                             //qDebug() << "Remaining : " << remainingDistance;
         QPoint startingPoint = p1;
         float pressure = pressure_p1;
-
-        // Drawing first dot using spare distance from previous stroke
-        QPointF leftoverVect = stepVectorNormalizedAsPF * mLeftover;
-        remainingDistance -= mLeftover;
-        float ratio = 1.0 - (remainingDistance)/distance;
-        pressure = pressure_p1 + subPression * ratio;
-
-        //if( mTruc )
-        //{
-        //    mTruc = false;
-        //    float pixtep = _GetHalfStepInPixelValue( pressure );
-        //    leftoverVect += stepVectorNormalizedAsPF * pixtep;
-        //    remainingDistance -= pixtep;
-
-        //    if( remainingDistance < 0 )
-        //    {
-        //        mLeftover = -remainingDistance;
-        //        continue;
-        //    }
-        //}
-
-        startingPoint = __DrawDotVectorTruc_RequiresAName_( p1, leftoverVect, pressure, rotation_p1 );
-
-        // Now, we go step by step
         QPointF stepSum( 0, 0 );
+        QPointF leftoverVect = stepVectorNormalizedAsPF * mLeftover;
 
-                       // We split the segment using mStep, and draw dots on each step while there is room on the segment
         while( remainingDistance >= 0 )
         {
-            float pixelStep = _GetHalfStepInPixelValue( pressure );
-            stepSum += stepVectorNormalizedAsPF * pixelStep;
-            remainingDistance -= pixelStep;
+            float ratio = 1.0 - (remainingDistance)/distance;
+            float pressure = pressure_p1 + subPression * ratio;
 
-            //if( remainingDistance <= 0 )
-            //{
-            //    mTruc = true;
-            //    break;
-            //}
+            startingPoint = __DrawDotVectorTruc_RequiresAName_( startingPoint, stepSum + leftoverVect, pressure, rotation_p1 );
 
-            ratio = 1.0 - (remainingDistance)/distance;
-            pressure = pressure_p1 + subPression * ratio;
+            float pixelStep = _GetHalfStepInPixelValue( pressure ) * 2;
+            stepSum = stepVectorNormalizedAsPF * pixelStep;
+            remainingDistance -= pixelStep + mLeftover;
 
-            float rotation = rotation_p1 + subRotation * ratio;
-
-            pixelStep = _GetHalfStepInPixelValue( pressure );
-            stepSum += stepVectorNormalizedAsPF * pixelStep;
-            remainingDistance -= pixelStep;
-
-            if( remainingDistance <= 0 )
-                break;
-
-            __DrawDotVectorTruc_RequiresAName_( startingPoint, stepSum, pressure, rotation );
+            leftoverVect = QPointF( 0, 0 );
+            mLeftover = 0;
         }
 
         mLeftover = -remainingDistance; // because  remaining will be negative
