@@ -1,6 +1,9 @@
 #include "HUD.Path.h"
 
 
+#include "Math.Fast.h"
+
+
 cHUDPath::~cHUDPath()
 {
 }
@@ -80,35 +83,52 @@ cHUDPath::Event( QEvent * iEvent )
         mOriginHandleFrame = mOriginHandle->GetFrame();
         mHandleIndex = _GetHandleIndex( mOriginHandle );
 
-        qDebug() << "T";
-
         return  true;
     }
     else if( iEvent->type() == QEvent::MouseMove )
     {
         eventAsMouse = dynamic_cast< QMouseEvent* >( iEvent );
 
+        QPointF offset = FromHUDCoords( eventAsMouse->pos() ) - FromHUDCoords( mOriginClickPos );
+
         if( mState == kDragPosition )
         {
-            QPointF offset = FromHUDCoords( eventAsMouse->pos() ) - FromHUDCoords( mOriginClickPos );
             QRectF frame = mOriginHandleFrame;
             frame.moveCenter( frame.center() + offset );
             mOriginHandle->SetFrame( frame );
-
             auto center = frame.center();
 
             sPointData p = mTool->PathGetPoint( mHandleIndex );
             p.mPosition = QPoint( center.x(), center.y() );
 
             mTool->PathSetPoint( mHandleIndex, p );
-            mTool->CancelDrawing();
-            mTool->DrawFullPath();
-            mClip->DirtyAll();
         }
         else if( mState == kDragPressure )
         {
-            qDebug() << "Pressure";
+            auto pathHandle = mChildrenHUDs[ mHandleIndex ];
+            QRectF frame = pathHandle->GetFrame();
+
+            QPointF mc = FromHUDCoords( eventAsMouse->pos() );
+            QPointF center = frame.center();
+
+            float newSize = Clamp( (mc - center).x() * 2.0, 0.0, mTool->getSize()*2.0 );
+
+            frame.setWidth( newSize );
+            frame.setHeight( newSize );
+            frame.moveCenter( center );
+            pathHandle->SetFrame( frame );
+
+            float newPressure = Clamp( frame.width()/2 / mTool->getSize(), 0.0, 1.0 );
+
+            sPointData p = mTool->PathGetPoint( mHandleIndex );
+            p.mPressure = newPressure;
+
+            mTool->PathSetPoint( mHandleIndex, p );
         }
+
+        mTool->CancelDrawing();
+        mTool->DrawFullPath();
+        mClip->DirtyAll();
 
         return  true;
     }
@@ -139,10 +159,10 @@ cHUDPath::_LayoutChildren()
     {
 		sPointData& point = mPath[ i ];
 		auto child = dynamic_cast< cHUDHandlePath* >( mChildrenHUDs[ i ] );
+        const int handleSize = ( mTool->getSize() * point.mPressure * 2 ) + 1;
 
-		QRect frame( point.mPosition.x() -HANDLESIZE/2, point.mPosition.y() -HANDLESIZE/2, HANDLESIZE, HANDLESIZE );
+		QRect frame( point.mPosition.x() -handleSize/2, point.mPosition.y() -handleSize/2, handleSize, handleSize );
         child->SetFrame( frame );
-        child->setSize( ( mTool->getSize() * point.mPressure * 2 ) + 1 );
     }
 }
 

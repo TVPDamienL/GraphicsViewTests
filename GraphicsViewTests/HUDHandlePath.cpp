@@ -31,7 +31,8 @@ cHUDHandlePath::Draw( QPainter* iPainter )
     QTransform parentsTransforms = mParentView->GetTransform();
 
     QPointF center = mOriginalFrame.center();
-    QRect circleRect( center.x() - mSize/2, center.y() - mSize/2, mSize, mSize );
+    const int size = mOriginalFrame.width();
+    QRect circleRect( center.x() - size/2, center.y() - size /2, size , size  );
     iPainter->drawEllipse( parentsTransforms.mapRect( circleRect ) );
     //iPainter->drawRect( parentsTransforms.mapRect( mPressureHandle->GetFrame() ) );
 
@@ -60,14 +61,16 @@ cHUDHandlePath::Event( QEvent * iEvent )
 }
 
 
-void
-cHUDHandlePath::setSize( float size )
+bool
+cHUDHandlePath::ContainsPoint( const QPointF & iPoint ) const
 {
-    mSize = size;
-    QPoint handleCenter( mOriginalFrame.center().x(), mOriginalFrame.center().y() );
-    QRect handleRect( handleCenter.x() - HANDLESIZE/2 + mSize/2, handleCenter.y() - HANDLESIZE/2, HANDLESIZE, HANDLESIZE );
+    for( auto handle : mChildrenHUDs )
+    {
+        if( handle->ContainsPoint( iPoint ) )
+            return  true;
+    }
 
-    mPressureHandle->SetFrame( handleRect );
+    return  cHUDObject::ContainsPoint( iPoint );
 }
 
 
@@ -75,8 +78,9 @@ void
 cHUDHandlePath::SetFrame( const QRectF & iFrame )
 {
     cHUDObject::SetFrame( iFrame );
-    QPoint handleCenter( mOriginalFrame.center().x(), mOriginalFrame.center().y() );
-    QRect handleRect( handleCenter.x() - HANDLESIZE/2 + mSize/2, handleCenter.y() - HANDLESIZE/2, HANDLESIZE, HANDLESIZE );
+    const float size = iFrame.width();
+    QPointF handleCenter( iFrame.center().x(), iFrame.center().y() );
+    QRect handleRect( handleCenter.x() - HANDLESIZE/2 + size/2, handleCenter.y() - HANDLESIZE/2, HANDLESIZE, HANDLESIZE );
 
     mPressureHandle->SetFrame( handleRect );
 }
@@ -94,11 +98,3 @@ cHUDHandlePath::GetHandlePtr() const
 {
     return  mPressureHandle;
 }
-
-
-cHUDObject*
-cHUDHandlePath::GetVisibleHUDObjectAtPos( const QPointF & iPoint )
-{
-    return nullptr;
-}
-

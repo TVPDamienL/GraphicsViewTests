@@ -23,7 +23,7 @@ cToolSimpleBrush::cToolSimpleBrush( QObject * iParent ) :
     // Some debug values to work with
     mToolSize = 50;
     mColor = Qt::red;
-    mStep = 1.5;
+    mStep = 1.0;
     mOpacity = 0.5F;
     mApplyProfile = true;
 
@@ -184,10 +184,6 @@ cToolSimpleBrush::MoveDrawing( sPointData iPointData )
 void
 cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
 {
-    //iPressure = 0.16;
-    _mToolSizeAfterPressure = Max( mToolSize * iPressure, 1.0F );
-
-
     const int baseDiameter = mToolSize * 2 + 1; // To get the odd diameter
     const int radius = mToolSize * iPressure;
     const int diam = radius*2 + 1;
@@ -305,13 +301,6 @@ cToolSimpleBrush::CancelDrawing()
     MTHardFillF( mStampBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(), mDrawingContext->rect(), Qt::transparent );
 
     mDirtyArea = mDrawingContext->rect();
-}
-
-
-float
-cToolSimpleBrush::_GetStepInPixelValue() const
-{
-    return  std::max( mStep * _mToolSizeAfterPressure, 1.0F );
 }
 
 

@@ -67,7 +67,8 @@ protected:
     // This method returns the amount of pixel needed to reach the next dot
     // It's a percentage of the toolsize, and can be rederivated to include pressure
     // Because step is always depending on size
-    virtual  float   _GetStepInPixelValue() const;
+    //virtual  float   _GetStepInPixelValue( float iPressure ) const;
+    virtual  float   _GetHalfStepInPixelValue( float iPressure ) const;
 
 protected:
     int                         mToolSize;
@@ -80,7 +81,8 @@ protected:
     QRect                       mDirtyArea;
 
     int                         mLastRenderedPathIndex;
-    float                       mRequiredStepLength;
+    float                       mLeftover = 0.0;
+    bool                        mTruc = false;
 
     QImage*                     _mPreviousDrawingContext = 0;
     float*                      _mFloatBuffer = 0;

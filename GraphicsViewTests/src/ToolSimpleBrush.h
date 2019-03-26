@@ -51,7 +51,6 @@ public:
 
 
 protected:
-    virtual  float   _GetStepInPixelValue() const;
     void            PrepareTool();
 
 

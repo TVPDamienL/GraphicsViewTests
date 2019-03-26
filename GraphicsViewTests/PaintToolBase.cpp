@@ -21,9 +21,10 @@ cPaintToolBase::cPaintToolBase( QObject *parent ) :
     ToolBase( parent ),
     mAlphaMask( 0 )
 {
-    mStep = 0.1;
+    mStep = 1.0;
     mLastRenderedPathIndex = 0;
-    mRequiredStepLength = _GetStepInPixelValue();
+    mLeftover = _GetHalfStepInPixelValue( 1.0 );
+    mTruc = false;
 }
 
 
@@ -93,7 +94,8 @@ void
 cPaintToolBase::StartDrawing( QImage* iDC, sPointData iPointData )
 {
     mPath.clear();
-    mRequiredStepLength = 0;
+    mLeftover = 0;
+    mTruc = false;
     mLastRenderedPathIndex = 0;
     mDrawingContext = iDC;
 
@@ -134,7 +136,8 @@ cPaintToolBase::DrawFullPath()
     if( mPath.size() <= 0 )
         return;
 
-    mRequiredStepLength = 0;
+    mLeftover = 0;
+    mTruc = false;
     mLastRenderedPathIndex = 0;
 
     DrawPathFromLastRenderedPoint();
@@ -154,6 +157,7 @@ cPaintToolBase::DrawPathFromPointToPoint( int a, int b )
 {
     if( mPath.size() <= 1 )
         return;
+    mTruc = false;
 
     for( int i = a; i < b; ++i )
     {
@@ -164,25 +168,24 @@ cPaintToolBase::DrawPathFromPointToPoint( int a, int b )
         float  pressure_p2 = mPath[ i + 1 ].mPressure;
         float  rotation_p1 = mPath[ i ].mRotation;
         float  rotation_p2 = mPath[ i + 1 ].mRotation;
-        float distance = Distance2Points( p1, p2 );
-        float subPression = pressure_p2 - pressure_p1;
-        float subRotation = rotation_p2 - rotation_p1;
+        float  distance = Distance2Points( p1, p2 );
+        float  subPression = pressure_p2 - pressure_p1;
+        float  subRotation = rotation_p2 - rotation_p1;
 
         // Two identical points -> SKIP
         if( abs( distance ) < 0.01 )
             continue;
 
         // Not enough distance on that path segment to draw a dot, so we'll see on the next one, after decreasing the requiredToStep
-        if( mRequiredStepLength - distance > 0 )
+        if( mLeftover - distance > 0 )
         {
-            mRequiredStepLength -= distance;
+            mLeftover -= distance;
             continue;
         }
 
         // Getting the directionnal vector, that'll be used to find all points on the segment
         QVector2D stepVectorNormalized = QVector2D( p2 - p1 ).normalized();
         QPointF stepVectorNormalizedAsPF = stepVectorNormalized.toPointF();
-
 
         // From here, we split segment and draw dots
         // ==================================
@@ -191,33 +194,62 @@ cPaintToolBase::DrawPathFromPointToPoint( int a, int b )
         float remainingDistance = distance; // The distance left of the segment, that still needs split
                                             //qDebug() << "Remaining : " << remainingDistance;
         QPoint startingPoint = p1;
+        float pressure = pressure_p1;
 
+        // Drawing first dot using spare distance from previous stroke
+        QPointF leftoverVect = stepVectorNormalizedAsPF * mLeftover;
+        remainingDistance -= mLeftover;
+        float ratio = 1.0 - (remainingDistance)/distance;
+        pressure = pressure_p1 + subPression * ratio;
 
-        // If spare steps from previous it, we apply it, and then use this point as first
-        if( abs( mRequiredStepLength - _GetStepInPixelValue() ) > 0.1F )
-        {
-            startingPoint = __DrawDotVectorTruc_RequiresAName_( p1, stepVectorNormalizedAsPF * mRequiredStepLength, pressure_p1, rotation_p1 );
-            remainingDistance -= mRequiredStepLength;
-        }
+        //if( mTruc )
+        //{
+        //    mTruc = false;
+        //    float pixtep = _GetHalfStepInPixelValue( pressure );
+        //    leftoverVect += stepVectorNormalizedAsPF * pixtep;
+        //    remainingDistance -= pixtep;
+
+        //    if( remainingDistance < 0 )
+        //    {
+        //        mLeftover = -remainingDistance;
+        //        continue;
+        //    }
+        //}
+
+        startingPoint = __DrawDotVectorTruc_RequiresAName_( p1, leftoverVect, pressure, rotation_p1 );
 
         // Now, we go step by step
-        int count = 1; // Counting how many split have been drawn
-
+        QPointF stepSum( 0, 0 );
 
                        // We split the segment using mStep, and draw dots on each step while there is room on the segment
-        while( remainingDistance >= _GetStepInPixelValue() )
+        while( remainingDistance >= 0 )
         {
-            float ratio = 1.0 - remainingDistance/distance;
+            float pixelStep = _GetHalfStepInPixelValue( pressure );
+            stepSum += stepVectorNormalizedAsPF * pixelStep;
+            remainingDistance -= pixelStep;
 
-            float pressure = pressure_p1 + subPression * ratio;
+            //if( remainingDistance <= 0 )
+            //{
+            //    mTruc = true;
+            //    break;
+            //}
+
+            ratio = 1.0 - (remainingDistance)/distance;
+            pressure = pressure_p1 + subPression * ratio;
+
             float rotation = rotation_p1 + subRotation * ratio;
-            __DrawDotVectorTruc_RequiresAName_( startingPoint, stepVectorNormalizedAsPF * _GetStepInPixelValue() * count, pressure, rotation );
-            remainingDistance -= _GetStepInPixelValue();
-            ++count;
+
+            pixelStep = _GetHalfStepInPixelValue( pressure );
+            stepSum += stepVectorNormalizedAsPF * pixelStep;
+            remainingDistance -= pixelStep;
+
+            if( remainingDistance <= 0 )
+                break;
+
+            __DrawDotVectorTruc_RequiresAName_( startingPoint, stepSum, pressure, rotation );
         }
 
-        // Here, we probably have space between the last dot and the next point, not enough for a step, but still space, so we remember it for next iteration
-        mRequiredStepLength = _GetStepInPixelValue() - remainingDistance;
+        mLeftover = -remainingDistance; // because  remaining will be negative
     }
 }
 
@@ -324,8 +356,15 @@ cPaintToolBase::__DrawDotVectorTruc_RequiresAName_( const QPoint& iStart, const 
 }
 
 
+//float
+//cPaintToolBase::_GetStepInPixelValue( float iPressure ) const
+//{
+//    return  std::max( mStep * mToolSize*2 * iPressure, 1.0F );
+//}
+
+
 float
-cPaintToolBase::_GetStepInPixelValue() const
+cPaintToolBase::_GetHalfStepInPixelValue( float iPressure ) const
 {
-    return  std::max( mStep * mToolSize, 1.0F );
+    return  std::max( mStep * mToolSize * iPressure, 1.0F );
 }

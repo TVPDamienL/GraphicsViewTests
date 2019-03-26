@@ -15,8 +15,7 @@ public:
     virtual  void  Draw( QPainter* iPainter ) override;
     virtual  bool  Event( QEvent* iEvent ) override;
 
-public:
-    void   setSize( float size );
+    virtual  bool   ContainsPoint( const QPointF& iPoint ) const override;
 
 public:
     void   SetFrame( const QRectF& iFrame ) override;
@@ -25,12 +24,9 @@ public:
 public:
     const cHUDHandle* GetHandlePtr() const;
 
-    virtual  cHUDObject* GetVisibleHUDObjectAtPos( const QPointF& iPoint ) override;
-
 
 public:
     QColor mColor;
-    float  mSize;
 
     cHUDHandle* mPressureHandle;
 };
