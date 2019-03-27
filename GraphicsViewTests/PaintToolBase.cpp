@@ -192,25 +192,20 @@ cPaintToolBase::DrawPathFromPointToPoint( int a, int b )
         // ==================================
 
         float remainingDistance = distance; // The distance left of the segment, that still needs split
-                                            //qDebug() << "Remaining : " << remainingDistance;
         QPoint startingPoint = p1;
-        float pressure = pressure_p1;
-        QPointF stepSum( 0, 0 );
-        QPointF leftoverVect = stepVectorNormalizedAsPF * mLeftover;
+        QPointF stepSum = stepVectorNormalizedAsPF * mLeftover;
+        remainingDistance -= mLeftover;
 
         while( remainingDistance >= 0 )
         {
             float ratio = 1.0 - (remainingDistance)/distance;
             float pressure = pressure_p1 + subPression * ratio;
 
-            startingPoint = __DrawDotVectorTruc_RequiresAName_( startingPoint, stepSum + leftoverVect, pressure, rotation_p1 );
+            startingPoint = __DrawDotVectorTruc_RequiresAName_( startingPoint, stepSum, pressure, rotation_p1 );
 
             float pixelStep = _GetHalfStepInPixelValue( pressure ) * 2;
             stepSum = stepVectorNormalizedAsPF * pixelStep;
-            remainingDistance -= pixelStep + mLeftover;
-
-            leftoverVect = QPointF( 0, 0 );
-            mLeftover = 0;
+            remainingDistance -= pixelStep;
         }
 
         mLeftover = -remainingDistance; // because  remaining will be negative
