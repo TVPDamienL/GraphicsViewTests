@@ -25,7 +25,7 @@ cToolSimpleBrush::cToolSimpleBrush( QObject * iParent ) :
     mColor = Qt::red;
     mStep = 1.0;
     mOpacity = 1.F;
-    mApplyProfile = false;
+    mApplyProfile = true;
 
     buildTool();
 }

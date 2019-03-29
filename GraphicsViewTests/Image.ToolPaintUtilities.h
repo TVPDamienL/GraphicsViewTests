@@ -16,18 +16,12 @@
 static
 inline
 void
-ReadImageWithFloatArea( const QPointF& iOffset, int iX, int iY, const float* iImage, int iImageWidth, int iImageHeight, float* oRed, float* oGreen, float *oBlue, float* oAlpha )
+ReadImageWithFloatArea( const QPointF& iOffset, int iX, int iY, float iTopLeftRatio, float iTopRightRatio, float iBottomLeftRatio, float iBottomRightRatio,
+                        const float* iImage, int iImageWidth, int iImageHeight,
+                        float* oRed, float* oGreen, float *oBlue, float* oAlpha )
 {
-    // Keep offset between 0 and 1
-    // TODO: if offset is larger than 1 or -1, need to do multiple +1 or -1 : 2.16 -> 0.16
-    QPointF offsetFinal = iOffset;
-    if( offsetFinal.x() < 0 )
-        offsetFinal.setX( offsetFinal.x() + 1 );
-    if( offsetFinal.y() < 0 )
-        offsetFinal.setY( offsetFinal.y() + 1 );
 
-
-    const float* scanline = iImage;
+    const float* scanline;
     const int bpl = iImageWidth * 4;
 
     // Cuz int cut on negative value cuts up, down down : 1.2 -> 1 ==> Reduction :: -1.2 -> -1.0 ==> Increase
@@ -58,65 +52,56 @@ ReadImageWithFloatArea( const QPointF& iOffset, int iX, int iY, const float* iIm
     *oBlue  = 0.F;
     *oAlpha = 0.F;
 
-    // This could be done once, not in every call of this fct
-    float topLeftRatio      = (1-offsetFinal.y()) * (1-offsetFinal.x());
-    float topRightRatio     = (1-offsetFinal.y()) * offsetFinal.x();
-    float bottomRightRatio  = offsetFinal.y() * offsetFinal.x();
-    float bottomLeftRatio   = offsetFinal.y() * (1-offsetFinal.x());
-
+    scanline = iImage + minY * bpl + minX * 4;
+    // Top left
     if( minX >= 0 && minX < iImageWidth && minY >= 0 && minY < iImageHeight )
     {
-        const int index = minY * bpl + minX * 4;
-        *oBlue  += iImage[ index + 0 ] * topLeftRatio;
-        *oGreen += iImage[ index + 1 ] * topLeftRatio;
-        *oRed   += iImage[ index + 2 ] * topLeftRatio;
-        *oAlpha += iImage[ index + 3 ] * topLeftRatio;
+        *oBlue  += *scanline * iTopLeftRatio; ++scanline;
+        *oGreen += *scanline * iTopLeftRatio; ++scanline;
+        *oRed   += *scanline * iTopLeftRatio; ++scanline;
+        *oAlpha += *scanline * iTopLeftRatio; ++scanline;
     }
-
-    if( minX >= 0 && minX < iImageWidth && maxY >= 0 && maxY < iImageHeight )
+    else
     {
-        const int index = maxY * bpl + minX * 4;
-        *oBlue  += iImage[ index + 0 ] * bottomLeftRatio;
-        *oGreen += iImage[ index + 1 ] * bottomLeftRatio;
-        *oRed   += iImage[ index + 2 ] * bottomLeftRatio;
-        *oAlpha += iImage[ index + 3 ] * bottomLeftRatio;
+        scanline += 4;
     }
 
+    // Top right
     if( maxX >= 0 && maxX < iImageWidth && minY >= 0 && minY < iImageHeight )
     {
-        const int index = minY * bpl + maxX * 4;
-        *oBlue  += iImage[ index + 0 ] * topRightRatio;
-        *oGreen += iImage[ index + 1 ] * topRightRatio;
-        *oRed   += iImage[ index + 2 ] * topRightRatio;
-        *oAlpha += iImage[ index + 3 ] * topRightRatio;
+        *oBlue  += *scanline * iTopRightRatio; ++scanline;
+        *oGreen += *scanline * iTopRightRatio; ++scanline;
+        *oRed   += *scanline * iTopRightRatio; ++scanline;
+        *oAlpha += *scanline * iTopRightRatio; ++scanline;
+    }
+    else
+    {
+        scanline += 4;
     }
 
+
+    scanline += bpl - 8;
+    // Bottom left
+    if( minX >= 0 && minX < iImageWidth && maxY >= 0 && maxY < iImageHeight )
+    {
+        *oBlue  += *scanline * iBottomLeftRatio; ++scanline;
+        *oGreen += *scanline * iBottomLeftRatio; ++scanline;
+        *oRed   += *scanline * iBottomLeftRatio; ++scanline;
+        *oAlpha += *scanline * iBottomLeftRatio; ++scanline;
+    }
+    else
+    {
+        scanline += 4;
+    }
+
+    // Bottom Right
     if( maxX >= 0 && maxX < iImageWidth && maxY >= 0 && maxY < iImageHeight )
     {
-        const int index = maxY * bpl + maxX * 4;
-        *oBlue  += iImage[ index + 0 ] * bottomRightRatio;
-        *oGreen += iImage[ index + 1 ] * bottomRightRatio;
-        *oRed   += iImage[ index + 2 ] * bottomRightRatio;
-        *oAlpha += iImage[ index + 3 ] * bottomRightRatio;
+        *oBlue  += *scanline * iBottomRightRatio; ++scanline;
+        *oGreen += *scanline * iBottomRightRatio; ++scanline;
+        *oRed   += *scanline * iBottomRightRatio; ++scanline;
+        *oAlpha += *scanline * iBottomRightRatio; ++scanline;
     }
-
-    //for( int y = startingY; y <= endingY; ++y )
-    //{
-    //    const int indexLarge = y * bpl;
-    //    for( int x = startingX; x <= endingX; ++x )
-    //    {
-    //        const int index = indexLarge + x;
-    //        *oBlue  += iImage[ index + 0 ];
-    //        *oGreen += iImage[ index + 1 ];
-    //        *oRed   += iImage[ index + 2 ];
-    //        *oAlpha += iImage[ index + 3 ];
-    //    }
-    //}
-
-    //*oBlue  /= total;
-    //*oGreen /= total;
-    //*oRed   /= total;
-    //*oAlpha /= total;
 }
 
 
@@ -268,6 +253,20 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
     QRectF floatArea( point.x(), point.y(), iSourceWidth, iSourceHeight );
     const QPointF subReadOffset = -(point - QPoint( point.x(), point.y() )); // Basically the offset representing the amount that has been cut by int
 
+    // Keep offset between 0 and 1
+    // TODO: if offset is larger than 1 or -1, need to do multiple +1 or -1 : 2.16 -> 0.16
+    // noneed: indeed sudReadBuffer is the subtraction between a flot and its int cut, which can't be > 1
+    QPointF offsetFinal = subReadOffset;
+    if( offsetFinal.x() < 0 )
+        offsetFinal.setX( offsetFinal.x() + 1 );
+    if( offsetFinal.y() < 0 )
+        offsetFinal.setY( offsetFinal.y() + 1 );
+
+    float topLeftRatio      = (1-offsetFinal.y())   * (1-offsetFinal.x());
+    float topRightRatio     = (1-offsetFinal.y())   * offsetFinal.x();
+    float bottomRightRatio  = offsetFinal.y()       * offsetFinal.x();
+    float bottomLeftRatio   = offsetFinal.y()       * (1-offsetFinal.x());
+
     // Source bbox
     const int minX = point.x();
     const int maxX = minX + iSourceWidth; // Max is not min + width -1 here because we want to expand the int area by one, to handle float area entirely
@@ -329,7 +328,9 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
                 for( int x = startX; x < endX; ++x )
                 {
                     float red2, green2, blue2, alpha2;
-                    ReadImageWithFloatArea( subReadOffset, (x - minX), (y - minY), source, iSourceWidth, iSourceHeight, &red2, &green2, &blue2, &alpha2 );
+                    ReadImageWithFloatArea( subReadOffset, (x - minX), (y - minY), topLeftRatio, topRightRatio, bottomLeftRatio, bottomRightRatio,
+                                            source, iSourceWidth, iSourceHeight,
+                                            &red2, &green2, &blue2, &alpha2 );
 
 
                     float alpha = *(sourceScanline + 3);
