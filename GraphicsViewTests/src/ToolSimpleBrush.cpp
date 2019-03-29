@@ -21,11 +21,11 @@ cToolSimpleBrush::cToolSimpleBrush( QObject * iParent ) :
     cPaintToolBase( iParent )
 {
     // Some debug values to work with
-    mToolSize = 50;
+    mToolSize = 1;
     mColor = Qt::red;
     mStep = 1.0;
-    mOpacity = 0.5F;
-    mApplyProfile = true;
+    mOpacity = 1.F;
+    mApplyProfile = false;
 
     buildTool();
 }
@@ -182,7 +182,7 @@ cToolSimpleBrush::MoveDrawing( sPointData iPointData )
 
 
 void
-cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
+cToolSimpleBrush::DrawDot( float iX, float iY, float iPressure, float iRotation )
 {
     const int baseDiameter = mToolSize * 2 + 1; // To get the odd diameter
     const int radius = mToolSize * iPressure;
@@ -190,10 +190,10 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
 
     const float scale = float(diam) / float(baseDiameter);
 
-    const int minX = iX - radius;
-    const int maxX = minX + diam;
-    const int minY = iY - radius;
-    const int maxY = minY + diam;
+    const float minX = iX - radius;
+    const float maxX = minX + diam;
+    const float minY = iY - radius;
+    const float maxY = minY + diam;
 
     // Basic out of bounds elimination
     if( minX >= mDrawingContext->width() || minY >= mDrawingContext->height() )
@@ -201,10 +201,10 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
     if( maxX < 0 || maxY < 0 )
         return;
 
-    int startingX = minX < 0 ? 0 : minX;
-    int endingX = maxX >= mDrawingContext->width() ? mDrawingContext->width() - 1 : maxX;
-    int startingY = minY < 0 ? 0 : minY;
-    int endingY = maxY >= mDrawingContext->height() ? mDrawingContext->height() - 1 : maxY;
+    int startingX = int( minX ) < 0 ? 0 : int( minX );
+    int endingX = int( maxX + 1 ) >= mDrawingContext->width() ? mDrawingContext->width() - 1 : int( maxX + 1 );
+    int startingY = int( minY ) < 0 ? 0 : int( minY );
+    int endingY = int( maxY + 1 ) >= mDrawingContext->height() ? mDrawingContext->height() - 1 : int( maxY + 1 );
 
     auto trans = QTransform();
     int indexMip = std::min( log2( 1/scale ), float( mMipMapF.count() - 1 ) );
@@ -226,8 +226,6 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
     //TransformNearestNeighbourDirectOutputNormalBlendFParallel( mMipMapF[ indexMip ], mToolSize * startingScale, mToolSize * startingScale,
     //                                                           _mFloatBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
     //                                                           mDrawingContext, transfo, QPoint( 0, 0 ) );
-
-
 
     MTDownscaleBoxAverageDirectAlphaFDry( mMipMapF[ indexMip ], mipMapSizeAtIndex, mipMapSizeAtIndex,
                                        mDryBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
@@ -258,7 +256,7 @@ cToolSimpleBrush::DrawDot( int iX, int iY, float iPressure, float iRotation )
 
 
 void
-cToolSimpleBrush::DrawLine( const QPoint& iP1, const QPoint& iP2, float iPressure1, float iRotation1, float iPressure2, float iRotation2 )
+cToolSimpleBrush::DrawLine( const QPointF& iP1, const QPointF& iP2, float iPressure1, float iRotation1, float iPressure2, float iRotation2 )
 {
 }
 

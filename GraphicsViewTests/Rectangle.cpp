@@ -27,10 +27,10 @@ cShapeRectangle::StartDrawing( QImage * iImage, sPointData iPointData )
 {
     mPaintTool->StartDrawing( iImage, iPointData );
 
-    mPolygon.setPoint( 0, iPointData.mPosition );
-    mPolygon.setPoint( 1, iPointData.mPosition );
-    mPolygon.setPoint( 2, iPointData.mPosition );
-    mPolygon.setPoint( 3, iPointData.mPosition );
+    mPolygon[0] = iPointData.mPosition;
+    mPolygon[1] = iPointData.mPosition;
+    mPolygon[2] = iPointData.mPosition;
+    mPolygon[3] = iPointData.mPosition;
     mDrawingContext = mPaintTool->DrawingContext();
 
     EmitValueChanged( kShapeStarted );
@@ -40,10 +40,10 @@ cShapeRectangle::StartDrawing( QImage * iImage, sPointData iPointData )
 QRect
 cShapeRectangle::MoveDrawing( sPointData iPointData )
 {
-    mPolygon.setPoint( 2, iPointData.mPosition );
+    mPolygon[2] = iPointData.mPosition;
 
-    mPolygon.setPoint( 1, mPolygon[ 2 ].x(), mPolygon[ 0 ].y() );
-    mPolygon.setPoint( 3, mPolygon[ 0 ].x(), mPolygon[ 2 ].y() );
+    mPolygon[1] = QPointF( mPolygon[ 2 ].x(), mPolygon[ 0 ].y() );
+    mPolygon[3] = QPointF( mPolygon[ 0 ].x(), mPolygon[ 2 ].y() );
 
     EmitValueChanged( kShapeChanged );
 
@@ -54,8 +54,8 @@ cShapeRectangle::MoveDrawing( sPointData iPointData )
 QRect
 cShapeRectangle::EndDrawing( sPointData iPointData )
 {
-    const QPoint start = mPolygon[ 0 ];
-    const QPoint end = mPolygon[ 2 ];
+    const QPointF start = mPolygon[ 0 ];
+    const QPointF end = mPolygon[ 2 ];
     if( mMode == kStroke )
     {
         sPointData p1;

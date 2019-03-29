@@ -12,6 +12,114 @@
 
 
 
+
+static
+inline
+void
+ReadImageWithFloatArea( const QPointF& iOffset, int iX, int iY, const float* iImage, int iImageWidth, int iImageHeight, float* oRed, float* oGreen, float *oBlue, float* oAlpha )
+{
+    // Keep offset between 0 and 1
+    // TODO: if offset is larger than 1 or -1, need to do multiple +1 or -1 : 2.16 -> 0.16
+    QPointF offsetFinal = iOffset;
+    if( offsetFinal.x() < 0 )
+        offsetFinal.setX( offsetFinal.x() + 1 );
+    if( offsetFinal.y() < 0 )
+        offsetFinal.setY( offsetFinal.y() + 1 );
+
+
+    const float* scanline = iImage;
+    const int bpl = iImageWidth * 4;
+
+    // Cuz int cut on negative value cuts up, down down : 1.2 -> 1 ==> Reduction :: -1.2 -> -1.0 ==> Increase
+    int offX = iOffset.x();
+    if( iOffset.x() < 0 )
+        offX -= 1;
+
+    int minX = iX + offX;
+
+    // Cuz int cut on negative value cuts up, down down : 1.2 -> 1 ==> Reduction :: -1.2 -> -1.0 ==> Increase
+    int offY = iOffset.y();
+    if( iOffset.y() < 0 )
+        offY -= 1;
+
+    int minY = iY + offY;
+
+    const int maxX = minX + 1;
+    const int maxY = minY + 1;
+
+    const int startingX = Clamp( minX, 0, iImageWidth - 1 );
+    const int endingX   = Clamp( maxX, 0, iImageWidth - 1 );
+    const int startingY = Clamp( minY, 0, iImageHeight - 1 );
+    const int endingY   = Clamp( maxY, 0, iImageHeight - 1 );
+    const int total     = (endingX - startingX + 1) * (endingY - startingY + 1);
+
+    *oRed   = 0.F;
+    *oGreen = 0.F;
+    *oBlue  = 0.F;
+    *oAlpha = 0.F;
+
+    // This could be done once, not in every call of this fct
+    float topLeftRatio      = (1-offsetFinal.y()) * (1-offsetFinal.x());
+    float topRightRatio     = (1-offsetFinal.y()) * offsetFinal.x();
+    float bottomRightRatio  = offsetFinal.y() * offsetFinal.x();
+    float bottomLeftRatio   = offsetFinal.y() * (1-offsetFinal.x());
+
+    if( minX >= 0 && minX < iImageWidth && minY >= 0 && minY < iImageHeight )
+    {
+        const int index = minY * bpl + minX * 4;
+        *oBlue  += iImage[ index + 0 ] * topLeftRatio;
+        *oGreen += iImage[ index + 1 ] * topLeftRatio;
+        *oRed   += iImage[ index + 2 ] * topLeftRatio;
+        *oAlpha += iImage[ index + 3 ] * topLeftRatio;
+    }
+
+    if( minX >= 0 && minX < iImageWidth && maxY >= 0 && maxY < iImageHeight )
+    {
+        const int index = maxY * bpl + minX * 4;
+        *oBlue  += iImage[ index + 0 ] * bottomLeftRatio;
+        *oGreen += iImage[ index + 1 ] * bottomLeftRatio;
+        *oRed   += iImage[ index + 2 ] * bottomLeftRatio;
+        *oAlpha += iImage[ index + 3 ] * bottomLeftRatio;
+    }
+
+    if( maxX >= 0 && maxX < iImageWidth && minY >= 0 && minY < iImageHeight )
+    {
+        const int index = minY * bpl + maxX * 4;
+        *oBlue  += iImage[ index + 0 ] * topRightRatio;
+        *oGreen += iImage[ index + 1 ] * topRightRatio;
+        *oRed   += iImage[ index + 2 ] * topRightRatio;
+        *oAlpha += iImage[ index + 3 ] * topRightRatio;
+    }
+
+    if( maxX >= 0 && maxX < iImageWidth && maxY >= 0 && maxY < iImageHeight )
+    {
+        const int index = maxY * bpl + maxX * 4;
+        *oBlue  += iImage[ index + 0 ] * bottomRightRatio;
+        *oGreen += iImage[ index + 1 ] * bottomRightRatio;
+        *oRed   += iImage[ index + 2 ] * bottomRightRatio;
+        *oAlpha += iImage[ index + 3 ] * bottomRightRatio;
+    }
+
+    //for( int y = startingY; y <= endingY; ++y )
+    //{
+    //    const int indexLarge = y * bpl;
+    //    for( int x = startingX; x <= endingX; ++x )
+    //    {
+    //        const int index = indexLarge + x;
+    //        *oBlue  += iImage[ index + 0 ];
+    //        *oGreen += iImage[ index + 1 ];
+    //        *oRed   += iImage[ index + 2 ];
+    //        *oAlpha += iImage[ index + 3 ];
+    //    }
+    //}
+
+    //*oBlue  /= total;
+    //*oGreen /= total;
+    //*oRed   /= total;
+    //*oAlpha /= total;
+}
+
+
 static
 void
 MTBlendImageNormalF( const float* source, const int iSourceWidth, const int iSourceHeight,  // Source we will blend
@@ -146,7 +254,7 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
 
                         float* destination,         // The float output result buffer
                         QImage* iParallelRender,    // The 8bit output buffer
-                        const QPoint& point,
+                        const QPointF& point,
                         const float maxAlpha )
 {
     const uchar maxAlphaRanged = maxAlpha * 255.F;
@@ -156,12 +264,18 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
     uchar* parallelData = iParallelRender->bits();
     const int parallelBPL = iParallelRender->bytesPerLine();
 
+    // Final area in float
+    QRectF floatArea( point.x(), point.y(), iSourceWidth, iSourceHeight );
+    const QPointF subReadOffset = -(point - QPoint( point.x(), point.y() )); // Basically the offset representing the amount that has been cut by int
+
     // Source bbox
     const int minX = point.x();
-    const int maxX = minX + iSourceWidth - 1;
+    const int maxX = minX + iSourceWidth; // Max is not min + width -1 here because we want to expand the int area by one, to handle float area entirely
     const int minY = point.y();
-    const int maxY = minY + iSourceHeight - 1;
+    const int maxY = minY + iSourceHeight; // Max is not min + width -1 here because we want to expand the int area by one, to handle float area entirely
 
+
+    // Clipped bounds == iteration limits
     const int startingX = minX < 0 ? 0 : minX;
     const int endingX = maxX >= iWidth ? iWidth - 1 : maxX;
     const int startingY = minY < 0 ? 0 : minY;
@@ -198,8 +312,13 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
             const int endX = startX + iRange.mX;
             const int xOffset = startX * 4;
 
+            float yRatio = 1.F;
+            float xRatio = 1.F;
+            float pixelRatio = 1.F;
+
             for( int y = startY; y < endY; ++y )
             {
+                // Indexes and stuff
                 sourceScanline  = source + (y - minY) * sourceBPL + (startX - minX) * 4;
                 const int indexOffset = y * buffersBPL + xOffset;
                 dryScan  = drybuffer + indexOffset;
@@ -209,8 +328,12 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
 
                 for( int x = startX; x < endX; ++x )
                 {
+                    float red2, green2, blue2, alpha2;
+                    ReadImageWithFloatArea( subReadOffset, (x - minX), (y - minY), source, iSourceWidth, iSourceHeight, &red2, &green2, &blue2, &alpha2 );
+
+
                     float alpha = *(sourceScanline + 3);
-                    if( alpha == 0 ) // Skip if alpha is nil
+                    if( alpha2 == 0 ) // Skip if alpha is nil
                     {
                         sourceScanline += 4;
                         dryScan += 4;
@@ -220,16 +343,16 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
                         continue;
                     }
 
-                    const float inverseCeiled = 1 - (alpha / maxAlphaRanged);
+                    const float inverseCeiled = (1 - (alpha2 / maxAlphaRanged)) * pixelRatio;
 
                     float* gPtr = stampScan + 1;
                     float* rPtr = stampScan + 2;
                     float* alphaPtr = stampScan + 3;
 
-                    *stampScan  = *sourceScanline + *stampScan  * inverseCeiled; ++sourceScanline;
-                    *gPtr       = *sourceScanline + *gPtr       * inverseCeiled; ++sourceScanline;
-                    *rPtr       = *sourceScanline + *rPtr       * inverseCeiled; ++sourceScanline;
-                    *alphaPtr   = *sourceScanline + *alphaPtr   * inverseCeiled; ++sourceScanline;
+                    *stampScan  = blue2 + *stampScan  * inverseCeiled; ++sourceScanline;
+                    *gPtr       = green2 + *gPtr       * inverseCeiled; ++sourceScanline;
+                    *rPtr       = red2 + *rPtr       * inverseCeiled; ++sourceScanline;
+                    *alphaPtr   = alpha2 + *alphaPtr   * inverseCeiled; ++sourceScanline;
 
                     const float transparencyAmountInverse = 1 - *alphaPtr / 255.F;
 
@@ -533,7 +656,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                                     QImage* iParallelRender,                                             // The uchar buffer we wanna write to at the same time
                                     float* iAlphaMask,  const int iAlphaWidth, const int iAlphaHeight,   // An alpha mask to apply to the blend
                                     const QTransform& iTransform, const QPoint& iOrigin,
-                                    const float maxalpha)                // Transform and its origin to apply
+                                    const float maxalpha )                // Transform and its origin to apply
 {
     QTransform transfoFinal = iTransform;
 
@@ -544,23 +667,30 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
 
     // Transformed bbox
     QPolygonF outputRect = MapToPolygonF( iTransform, inputArea );
-    for( auto& point : outputRect )
-    {
-        point.setX( std::round( point.x() ) );
-        point.setY( std::round( point.y() ) );
-    }
+    //for( auto& point : outputRect )
+    //{
+    //    point.setX( std::round( point.x() ) );
+    //    point.setY( std::round( point.y() ) );
+    //}
 
-    QRect transfoBBox = ExclusiveBoundingBox( outputRect );
+    QRect transfoBBoxI = ExclusiveBoundingBox( outputRect );
+    QRectF transfoBBoxF = ExclusiveBoundingBoxF( outputRect );
 
-    int minX = transfoBBox.left();
-    int minY = transfoBBox.top();
+    // Add one because float will go from 0.2 to 1.2 for example
+    // So we need to cover pixels from 0 to 2
+    // 0 is the min being int cut, 2 is max being int cut + 1
+    transfoBBoxI.setWidth( transfoBBoxI.width() + 1 );
+    transfoBBoxI.setHeight( transfoBBoxI.height() + 1 );
 
-    transfoBBox = transfoBBox.intersected( QRect( 0, 0, iOutputBuffersWidth, iOutputBuffersHeight ) ); // Intersected here will be inclusive, so intersection with 1080 and 1086 = 1080 for x2
+    int minX = transfoBBoxI.left();
+    int minY = transfoBBoxI.top();
 
-    int startingX = transfoBBox.left();
-    int startingY = transfoBBox.top();
-    int endingX = transfoBBox.right() >= iOutputBuffersWidth ? iOutputBuffersWidth - 1 : transfoBBox.right();
-    int endingY = transfoBBox.bottom() >= iOutputBuffersHeight ? iOutputBuffersHeight - 1 : transfoBBox.bottom();
+    transfoBBoxI = transfoBBoxI.intersected( QRect( 0, 0, iOutputBuffersWidth, iOutputBuffersHeight ) ); // Intersected here will be inclusive, so intersection with 1080 and 1086 = 1080 for x2
+
+    int startingX = transfoBBoxI.left();
+    int startingY = transfoBBoxI.top();
+    int endingX = transfoBBoxI.right() >= iOutputBuffersWidth ? iOutputBuffersWidth - 1 : transfoBBoxI.right();
+    int endingY = transfoBBoxI.bottom() >= iOutputBuffersHeight ? iOutputBuffersHeight - 1 : transfoBBoxI.bottom();
 
     auto check = endingX - startingX + 1;
     if( check % 2 == 0 )
@@ -577,7 +707,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
 
     if( xScaleFactorOriginal >= 1.0 || yScaleFactorOriginal >= 1.0 )
     {
-        MTBlendImageNormalFDry( iInput, iWidth, iHeight, background, iOutputBuffersWidth, iOutputBuffersHeight, stampBuffer, iOutput, iParallelRender, QPoint( minX, minY ), maxalpha );
+        MTBlendImageNormalFDry( iInput, iWidth, iHeight, background, iOutputBuffersWidth, iOutputBuffersHeight, stampBuffer, iOutput, iParallelRender, transfoBBoxF.topLeft(), maxalpha );
         return;
     }
 

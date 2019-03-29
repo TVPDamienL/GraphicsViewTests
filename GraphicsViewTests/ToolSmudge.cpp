@@ -77,7 +77,7 @@ cToolSmudge::MoveDrawing( sPointData iPointData )
 
 
 void
-cToolSmudge::DrawDot( int iX, int iY, float iPressure, float iRotation )
+cToolSmudge::DrawDot( float iX, float iY, float iPressure, float iRotation )
 {
     if( _mFloatExtract )
     {
@@ -170,7 +170,7 @@ cToolSmudge::DrawDot( int iX, int iY, float iPressure, float iRotation )
 
 
 void
-cToolSmudge::DrawLine( const QPoint& iP1, const QPoint& iP2, float iPressure1, float iRotation1, float iPressure2, float iRotation2 )
+cToolSmudge::DrawLine( const QPointF& iP1, const QPointF& iP2, float iPressure1, float iRotation1, float iPressure2, float iRotation2 )
 {
 }
 

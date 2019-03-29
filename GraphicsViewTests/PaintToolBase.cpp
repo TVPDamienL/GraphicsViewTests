@@ -23,8 +23,6 @@ cPaintToolBase::cPaintToolBase( QObject *parent ) :
 {
     mStep = 1.0;
     mLastRenderedPathIndex = 0;
-    mLeftover = _GetHalfStepInPixelValue( 1.0 );
-    mTruc = false;
 }
 
 
@@ -95,7 +93,6 @@ cPaintToolBase::StartDrawing( QImage* iDC, sPointData iPointData )
 {
     mPath.clear();
     mLeftover = 0;
-    mTruc = false;
     mLastRenderedPathIndex = 0;
     mDrawingContext = iDC;
 
@@ -137,7 +134,6 @@ cPaintToolBase::DrawFullPath()
         return;
 
     mLeftover = 0;
-    mTruc = false;
     mLastRenderedPathIndex = 0;
 
     DrawPathFromLastRenderedPoint();
@@ -157,20 +153,19 @@ cPaintToolBase::DrawPathFromPointToPoint( int a, int b )
 {
     if( mPath.size() <= 1 )
         return;
-    mTruc = false;
 
     for( int i = a; i < b; ++i )
     {
         // Setting base variables : starting point, ending point and their distance
-        QPoint p1 = mPath[ i ].mPosition;
-        QPoint p2 = mPath[ i + 1 ].mPosition;
-        float  pressure_p1 = mPath[ i ].mPressure;
-        float  pressure_p2 = mPath[ i + 1 ].mPressure;
-        float  rotation_p1 = mPath[ i ].mRotation;
-        float  rotation_p2 = mPath[ i + 1 ].mRotation;
-        float  distance = Distance2Points( p1, p2 );
-        float  subPression = pressure_p2 - pressure_p1;
-        float  subRotation = rotation_p2 - rotation_p1;
+        QPointF p1          = mPath[ i ].mPosition;
+        QPointF p2          = mPath[ i + 1 ].mPosition;
+        float   pressure_p1 = mPath[ i ].mPressure;
+        float   pressure_p2 = mPath[ i + 1 ].mPressure;
+        float   rotation_p1 = mPath[ i ].mRotation;
+        float   rotation_p2 = mPath[ i + 1 ].mRotation;
+        float   distance    = Distance2Points( p1, p2 );
+        float   subPression = pressure_p2 - pressure_p1;
+        float   subRotation = rotation_p2 - rotation_p1;
 
         // Two identical points -> SKIP
         if( abs( distance ) < 0.01 )
@@ -192,7 +187,7 @@ cPaintToolBase::DrawPathFromPointToPoint( int a, int b )
         // ==================================
 
         float remainingDistance = distance; // The distance left of the segment, that still needs split
-        QPoint startingPoint = p1;
+        QPointF startingPoint = p1;
         QPointF stepSum = stepVectorNormalizedAsPF * mLeftover;
         remainingDistance -= mLeftover;
 
@@ -201,10 +196,10 @@ cPaintToolBase::DrawPathFromPointToPoint( int a, int b )
             float ratio = 1.0 - (remainingDistance)/distance;
             float pressure = pressure_p1 + subPression * ratio;
 
-            startingPoint = __DrawDotVectorTruc_RequiresAName_( startingPoint, stepSum, pressure, rotation_p1 );
+            __DrawDotVectorTruc_RequiresAName_( startingPoint, stepSum, pressure, rotation_p1 );
 
-            float pixelStep = _GetHalfStepInPixelValue( pressure ) * 2;
-            stepSum = stepVectorNormalizedAsPF * pixelStep;
+            float pixelStep = _GetFullStepInPixelValue( pressure );
+            stepSum += stepVectorNormalizedAsPF * pixelStep;
             remainingDistance -= pixelStep;
         }
 
@@ -302,12 +297,11 @@ cPaintToolBase::ClearAlphaMask()
 // ===========================
 
 
-QPoint
-cPaintToolBase::__DrawDotVectorTruc_RequiresAName_( const QPoint& iStart, const QPointF& iVector,  float iPressure, float iRotation )
+QPointF
+cPaintToolBase::__DrawDotVectorTruc_RequiresAName_( const QPointF& iStart, const QPointF& iVector,  float iPressure, float iRotation )
 {
     // This takes a starting point, offsets by a vector, draws a dot there and return the offset point's coordinates
-    QPoint stepVector = QPoint( std::roundf( iVector.x() ), std::roundf( iVector.y() ) );
-    QPoint stepPosition = iStart + stepVector;
+    QPointF stepPosition = iStart + iVector;
 
     DrawDot( stepPosition.x(), stepPosition.y(), iPressure, iRotation );
 
@@ -326,4 +320,11 @@ float
 cPaintToolBase::_GetHalfStepInPixelValue( float iPressure ) const
 {
     return  std::max( mStep * mToolSize * iPressure, 1.0F );
+}
+
+
+float
+cPaintToolBase::_GetFullStepInPixelValue( float iPressure ) const
+{
+    return  std::max( mStep * mToolSize*2 * iPressure, 1.0F );
 }

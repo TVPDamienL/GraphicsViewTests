@@ -42,7 +42,7 @@ cToolSelectionTest::MoveDrawing( sPointData iPointData )
 
 
 void
-cToolSelectionTest::DrawDot( int iX, int iY, float iPressure, float iRotation )
+cToolSelectionTest::DrawDot( float iX, float iY, float iPressure, float iRotation )
 {
 
     uchar* data = mTheSelection->GetSelectionMask()->bits();
@@ -93,7 +93,7 @@ cToolSelectionTest::DrawDot( int iX, int iY, float iPressure, float iRotation )
 
 
 void
-cToolSelectionTest::DrawLine( const QPoint& iP1, const QPoint& iP2, float iPressure1, float iRotation1, float iPressure2, float iRotation2 )
+cToolSelectionTest::DrawLine( const QPointF& iP1, const QPointF& iP2, float iPressure1, float iRotation1, float iPressure2, float iRotation2 )
 {
     // nothing
 }

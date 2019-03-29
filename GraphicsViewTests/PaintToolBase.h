@@ -39,8 +39,8 @@ public:
     virtual  void   CancelDrawing() override;
 
 public:
-    virtual  void   DrawDot( int x, int y, float iPressure, float iRotation ) = 0;
-    virtual  void   DrawLine( const QPoint& iP1, const QPoint& iP2, float iPressure1, float iRotation1, float iPressure2, float iRotation2 ) = 0;
+    virtual  void   DrawDot( float x, float y, float iPressure, float iRotation ) = 0;
+    virtual  void   DrawLine( const QPointF& iP1, const QPointF& iP2, float iPressure1, float iRotation1, float iPressure2, float iRotation2 ) = 0;
     virtual  void   DrawFullPath();
     virtual  void   DrawPathFromLastRenderedPoint();
     virtual  void   DrawPathFromPointToPoint( int a, int b );
@@ -62,13 +62,14 @@ public:
     void  ClearAlphaMask();
 
 protected:
-    QPoint  __DrawDotVectorTruc_RequiresAName_( const QPoint& iStart, const QPointF& iVector, float iPressure, float iRotation );
+    QPointF  __DrawDotVectorTruc_RequiresAName_( const QPointF& iStart, const QPointF& iVector, float iPressure, float iRotation );
 
     // This method returns the amount of pixel needed to reach the next dot
     // It's a percentage of the toolsize, and can be rederivated to include pressure
     // Because step is always depending on size
     //virtual  float   _GetStepInPixelValue( float iPressure ) const;
     virtual  float   _GetHalfStepInPixelValue( float iPressure ) const;
+    virtual  float   _GetFullStepInPixelValue( float iPressure ) const;
 
 protected:
     int                         mToolSize;
@@ -82,7 +83,6 @@ protected:
 
     int                         mLastRenderedPathIndex;
     float                       mLeftover = 0.0;
-    bool                        mTruc = false;
 
     QImage*                     _mPreviousDrawingContext = 0;
     float*                      _mFloatBuffer = 0;

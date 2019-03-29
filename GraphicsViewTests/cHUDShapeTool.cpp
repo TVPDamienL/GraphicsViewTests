@@ -76,12 +76,12 @@ cHUDShapeTool::ShapeChanged( cBaseData * sender, int args )
 void
 cHUDShapeTool::_Layout()
 {
-    QPolygon finalP = GetFinalTransform().map( mShape->Polygon() );
+    QPolygonF finalP = GetFinalTransform().map( mShape->Polygon() );
     const QTransform fTrans = GetFinalTransform();
     int index = 0;
     for( auto point : mShape->Polygon() )
     {
-        const QPoint mapped = point;
+        const QPointF mapped = point;
         mChildrenHUDs[ index ]->SetFrame( QRect( mapped.x() - 5, mapped.y() - 5, 10, 10 ) );
         ++index;
     }

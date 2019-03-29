@@ -25,8 +25,8 @@ public:
     // Overrides
     virtual  void  StartDrawing( QImage* iImage, sPointData iPointData ) override;
     virtual  QRect MoveDrawing( sPointData iPointData ) override;
-    virtual  void  DrawDot( int x, int y, float iPressure, float iRotation ) override;
-    virtual  void  DrawLine( const QPoint& iP1, const QPoint& iP2, float iPressure1, float iRotation1, float iPressure2, float iRotation2 ) override;
+    virtual  void  DrawDot( float x, float y, float iPressure, float iRotation ) override;
+    virtual  void  DrawLine( const QPointF& iP1, const QPointF& iP2, float iPressure1, float iRotation1, float iPressure2, float iRotation2 ) override;
     virtual  QRect  EndDrawing( sPointData iPointData ) override;
 
 

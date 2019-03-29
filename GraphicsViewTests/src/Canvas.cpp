@@ -324,7 +324,7 @@ cCanvas::MouseDown( const QPoint& iPos, const Qt::MouseButton& iButton, double i
 
             sPointData point;
             QPointF clickMapped = mEditableItem->mapFromScene( mapToScene( iPos.x(), iPos.y() ) );
-            point.mPosition = QPoint( clickMapped.x(), clickMapped.y() );
+            point.mPosition = clickMapped;
             point.mPressure = 1.0F;
             point.mRotation = 0.0F;
 
@@ -393,7 +393,7 @@ cCanvas::MouseMove( const QPoint& iPos, double iPressure, double iRotation )
         QPointF newPointInItemCoordinate = mEditableItem->mapFromScene( mapToScene( iPos.x(), iPos.y() ) );
 
         sPointData point;
-        point.mPosition = QPoint( newPointInItemCoordinate.x(), newPointInItemCoordinate.y() );
+        point.mPosition = newPointInItemCoordinate;
         point.mPressure = iPressure;
         point.mRotation = iRotation;
 
@@ -411,7 +411,7 @@ cCanvas::MouseUp( const QPoint& iPos, double iPressure, double iRotation )
     {
         sPointData point;
         QPointF clickMapped = mEditableItem->mapFromScene( mapToScene( iPos.x(), iPos.y() ) );
-        point.mPosition = QPoint( clickMapped.x(), clickMapped.y() );
+        point.mPosition = clickMapped;
         point.mPressure = 1.0F;
         point.mRotation = 0.0F;
 

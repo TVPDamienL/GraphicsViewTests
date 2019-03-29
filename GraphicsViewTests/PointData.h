@@ -6,9 +6,9 @@
 // Pressure, azimut, angle, rotation etc...
 struct sPointData
 {
-    QPoint mPosition;
-    float  mPressure;
-    float  mRotation;
+    QPointF mPosition;
+    float   mPressure;
+    float   mRotation;
 
     bool operator ==( const sPointData& rhs )
     {

@@ -19,7 +19,7 @@ cShapeBase::SetPaintTool( cPaintToolBase * iTool )
 }
 
 
-QPolygon
+QPolygonF
 cShapeBase::Polygon() const
 {
     return  mPolygon;

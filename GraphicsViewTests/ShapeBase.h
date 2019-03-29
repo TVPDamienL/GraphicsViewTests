@@ -23,9 +23,9 @@ public:
 
 public:
     void        SetPaintTool( cPaintToolBase* iTool );
-    QPolygon    Polygon() const;
+    QPolygonF   Polygon() const;
 
 protected:
-    QPolygon        mPolygon;
-    cPaintToolBase* mPaintTool;
+    QPolygonF        mPolygon;
+    cPaintToolBase*  mPaintTool;
 };

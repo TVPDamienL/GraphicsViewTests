@@ -67,7 +67,7 @@ cToolPencil::MoveDrawing( sPointData iPointData )
 
 
 void
-cToolPencil::DrawLine( const QPoint& iP1, const QPoint& iP2, float iPressure1, float iRotation1, float iPressure2, float iRotation2 )
+cToolPencil::DrawLine( const QPointF& iP1, const QPointF& iP2, float iPressure1, float iRotation1, float iPressure2, float iRotation2 )
 {
 }
 
@@ -81,8 +81,8 @@ cToolPencil::DrawPathFromLastRenderedPoint()
     for( mLastRenderedPathIndex; mLastRenderedPathIndex < mPath.size() - 1; ++mLastRenderedPathIndex )
     {
         // Setting base variables : starting point, ending point and their distance
-        QPoint p1 = mPath[ mLastRenderedPathIndex ].mPosition;
-        QPoint p2 = mPath[ mLastRenderedPathIndex + 1 ].mPosition;
+        QPointF p1 = mPath[ mLastRenderedPathIndex ].mPosition;
+        QPointF p2 = mPath[ mLastRenderedPathIndex + 1 ].mPosition;
         float  pressure_p1 = mPath[ mLastRenderedPathIndex ].mPressure;
         float  pressure_p2 = mPath[ mLastRenderedPathIndex + 1 ].mPressure;
         float  rotation_p1 = mPath[ mLastRenderedPathIndex ].mRotation;
