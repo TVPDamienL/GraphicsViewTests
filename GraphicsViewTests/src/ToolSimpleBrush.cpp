@@ -24,8 +24,10 @@ cToolSimpleBrush::cToolSimpleBrush( QObject * iParent ) :
     mToolSize = 1;
     mColor = Qt::red;
     mStep = 1.0;
+    mStep = 0.1;
     mOpacity = 0.1F;
-    mApplyProfile = true;
+    mOpacity = 1.F;
+    mApplyProfile = false;
 
     buildTool();
 }
@@ -184,6 +186,7 @@ cToolSimpleBrush::MoveDrawing( sPointData iPointData )
 void
 cToolSimpleBrush::DrawDot( float iX, float iY, float iPressure, float iRotation )
 {
+    //iPressure = 0.5;
     const int baseDiameter = mToolSize * 2 + 1; // To get the odd diameter
     const int radius = mToolSize * iPressure;
     const int diam = radius*2 + 1;
@@ -218,6 +221,7 @@ cToolSimpleBrush::DrawDot( float iX, float iY, float iPressure, float iRotation 
         remainingScale = float(finalSize + 1) / float(mipMapSizeAtIndex);
 
     trans.scale( remainingScale, remainingScale );
+    qDebug() << "Scale" << remainingScale;
     //trans.scale( scale, scale );
 
 
@@ -227,12 +231,17 @@ cToolSimpleBrush::DrawDot( float iX, float iY, float iPressure, float iRotation 
     //                                                           _mFloatBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
     //                                                           mDrawingContext, transfo, QPoint( 0, 0 ) );
 
+
+    QPointF mousePos( iX, iY );
+    QPoint mousePosI( iX, iY );
+    QPointF subPixelOffset = mousePosI - mousePos; // Invert the sigh to have the offset from the source image perspective
+
     MTDownscaleBoxAverageDirectAlphaFDry( mMipMapF[ indexMip ], mipMapSizeAtIndex, mipMapSizeAtIndex,
                                        mDryBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
                                        mStampBuffer,
                                        _mFloatBuffer,
                                        mDrawingContext,
-                                       0, 0, 0, transfo, QPoint( 0, 0 ), mOpacity );
+                                       0, 0, 0, transfo, QPoint( 0, 0 ), subPixelOffset, mOpacity );
 
     // Normal drawing
     //BENCHSTART( 10 )

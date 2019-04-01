@@ -656,8 +656,9 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                                     float* iOutput,                                                  // The output result buffer, can be the same as background
                                     QImage* iParallelRender,                                             // The uchar buffer we wanna write to at the same time
                                     float* iAlphaMask,  const int iAlphaWidth, const int iAlphaHeight,   // An alpha mask to apply to the blend
-                                    const QTransform& iTransform, const QPoint& iOrigin,
-                                    const float maxalpha )                // Transform and its origin to apply
+                                    const QTransform& iTransform, const QPoint& iOrigin, // Transform and its origin to apply
+                                    const QPointF& iSubPixelOffset,
+                                    const float maxalpha )
 {
     QTransform transfoFinal = iTransform;
 
@@ -665,17 +666,16 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     const int inputHeight = iHeight;
     QRect inputArea = QRect( 0, 0, iWidth, iHeight );
     inputArea.moveTopLeft( iOrigin );
+    QRectF inputAreaF = QRect( 0, 0, iWidth, iHeight );
+    inputAreaF.translate( iSubPixelOffset );
 
     // Transformed bbox
-    QPolygonF outputRect = MapToPolygonF( iTransform, inputArea );
-    //for( auto& point : outputRect )
-    //{
-    //    point.setX( std::round( point.x() ) );
-    //    point.setY( std::round( point.y() ) );
-    //}
+    QPolygonF outputRect = MapToPolygonF( iTransform, inputArea ); // Apply transfo over inputArea not F, because transfo holds the offset already
 
     QRect transfoBBoxI = ExclusiveBoundingBox( outputRect );
     QRectF transfoBBoxF = ExclusiveBoundingBoxF( outputRect );
+    const QPointF subPixelPos = transfoBBoxF.topLeft();
+    const QPointF subpixelOffset = -(subPixelPos - QPoint( subPixelPos.x(), subPixelPos.y() )); // Basically the offset representing the amount that has been cut by int
 
     // Add one because float will go from 0.2 to 1.2 for example
     // So we need to cover pixels from 0 to 2
@@ -693,22 +693,23 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     int endingX = transfoBBoxI.right() >= iOutputBuffersWidth ? iOutputBuffersWidth - 1 : transfoBBoxI.right();
     int endingY = transfoBBoxI.bottom() >= iOutputBuffersHeight ? iOutputBuffersHeight - 1 : transfoBBoxI.bottom();
 
-    auto check = endingX - startingX + 1;
-    if( check % 2 == 0 )
-        int bp = 5;
+    //qDebug() << " W1 : " << transfoBBoxF.width();
 
     // Scales
     const float transfoWidth = Distance2Points( outputRect[ 0 ], outputRect[ 1 ] );
     const float transfoHeight = Distance2Points( outputRect[ 1 ], outputRect[ 2 ] );
+    //qDebug() << " W2 : " << transfoWidth;
 
-    const double xScaleFactorOriginal = transfoWidth / double( inputArea.width() );
-    const double yScaleFactorOriginal = transfoHeight / double( inputArea.height() );
-    const double xScaleFactorRounded = int(transfoWidth) / double( inputArea.width() );
-    const double yScaleFactorRounded = int(transfoHeight) / double( inputArea.height() );
+    const double xScaleFactorOriginal = transfoWidth /      inputAreaF.width() ;
+    const double yScaleFactorOriginal = transfoHeight /     inputAreaF.height();
+    const double xScaleFactorRounded = int(transfoWidth) /  inputAreaF.width() ;
+    const double yScaleFactorRounded = int(transfoHeight) / inputAreaF.height();
 
     if( xScaleFactorOriginal >= 1.0 || yScaleFactorOriginal >= 1.0 )
     {
-        MTBlendImageNormalFDry( iInput, iWidth, iHeight, background, iOutputBuffersWidth, iOutputBuffersHeight, stampBuffer, iOutput, iParallelRender, transfoBBoxF.topLeft(), maxalpha );
+        MTBlendImageNormalFDry( iInput, iWidth, iHeight,
+                                background, iOutputBuffersWidth, iOutputBuffersHeight, stampBuffer, iOutput, iParallelRender,
+                                subPixelPos, maxalpha );
         return;
     }
 
@@ -722,12 +723,9 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     transfoFinal = QTransform::fromScale( 1/xScaleFactorOriginal, 1/yScaleFactorOriginal ) * QTransform::fromScale( xScaleFactorRounded, yScaleFactorRounded ) * transfoFinal;
     QTransform inverse = transfoFinal.inverted();
 
+    const float floatBoxWidth = inputAreaF.width() / transfoWidth;
+    const float floatBoxHeight = inputAreaF.height() / transfoHeight;
 
-    //const double xScaleInverse = 1/ xScaleFactor;
-    //const double yScaleInverse = 1/ yScaleFactor;
-
-    const float floatBoxWidth = float(inputArea.width()) / float(transfoWidth);
-    const float floatBoxHeight = float(inputArea.height()) / float(transfoHeight);
 
     // Data iteration
     const float * inputData = iInput;
@@ -803,14 +801,17 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                     const QPointF xyMappedF = inverse.map( QPointF( x, y ) ); // To use this wee need to tune the transformation with new scale
                     const QPoint xyMapped = QPoint( xyMappedF.x(), xyMappedF.y() );
 
-                    if( !inputArea.contains( xyMapped ) )
+                    if( !inputAreaF.contains( xyMapped ) )
                     {
                         continue;
                     }
 
                     // Get the box to read in original
                     QRectF boxAreaF( xyMappedF.x(), xyMappedF.y(), floatBoxWidth, floatBoxHeight );
-                    QRect boxArea( xyMapped.x(), xyMapped.y(), int( floatBoxWidth ) + 1, int( floatBoxHeight ) + 1 );
+                    //QRect boxArea( boxAreaF.left(), boxAreaF.right(), int( boxAreaF.width() ) + 1, int( boxAreaF.height() ) + 1 );
+                    QRect boxArea( boxAreaF.left(), boxAreaF.top(), 1, 1 );
+                    boxArea.setRight( int(boxAreaF.right()) );
+                    boxArea.setBottom( int(boxAreaF.bottom()) );
 
                     boxArea = boxArea.intersected( inputArea );
 
@@ -853,6 +854,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                             }
                         }
 
+                        surface = floatBoxWidth * floatBoxHeight;
                         rSum /= surface;
                         gSum /= surface;
                         bSum /= surface;
