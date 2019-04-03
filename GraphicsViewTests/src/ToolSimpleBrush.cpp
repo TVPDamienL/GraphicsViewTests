@@ -215,9 +215,9 @@ cToolSimpleBrush::DrawDot( float iX, float iY, float iPressure, float iRotation 
 
     const int mipMapSizeAtIndex = baseDiameter * startingScale;
 
-    //trans.scale( remainingScale, remainingScale );
+    trans.scale( remainingScale, remainingScale );
     //qDebug() << "Scale" << remainingScale;
-    trans.scale( scale, scale );
+    //trans.scale( scale, scale );
 
     auto transfo = QTransform() * trans * QTransform::fromTranslate( minX, minY );
 
@@ -225,15 +225,11 @@ cToolSimpleBrush::DrawDot( float iX, float iY, float iPressure, float iRotation 
     //                                                           _mFloatBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
     //                                                           mDrawingContext, transfo, QPoint( 0, 0 ) );
 
-    //QPointF mousePos( iX, iY );
-    //QPoint mousePosI( iX, iY );
-    //QPointF subPixelOffset = mousePosI - mousePos; // Invert the sign to have the offset from the source image perspective
     const int minXI = int( minX );
     const int minYI = int( minY );
     QPointF subPixelOffset( minXI - minX, minYI - minY ); // Invert the sign to have the offset from the source image perspective
 
-    //MTDownscaleBoxAverageDirectAlphaFDry( mMipMapF[ indexMip ], mipMapSizeAtIndex, mipMapSizeAtIndex,
-    MTDownscaleBoxAverageDirectAlphaFDry( mMipMapF[ 0 ], baseDiameter, baseDiameter,
+    MTDownscaleBoxAverageDirectAlphaFDry( mMipMapF[ indexMip ], mipMapSizeAtIndex, mipMapSizeAtIndex,
                                        mDryBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
                                        mStampBuffer,
                                        _mFloatBuffer,
