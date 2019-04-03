@@ -131,6 +131,7 @@
     <ClCompile Include="ColorSwatch.cpp" />
     <ClCompile Include="cSelection.cpp" />
     <ClCompile Include="cToolSelectionTest.cpp" />
+    <ClCompile Include="Debug.cpp" />
     <ClCompile Include="GPUController.cpp" />
     <ClCompile Include="GPUForThisApp.cpp" />
     <ClCompile Include="HUD.Path.cpp" />
@@ -166,6 +167,7 @@
     <QtRcc Include="cMainWindow.qrc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Debug.h" />
     <ClInclude Include="HUD.Path.h" />
     <ClInclude Include="HUDHandlePath.h" />
     <ClInclude Include="Image.LineSimplification.h" />

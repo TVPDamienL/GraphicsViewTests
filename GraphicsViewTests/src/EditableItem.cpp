@@ -5,6 +5,9 @@
 #include <QPainter>
 
 
+// DEBUG
+#include "Debug.h"
+
 
 cEditableItem::cEditableItem( QGraphicsItem *parent ) :
     QGraphicsPixmapItem ( parent ),
@@ -33,8 +36,7 @@ cEditableItem::paint( QPainter * painter, const QStyleOptionGraphicsItem * optio
         painter->drawImage( QPoint( 0, 0 ), *mImage );
     }
 
-    QPen pen( Qt::black );
-    pen.setWidth( 1 );
+
     auto  rect = boundingRect();
     int off = 1;
     rect.setLeft( rect.left() + off );
@@ -42,6 +44,30 @@ cEditableItem::paint( QPainter * painter, const QStyleOptionGraphicsItem * optio
     rect.setWidth( rect.width() - off );
     rect.setHeight( rect.height() - off );
     painter->drawRect( rect );
+
+    //painter->setBrush( Qt::transparent );
+    //QPen pen( QColor(0,0,0,120) );
+    //pen.setWidthF( 0.5 );
+    //painter->setPen( pen );
+    //painter->setRenderHint( QPainter::Antialiasing, false );
+    //for( auto& pt : debugDots )
+    //{
+    //    painter->drawPoint( pt );
+    //}
+
+
+
+    //for( auto& rrr : debugBBox )
+    //{
+    //    painter->drawRect( rrr );
+    //}
+
+    //pen.setColor( QColor( 0,255,0,120));
+    //painter->setPen( pen );
+    //for( auto& rrr : debugBBoxI )
+    //{
+    //    painter->drawRect( rrr );
+    //}
 }
 
 

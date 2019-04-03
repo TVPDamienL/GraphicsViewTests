@@ -21,13 +21,13 @@ cToolSimpleBrush::cToolSimpleBrush( QObject * iParent ) :
     cPaintToolBase( iParent )
 {
     // Some debug values to work with
-    mToolSize = 1;
+    mToolSize = 5;
     mColor = Qt::red;
     mStep = 1.0;
     mStep = 0.1;
     mOpacity = 0.1F;
     mOpacity = 1.F;
-    mApplyProfile = false;
+    mApplyProfile = true;
 
     buildTool();
 }
@@ -186,16 +186,15 @@ cToolSimpleBrush::MoveDrawing( sPointData iPointData )
 void
 cToolSimpleBrush::DrawDot( float iX, float iY, float iPressure, float iRotation )
 {
-    //iPressure = 0.5;
-    const int baseDiameter = mToolSize * 2 + 1; // To get the odd diameter
-    const int radius = mToolSize * iPressure;
-    const int diam = radius*2 + 1;
+    const int baseDiameter = mToolSize * 2;
+    const float radius = mToolSize * iPressure;
+    const float diam = radius*2;
 
-    const float scale = float(diam) / float(baseDiameter);
+    const float scale = diam / baseDiameter;
 
     const float minX = iX - radius;
-    const float maxX = minX + diam;
     const float minY = iY - radius;
+    const float maxX = minX + diam;
     const float maxY = minY + diam;
 
     // Basic out of bounds elimination
@@ -215,15 +214,10 @@ cToolSimpleBrush::DrawDot( float iX, float iY, float iPressure, float iRotation 
     float remainingScale = scale / startingScale;
 
     const int mipMapSizeAtIndex = baseDiameter * startingScale;
-    const int finalSize = mipMapSizeAtIndex * remainingScale;
 
-    if( finalSize % 2 == 0  )
-        remainingScale = float(finalSize + 1) / float(mipMapSizeAtIndex);
-
-    trans.scale( remainingScale, remainingScale );
-    qDebug() << "Scale" << remainingScale;
-    //trans.scale( scale, scale );
-
+    //trans.scale( remainingScale, remainingScale );
+    //qDebug() << "Scale" << remainingScale;
+    trans.scale( scale, scale );
 
     auto transfo = QTransform() * trans * QTransform::fromTranslate( minX, minY );
 
@@ -231,12 +225,15 @@ cToolSimpleBrush::DrawDot( float iX, float iY, float iPressure, float iRotation 
     //                                                           _mFloatBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
     //                                                           mDrawingContext, transfo, QPoint( 0, 0 ) );
 
+    //QPointF mousePos( iX, iY );
+    //QPoint mousePosI( iX, iY );
+    //QPointF subPixelOffset = mousePosI - mousePos; // Invert the sign to have the offset from the source image perspective
+    const int minXI = int( minX );
+    const int minYI = int( minY );
+    QPointF subPixelOffset( minXI - minX, minYI - minY ); // Invert the sign to have the offset from the source image perspective
 
-    QPointF mousePos( iX, iY );
-    QPoint mousePosI( iX, iY );
-    QPointF subPixelOffset = mousePosI - mousePos; // Invert the sigh to have the offset from the source image perspective
-
-    MTDownscaleBoxAverageDirectAlphaFDry( mMipMapF[ indexMip ], mipMapSizeAtIndex, mipMapSizeAtIndex,
+    //MTDownscaleBoxAverageDirectAlphaFDry( mMipMapF[ indexMip ], mipMapSizeAtIndex, mipMapSizeAtIndex,
+    MTDownscaleBoxAverageDirectAlphaFDry( mMipMapF[ 0 ], baseDiameter, baseDiameter,
                                        mDryBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
                                        mStampBuffer,
                                        _mFloatBuffer,
@@ -314,7 +311,7 @@ cToolSimpleBrush::CancelDrawing()
 void
 cToolSimpleBrush::PrepareTool()
 {
-    int toolDiameter = mToolSize * 2 + 1; // To get an odd diameter, so center is a single pixel
+    int toolDiameter = mToolSize * 2;
 
     QRect rect( 0, 0, toolDiameter, toolDiameter );
     delete  mTipRenderedF;
@@ -330,8 +327,8 @@ cToolSimpleBrush::_RenderTip( int iX, int iY, float iPressure, float iRotation )
 {
     float* data = mTipRenderedF;
     float* pixelRow = data;
-    unsigned int width = mToolSize * 2 + 1;
-    unsigned int height = mToolSize * 2 + 1;
+    unsigned int width = mToolSize * 2;
+    unsigned int height = mToolSize * 2;
 
     float originR = mColor.red()    * mOpacity;
     float originG = mColor.green()  * mOpacity;
@@ -408,8 +405,8 @@ cToolSimpleBrush::_BuildMipMap()
     //QVector< int > ws;
     //QVector< int > hs;
 
-    int width = mToolSize*2+1;
-    int height = mToolSize*2+1;
+    int width = mToolSize*2;
+    int height = mToolSize*2;
     QTransform t = QTransform::fromScale( 0.5, 0.5 );
 
     float* tipRenderedCopy = new float[ width * 4 * height ];

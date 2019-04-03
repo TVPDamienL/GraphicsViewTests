@@ -10,6 +10,7 @@
 #include "vector"                // for vector
 #include <memory>                // for allocator
 
+
 class cPaintToolBase :
     public  ToolBase
 {

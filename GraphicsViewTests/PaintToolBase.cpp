@@ -12,6 +12,8 @@
 #include "qvector2d.h"     // for QVector2D
 #include "type_traits"     // for move
 
+#include "Debug.h"
+
 cPaintToolBase::~cPaintToolBase()
 {
 }
@@ -135,6 +137,8 @@ cPaintToolBase::DrawFullPath()
 
     mLeftover = 0;
     mLastRenderedPathIndex = 0;
+    debugBBox.clear();
+    debugBBoxI.clear();
 
     DrawPathFromLastRenderedPoint();
 }
@@ -151,6 +155,8 @@ cPaintToolBase::DrawPathFromLastRenderedPoint()
 void
 cPaintToolBase::DrawPathFromPointToPoint( int a, int b )
 {
+    debugDots.clear();
+
     if( mPath.size() <= 1 )
         return;
 
@@ -195,7 +201,9 @@ cPaintToolBase::DrawPathFromPointToPoint( int a, int b )
         {
             float ratio = 1.0 - (remainingDistance)/distance;
             float pressure = pressure_p1 + subPression * ratio;
+            //pressure = 0.5;
 
+            debugDots.push_back( startingPoint + stepSum );
             __DrawDotVectorTruc_RequiresAName_( startingPoint, stepSum, pressure, rotation_p1 );
 
             float pixelStep = _GetFullStepInPixelValue( pressure );
@@ -307,13 +315,6 @@ cPaintToolBase::__DrawDotVectorTruc_RequiresAName_( const QPointF& iStart, const
 
     return  stepPosition;
 }
-
-
-//float
-//cPaintToolBase::_GetStepInPixelValue( float iPressure ) const
-//{
-//    return  std::max( mStep * mToolSize*2 * iPressure, 1.0F );
-//}
 
 
 float

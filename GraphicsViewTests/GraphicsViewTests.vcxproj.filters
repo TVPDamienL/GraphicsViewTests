@@ -216,6 +216,9 @@
     <ClCompile Include="HUDHandlePath.cpp">
       <Filter>src\HUD</Filter>
     </ClCompile>
+    <ClCompile Include="Debug.cpp">
+      <Filter>src\Image</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="cMainWindow.h">
@@ -371,6 +374,9 @@
     </ClInclude>
     <ClInclude Include="HUDHandlePath.h">
       <Filter>src\HUD</Filter>
+    </ClInclude>
+    <ClInclude Include="Debug.h">
+      <Filter>src\Image</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -12,6 +12,8 @@
 
 
 
+#include "Debug.h"
+
 
 static
 inline
@@ -647,9 +649,10 @@ MTDownscaleBoxAverageDirectAlphaF( const float* iInput, const int iInputWidth, c
 // PERFORMANCE : Not a huge increase from doing a new allocated image output that we blend afterward and this
 // where we directly draw to output
 static
-void                                                                // All float images MUST be the same size, this allows faster access
+void
 MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, const int iHeight,     // Source we will blend
 
+                                                                        // All float images MUST be the same size, this allows faster access
                                     const float* background, const int iOutputBuffersWidth, const int iOutputBuffersHeight,    // The background over which we blend
                                     float* stampBuffer,                                              // The buffer holding the current tool line
 
@@ -660,8 +663,6 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                                     const QPointF& iSubPixelOffset,
                                     const float maxalpha )
 {
-    QTransform transfoFinal = iTransform;
-
     const int inputWidth = iWidth;
     const int inputHeight = iHeight;
     QRect inputArea = QRect( 0, 0, iWidth, iHeight );
@@ -673,7 +674,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     QPolygonF outputRect = MapToPolygonF( iTransform, inputArea ); // Apply transfo over inputArea not F, because transfo holds the offset already
 
     QRect transfoBBoxI = ExclusiveBoundingBox( outputRect );
-    QRectF transfoBBoxF = ExclusiveBoundingBoxF( outputRect );
+    QRectF transfoBBoxF = ExclusiveBoundingBoxF( outputRect ); debugBBox.push_back( transfoBBoxF );
     const QPointF subPixelPos = transfoBBoxF.topLeft();
     const QPointF subpixelOffset = -(subPixelPos - QPoint( subPixelPos.x(), subPixelPos.y() )); // Basically the offset representing the amount that has been cut by int
 
@@ -693,6 +694,8 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     int endingX = transfoBBoxI.right() >= iOutputBuffersWidth ? iOutputBuffersWidth - 1 : transfoBBoxI.right();
     int endingY = transfoBBoxI.bottom() >= iOutputBuffersHeight ? iOutputBuffersHeight - 1 : transfoBBoxI.bottom();
 
+    debugBBoxI.push_back( transfoBBoxI );
+
     //qDebug() << " W1 : " << transfoBBoxF.width();
 
     // Scales
@@ -705,13 +708,13 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     const double xScaleFactorRounded = int(transfoWidth) /  inputAreaF.width() ;
     const double yScaleFactorRounded = int(transfoHeight) / inputAreaF.height();
 
-    if( xScaleFactorOriginal >= 1.0 || yScaleFactorOriginal >= 1.0 )
-    {
-        MTBlendImageNormalFDry( iInput, iWidth, iHeight,
-                                background, iOutputBuffersWidth, iOutputBuffersHeight, stampBuffer, iOutput, iParallelRender,
-                                subPixelPos, maxalpha );
-        return;
-    }
+    //if( xScaleFactorOriginal >= 1.0 || yScaleFactorOriginal >= 1.0 )
+    //{
+    //    MTBlendImageNormalFDry( iInput, iWidth, iHeight,
+    //                            background, iOutputBuffersWidth, iOutputBuffersHeight, stampBuffer, iOutput, iParallelRender,
+    //                            subPixelPos, maxalpha );
+    //    return;
+    //}
 
 
     // We decide to work with ratios resulting from the rounded result
@@ -720,8 +723,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     // Now, dividing the image in 4.48 will result in missing datas (because for loop below will go 4 iterations, not 4.48,, and 4*X < 4.48*X),
     // and thus, uneven results at lower sizes
     // So we take the final int size, compute the scale this represents, and set this one as the transformation scale, so we can evenly cover the original image
-    transfoFinal = QTransform::fromScale( 1/xScaleFactorOriginal, 1/yScaleFactorOriginal ) * QTransform::fromScale( xScaleFactorRounded, yScaleFactorRounded ) * transfoFinal;
-    QTransform inverse = transfoFinal.inverted();
+    QTransform inverse = iTransform.inverted();
 
     const float floatBoxWidth = inputAreaF.width() / transfoWidth;
     const float floatBoxHeight = inputAreaF.height() / transfoHeight;
@@ -780,7 +782,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
             float gSum = 0;
             float bSum = 0;
             float aSum = 0;
-            float surface = 0.0;
+            float surface = floatBoxWidth * floatBoxHeight;
             float xRatio = 1.0;
             float yRatio = 1.0;
             float finalRatio = 1.0;
@@ -801,11 +803,6 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                     const QPointF xyMappedF = inverse.map( QPointF( x, y ) ); // To use this wee need to tune the transformation with new scale
                     const QPoint xyMapped = QPoint( xyMappedF.x(), xyMappedF.y() );
 
-                    if( !inputAreaF.contains( xyMapped ) )
-                    {
-                        continue;
-                    }
-
                     // Get the box to read in original
                     QRectF boxAreaF( xyMappedF.x(), xyMappedF.y(), floatBoxWidth, floatBoxHeight );
                     //QRect boxArea( boxAreaF.left(), boxAreaF.right(), int( boxAreaF.width() ) + 1, int( boxAreaF.height() ) + 1 );
@@ -813,6 +810,8 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                     boxArea.setRight( int(boxAreaF.right()) );
                     boxArea.setBottom( int(boxAreaF.bottom()) );
 
+                    // This is the security line, that prevents from reading out of source buffer
+                    // Because we divide by the total surface at the end, skipping (because of interect clamp) pixels will reduce overall intensity properly
                     boxArea = boxArea.intersected( inputArea );
 
                     if( !boxArea.isEmpty() )
@@ -849,18 +848,15 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                                 gSum += *sourceScanline * finalRatio; ++sourceScanline;
                                 rSum += *sourceScanline * finalRatio; ++sourceScanline;
                                 aSum += *sourceScanline * finalRatio; ++sourceScanline;
-
-                                surface += finalRatio;
                             }
                         }
 
-                        surface = floatBoxWidth * floatBoxHeight;
                         rSum /= surface;
                         gSum /= surface;
                         bSum /= surface;
                         aSum /= surface;
 
-
+                        // Drawing in stamp buffer
                         const float inverseCeiled = 1 - (aSum / maxAlphaRanged);
 
                         float* gPtr = stampScan + 1;
@@ -872,6 +868,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                         *rPtr       = rSum + *rPtr       * inverseCeiled;
                         *alphaPtr   = aSum + *alphaPtr   * inverseCeiled;
 
+                        // Then drawing the final stamp to the float output and 8bit final image at the same time
                         const float transparencyAmountInverse = 1 - *alphaPtr / 255.F;
 
                         *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
