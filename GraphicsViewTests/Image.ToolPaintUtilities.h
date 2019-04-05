@@ -18,13 +18,13 @@
 static
 inline
 void
-ReadImageWithFloatArea( const QPointF& iOffset, int iX, int iY, float iTopLeftRatio, float iTopRightRatio, float iBottomLeftRatio, float iBottomRightRatio,
+ReadGrayImageWithFloatArea( const QPointF& iOffset, int iX, int iY, float iTopLeftRatio, float iTopRightRatio, float iBottomLeftRatio, float iBottomRightRatio,
                         const float* iImage, int iImageWidth, int iImageHeight,
-                        float* oRed, float* oGreen, float *oBlue, float* oAlpha )
+                        float* oAlpha )
 {
 
     const float* scanline;
-    const int bpl = iImageWidth * 4;
+    const int bpl = iImageWidth;
 
     // Cuz int cut on negative value cuts up, down down : 1.2 -> 1 ==> Reduction :: -1.2 -> -1.0 ==> Increase
     int offX = iOffset.x();
@@ -43,67 +43,33 @@ ReadImageWithFloatArea( const QPointF& iOffset, int iX, int iY, float iTopLeftRa
     const int maxX = minX + 1;
     const int maxY = minY + 1;
 
-    const int startingX = Clamp( minX, 0, iImageWidth - 1 );
-    const int endingX   = Clamp( maxX, 0, iImageWidth - 1 );
-    const int startingY = Clamp( minY, 0, iImageHeight - 1 );
-    const int endingY   = Clamp( maxY, 0, iImageHeight - 1 );
-    const int total     = (endingX - startingX + 1) * (endingY - startingY + 1);
-
-    *oRed   = 0.F;
-    *oGreen = 0.F;
-    *oBlue  = 0.F;
     *oAlpha = 0.F;
 
-    scanline = iImage + minY * bpl + minX * 4;
+    scanline = iImage + minY * bpl + minX;
     // Top left
     if( minX >= 0 && minX < iImageWidth && minY >= 0 && minY < iImageHeight )
-    {
-        *oBlue  += *scanline * iTopLeftRatio; ++scanline;
-        *oGreen += *scanline * iTopLeftRatio; ++scanline;
-        *oRed   += *scanline * iTopLeftRatio; ++scanline;
-        *oAlpha += *scanline * iTopLeftRatio; ++scanline;
-    }
-    else
-    {
-        scanline += 4;
-    }
+        *oAlpha += *scanline * iTopLeftRatio;
+
+    ++scanline;
 
     // Top right
     if( maxX >= 0 && maxX < iImageWidth && minY >= 0 && minY < iImageHeight )
-    {
-        *oBlue  += *scanline * iTopRightRatio; ++scanline;
-        *oGreen += *scanline * iTopRightRatio; ++scanline;
-        *oRed   += *scanline * iTopRightRatio; ++scanline;
-        *oAlpha += *scanline * iTopRightRatio; ++scanline;
-    }
-    else
-    {
-        scanline += 4;
-    }
+        *oAlpha += *scanline * iTopRightRatio;
 
+    ++scanline;
 
-    scanline += bpl - 8;
+    scanline += bpl - 2;
     // Bottom left
     if( minX >= 0 && minX < iImageWidth && maxY >= 0 && maxY < iImageHeight )
-    {
-        *oBlue  += *scanline * iBottomLeftRatio; ++scanline;
-        *oGreen += *scanline * iBottomLeftRatio; ++scanline;
-        *oRed   += *scanline * iBottomLeftRatio; ++scanline;
-        *oAlpha += *scanline * iBottomLeftRatio; ++scanline;
-    }
-    else
-    {
-        scanline += 4;
-    }
+        *oAlpha += *scanline * iBottomLeftRatio;
+
+    ++scanline;
 
     // Bottom Right
     if( maxX >= 0 && maxX < iImageWidth && maxY >= 0 && maxY < iImageHeight )
-    {
-        *oBlue  += *scanline * iBottomRightRatio; ++scanline;
-        *oGreen += *scanline * iBottomRightRatio; ++scanline;
-        *oRed   += *scanline * iBottomRightRatio; ++scanline;
-        *oAlpha += *scanline * iBottomRightRatio; ++scanline;
-    }
+        *oAlpha += *scanline * iBottomRightRatio;
+
+    ++scanline;
 }
 
 
@@ -113,17 +79,18 @@ ReadImageWithFloatArea( const QPointF& iOffset, int iX, int iY, float iTopLeftRa
 
 static
 void
-MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int iSourceHeight,  // Source we will blend
+MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int iSourceHeight,  // Source we will blend, in Gray
                         const float* drybuffer, const int iWidth, const int iHeight,      // The background over which we blend
                         float* stampbuffer,
 
                         float* destination,         // The float output result buffer
                         QImage* iParallelRender,    // The 8bit output buffer
                         const QPointF& point,
-                        const float maxAlpha )
+                        const float maxAlpha,
+                        const float red, const float green, const float blue )
 {
     const uchar maxAlphaRanged = maxAlpha * 255.F;
-    const int sourceBPL = iSourceWidth * 4;
+    const int sourceBPL = iSourceWidth;
     const int buffersBPL = iWidth * 4;
 
     uchar* parallelData = iParallelRender->bits();
@@ -137,10 +104,8 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
     // TODO: if offset is larger than 1 or -1, need to do multiple +1 or -1 : 2.16 -> 0.16
     // noneed: indeed sudReadBuffer is the subtraction between a flot and its int cut, which can't be > 1
     QPointF offsetFinal = subReadOffset;
-    if( offsetFinal.x() < 0 )
-        offsetFinal.setX( offsetFinal.x() + 1 );
-    if( offsetFinal.y() < 0 )
-        offsetFinal.setY( offsetFinal.y() + 1 );
+    offsetFinal.setX( offsetFinal.x() + 1 );
+    offsetFinal.setY( offsetFinal.y() + 1 );
 
     float topLeftRatio      = (1-offsetFinal.y())   * (1-offsetFinal.x());
     float topRightRatio     = (1-offsetFinal.y())   * offsetFinal.x();
@@ -193,76 +158,68 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
 
             float yRatio = 1.F;
             float xRatio = 1.F;
-            float pixelRatio = 1.F;
+
+
+            // BUG: with the left and top clamping, it fucks with one iteration, making a glitch in the shape
 
             for( int y = startY; y < endY; ++y )
             {
                 // Indexes and stuff
-                sourceScanline  = source + (y - minY) * sourceBPL + (startX - minX) * 4;
+                stampScan = stampbuffer + y * iWidth + startX;
+                sourceScanline  = source + (y - minY) * sourceBPL + (startX - minX);
+
                 const int indexOffset = y * buffersBPL + xOffset;
-                dryScan  = drybuffer + indexOffset;
-                stampScan = stampbuffer + indexOffset;
-                destScanline    = destination + indexOffset;
+                dryScan             = drybuffer + indexOffset;
+                destScanline        = destination + indexOffset;
                 parallelScanline    = parallelData + y * parallelBPL + xOffset;
 
                 for( int x = startX; x < endX; ++x )
                 {
-                    float red2, green2, blue2, alpha2;
-                    ReadImageWithFloatArea( subReadOffset, (x - minX), (y - minY), topLeftRatio, topRightRatio, bottomLeftRatio, bottomRightRatio,
+                    float alpha = 0;
+                    ReadGrayImageWithFloatArea( subReadOffset, (x - minX), (y - minY), topLeftRatio, topRightRatio, bottomLeftRatio, bottomRightRatio,
                                             source, iSourceWidth, iSourceHeight,
-                                            &red2, &green2, &blue2, &alpha2 );
+                                            &alpha );
 
-
-                    float alpha = *(sourceScanline + 3);
-                    if( alpha2 == 0 ) // Skip if alpha is nil
+                    if( alpha == 0 ) // Skip if alpha is nil
                     {
-                        sourceScanline += 4;
+                        stampScan++;
                         dryScan += 4;
-                        stampScan += 4;
                         destScanline += 4;
                         parallelScanline += 4;
                         continue;
                     }
 
-                    const float inverseCeiled = (1 - (alpha2 / maxAlphaRanged)) * pixelRatio;
+                    const float inverseCeiled = (1 - (alpha / maxAlphaRanged));
 
-                    float* gPtr = stampScan + 1;
-                    float* rPtr = stampScan + 2;
-                    float* alphaPtr = stampScan + 3;
+                    *stampScan  = alpha + *stampScan  * inverseCeiled;
 
-                    *stampScan  = blue2 + *stampScan  * inverseCeiled; ++sourceScanline;
-                    *gPtr       = green2 + *gPtr       * inverseCeiled; ++sourceScanline;
-                    *rPtr       = red2 + *rPtr       * inverseCeiled; ++sourceScanline;
-                    *alphaPtr   = alpha2 + *alphaPtr   * inverseCeiled; ++sourceScanline;
+                    const float stampAlphaNorm = *stampScan / 255.F;
+                    const float transparencyAmountInverse = 1 - stampAlphaNorm;
 
-                    const float transparencyAmountInverse = 1 - *alphaPtr / 255.F;
+                    *destScanline = blue * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *parallelScanline = uchar( *destScanline );
+                    ++destScanline;
+                    ++dryScan;
+                    ++parallelScanline;
+
+                    *destScanline = green * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *parallelScanline = uchar( *destScanline );
+                    ++destScanline;
+                    ++dryScan;
+                    ++parallelScanline;
+
+                    *destScanline = red * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *parallelScanline = uchar( *destScanline );
+                    ++destScanline;
+                    ++dryScan;
+                    ++parallelScanline;
 
                     *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
                     ++dryScan;
                     ++parallelScanline;
-                    ++stampScan;
 
-                    *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
-                    *parallelScanline = uchar( *destScanline );
-                    ++destScanline;
-                    ++dryScan;
-                    ++parallelScanline;
-                    ++stampScan;
-
-                    *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
-                    *parallelScanline = uchar( *destScanline );
-                    ++destScanline;
-                    ++dryScan;
-                    ++parallelScanline;
-                    ++stampScan;
-
-                    *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
-                    *parallelScanline = uchar( *destScanline );
-                    ++destScanline;
-                    ++dryScan;
-                    ++parallelScanline;
                     ++stampScan;
                 }
             }
@@ -300,7 +257,8 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                                     float* iAlphaMask,  const int iAlphaWidth, const int iAlphaHeight,   // An alpha mask to apply to the blend
                                     const QTransform& iTransform, const QPoint& iOrigin, // Transform and its origin to apply
                                     const QPointF& iSubPixelOffset,
-                                    const float maxalpha )
+                                    const float maxalpha,
+                                    const float red, const float green, const float blue )
 {
     const int inputWidth = iWidth;
     const int inputHeight = iHeight;
@@ -351,7 +309,8 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     {
         MTBlendImageNormalFDry( iInput, iWidth, iHeight,
                                 background, iOutputBuffersWidth, iOutputBuffersHeight, stampBuffer, iOutput, iParallelRender,
-                                subPixelPos, maxalpha );
+                                subPixelPos, maxalpha,
+                                red, green, blue );
         return;
     }
 
@@ -367,20 +326,21 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     const float floatBoxWidth = inputAreaF.width() / transfoWidth;
     const float floatBoxHeight = inputAreaF.height() / transfoHeight;
 
+    //float xBaseRatio      = 1+subpixelOffset.x(); // Because subpixelOffset is always < 0
+
 
     // Data iteration
     const float * inputData = iInput;
     float* outputData = iOutput;
     uchar* parallelData = iParallelRender->bits();
 
-    const int sourceBPL = iWidth * 4;
+    const int sourceBPL = iWidth;
     const int buffersBPL = iOutputBuffersWidth * 4;
     const int parallelBPL = iParallelRender->bytesPerLine();
 
     //uchar* alphaData = iAlphaMask->bits();
     //uchar* alphaScanline = alphaData + 3;
     //const int alphaBPL = iAlphaMask->bytesPerLine();
-
 
     const int height = endingY - startingY + 1;
 
@@ -404,8 +364,9 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
         {
             const uchar maxAlphaRanged = maxalpha * 255.F;
             const float* sourceScanline = iInput;
-            const float* dryScan = background;
             float* stampScan = stampBuffer;
+
+            const float* dryScan = background;
             float* destScanline = iOutput;
             uchar* parallelScanline = parallelData;
 
@@ -417,9 +378,6 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
             const int xOffset = startX * 4;
 
             // Pixel averaging variables
-            float rSum = 0;
-            float gSum = 0;
-            float bSum = 0;
             float aSum = 0;
             const float surface = floatBoxWidth * floatBoxHeight;
             float xRatio = 1.0;
@@ -428,10 +386,12 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
 
             for( int y = startY; y <= endY; ++y )
             {
-                sourceScanline  = iInput + (y - minY) * sourceBPL + (startX - minX) * 4;
+                // Gray buffers
+                sourceScanline  = iInput + (y - minY) * sourceBPL + (startX - minX);
+                stampScan = stampBuffer +  y * iOutputBuffersWidth + startX;
+
                 const int indexOffset = y * buffersBPL + xOffset;
                 dryScan  = background + indexOffset;
-                stampScan = stampBuffer + indexOffset;
                 destScanline    = iOutput + indexOffset;
                 parallelScanline    = parallelData + y * parallelBPL + xOffset;
                 //alphaScanline = alphaData +  (y-minY) * alphaBPL + xOffset + 3;
@@ -448,6 +408,13 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                     boxArea.setRight( int(boxAreaF.right()) );
                     boxArea.setBottom( int(boxAreaF.bottom()) );
 
+                    QPointF firstCellRatio = QPointF( 1.0, 1.0 ) - ( boxAreaF.topLeft() - boxArea.topLeft() );
+
+                    //float yBaseRatio     = (1-subpixelOffset.y())   * subpixelOffset.x();
+                    //float bottomRightRatio  = subpixelOffset.y()       * subpixelOffset.x();
+                    //float bottomLeftRatio   = subpixelOffset.y()       * (1-subpixelOffset.x());
+
+
 
                     // This is the security line, that prevents from reading out of source buffer
                     // Because we divide by the total surface at the end, skipping (because of interect clamp) pixels will reduce overall intensity properly
@@ -455,7 +422,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                     if( x == startingX || x == endingX || y == startingY || y == endingY )
                         boxArea = boxArea.intersected( inputArea );
 
-                    const float* dataOffset = inputData + boxArea.left() * 4;
+                    const float* dataOffset = inputData + boxArea.left();
 
                     if( !boxArea.isEmpty() )
                     {
@@ -480,68 +447,50 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
 
                                 finalRatio = xRatio * yRatio;
 
-                                bSum += *sourceScanline * finalRatio; ++sourceScanline;
-                                gSum += *sourceScanline * finalRatio; ++sourceScanline;
-                                rSum += *sourceScanline * finalRatio; ++sourceScanline;
                                 aSum += *sourceScanline * finalRatio; ++sourceScanline;
                             }
                         }
 
-                        rSum /= surface;
-                        gSum /= surface;
-                        bSum /= surface;
                         aSum /= surface;
 
                         // Drawing in stamp buffer
                         const float inverseCeiled = 1 - (aSum / maxAlphaRanged);
-
-                        float* gPtr = stampScan + 1;
-                        float* rPtr = stampScan + 2;
-                        float* alphaPtr = stampScan + 3;
-
-                        *stampScan  = bSum + *stampScan  * inverseCeiled;
-                        *gPtr       = gSum + *gPtr       * inverseCeiled;
-                        *rPtr       = rSum + *rPtr       * inverseCeiled;
-                        *alphaPtr   = aSum + *alphaPtr   * inverseCeiled;
+                        *stampScan   = aSum + *stampScan   * inverseCeiled;
 
                         // Then drawing the final stamp to the float output and 8bit final image at the same time
-                        const float transparencyAmountInverse = 1 - *alphaPtr / 255.F;
+                        const float stampAlphaNorm = *stampScan / 255.F;
+                        const float transparencyAmountInverse = 1 - stampAlphaNorm;
+
+                        *destScanline = blue * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                        *parallelScanline = uchar( *destScanline );
+                        ++destScanline;
+                        ++dryScan;
+                        ++parallelScanline;
+
+                        *destScanline = green * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                        *parallelScanline = uchar( *destScanline );
+                        ++destScanline;
+                        ++dryScan;
+                        ++parallelScanline;
+
+                        *destScanline = red * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                        *parallelScanline = uchar( *destScanline );
+                        ++destScanline;
+                        ++dryScan;
+                        ++parallelScanline;
 
                         *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
                         *parallelScanline = uchar( *destScanline );
                         ++destScanline;
                         ++dryScan;
                         ++parallelScanline;
-                        ++stampScan;
 
-                        *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
-                        *parallelScanline = uchar( *destScanline );
-                        ++destScanline;
-                        ++dryScan;
-                        ++parallelScanline;
-                        ++stampScan;
-
-                        *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
-                        *parallelScanline = uchar( *destScanline );
-                        ++destScanline;
-                        ++dryScan;
-                        ++parallelScanline;
-                        ++stampScan;
-
-                        *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
-                        *parallelScanline = uchar( *destScanline );
-                        ++destScanline;
-                        ++dryScan;
-                        ++parallelScanline;
                         ++stampScan;
 
 
                         // Blend
                         //BlendPixelNormalFParrallel( &destScanline, &parallelScanline, rSum, gSum, bSum, aSum );
 
-                        rSum = 0;
-                        gSum = 0;
-                        bSum = 0;
                         aSum = 0;
                     }
                 }

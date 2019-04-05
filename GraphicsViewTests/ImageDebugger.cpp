@@ -1,6 +1,7 @@
 #include "ImageDebugger.h"
 
 #include <QGraphicsItem>
+#include <QDebug>
 
 cImageDebugger::cImageDebugger( QWidget * parent ) :
     QDialog( parent )
@@ -105,6 +106,30 @@ cImageDebugger::ShowImage( const float * image, int width, int height )
 
 
 void
+cImageDebugger::ShowImageGray( const float * image, int width, int height )
+{
+    QImage* img = new QImage( width, height, QImage::Format_ARGB32_Premultiplied );
+    uchar* data = img->bits();
+
+    const int bpl = img->bytesPerLine();
+
+    for( int x = 0; x < width; ++x )
+        for( int y = 0; y < height; ++y )
+        {
+            int indexRGBA = y * bpl + x * 4;
+            int indexGray = indexRGBA/4;
+
+            data[ indexRGBA+0 ] = 0;
+            data[ indexRGBA+1 ] = 0;
+            data[ indexRGBA+2 ] = 0;
+            data[ indexRGBA+3 ] = uchar( image[ indexGray ] );
+        }
+
+    ShowImage( img );
+}
+
+
+void
 cImageDebugger::ShowImages( QVector<const float*> images, QVector<int> widths, QVector<int> heights )
 {
     QVector< const QImage* > outputs;
@@ -124,6 +149,41 @@ cImageDebugger::ShowImages( QVector<const float*> images, QVector<int> widths, Q
             {
                 int index = y * bpl + x;
                 data[ index ] = image[ index ];
+            }
+
+        outputs.push_back( img );
+    }
+
+    ShowImages( outputs );
+}
+
+
+void
+cImageDebugger::ShowImagesGray( QVector<const float*> images, QVector<int> widths, QVector<int> heights )
+{
+    QVector< const QImage* > outputs;
+
+    for( int i = 0; i < images.size(); ++i )
+    {
+        const float* image = images[ i ];
+        const int width = widths[ i ];
+        const int height = heights[ i ];
+
+        QImage* img = new QImage( width, height, QImage::Format_ARGB32_Premultiplied );
+        uchar* data = img->bits();
+
+        const int bpl = img->bytesPerLine();
+
+        for( int x = 0; x < width; ++x )
+            for( int y = 0; y < height; ++y )
+            {
+                int indexRGBA = y * bpl + x * 4;
+                int indexGray = indexRGBA/4;
+
+                data[ indexRGBA+0 ] = 0;
+                data[ indexRGBA+1 ] = 0;
+                data[ indexRGBA+2 ] = 0;
+                data[ indexRGBA+3 ] = uchar( image[ indexGray ] );
             }
 
         outputs.push_back( img );

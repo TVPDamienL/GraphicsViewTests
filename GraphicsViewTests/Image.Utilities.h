@@ -706,7 +706,7 @@ DownscaleBoxAverageIntoImage( QImage* iInput, const QTransform& iTransform )
 // This averages pixels to get the condensed pixel
 static
 float*
-DownscaleBoxAverageIntoImageF( const float* iInput, int width, int height, const QTransform& iTransform, int* oWidth, int* oHeight )
+DownscaleBoxAverageIntoImageFGray( const float* iInput, int width, int height, const QTransform& iTransform, int* oWidth, int* oHeight )
 {
     float* output = 0;
 
@@ -730,8 +730,8 @@ DownscaleBoxAverageIntoImageF( const float* iInput, int width, int height, const
 
     if( xScaleFactor >= 1.0 || yScaleFactor >= 1.0 )
     {
-        output = new float[ width * 4 * height ];
-        memcpy( output, iInput, sizeof( float ) * width * 4 * height );
+        output = new float[ width * height ];
+        memcpy( output, iInput, sizeof( float ) * width * height );
         *oWidth = width;
         *oHeight = height;
 
@@ -742,21 +742,18 @@ DownscaleBoxAverageIntoImageF( const float* iInput, int width, int height, const
     const double yScaleInverse = 1/ yScaleFactor;
 
     // The output image
-    output = new float[ (transfoBBox.width()) * 4 * (transfoBBox.height()) ];
+    output = new float[ transfoBBox.width() * transfoBBox.height() ];
     *oWidth = transfoBBox.width();
     *oHeight = transfoBBox.height();
 
     // Data iteration
-    const int inputBPL = width * 4;
+    const int inputBPL = width;
     const float* inputScanline = iInput;
 
     float* outputScanline = output;
-    const int outputBPL = *oWidth * 4;
+    const int outputBPL = *oWidth;
 
     // Pixel averaging variables
-    float rSum = 0;
-    float gSum = 0;
-    float bSum = 0;
     float aSum = 0;
     double surface = 0.0;
     double xRatio = 1.0;
@@ -775,7 +772,7 @@ DownscaleBoxAverageIntoImageF( const float* iInput, int width, int height, const
 
             if( !inputArea.contains( xyMapped ) )
             {
-                BlendPixelNoneF( &outputScanline, 0, 0, 0, 0 );
+                *outputScanline = 0; ++outputScanline;
                 continue;
             }
 
@@ -792,52 +789,34 @@ DownscaleBoxAverageIntoImageF( const float* iInput, int width, int height, const
                 // Sum of all pixel values
                 for( int j = boxArea.top(); j <= boxArea.bottom(); ++j )
                 {
-                    double ratio = 1 - (boxAreaF.top() - j);
-                    if( ratio < 1.0 )
-                    {
-                        yRatio = ratio;
-                    }
-                    else
+                    yRatio = 1 - (boxAreaF.top() - j);
+                    if( yRatio > 1.0 )
                     {
                         yRatio = Min( 1 - (j - boxAreaF.bottom()), 1.0);
                     }
 
-
-                    inputScanline = iInput + j * inputBPL + boxArea.left() * 4;
+                    inputScanline = iInput + j * inputBPL + boxArea.left();
                     for( int i = boxArea.left(); i <= boxArea.right(); ++i )
                     {
-                        ratio = 1 - (boxAreaF.left() - i);
-                        if( ratio < 1.0 )
-                        {
-                            xRatio = ratio;
-                        }
-                        else
+                        xRatio = 1 - (boxAreaF.left() - i);
+                        if( xRatio > 1.0 )
                         {
                             xRatio = Min( 1 - (i - boxAreaF.right()), 1.0 );
                         }
 
                         finalRatio = xRatio * yRatio;
 
-                        bSum += *inputScanline * finalRatio; ++inputScanline;
-                        gSum += *inputScanline * finalRatio; ++inputScanline;
-                        rSum += *inputScanline * finalRatio; ++inputScanline;
                         aSum += *inputScanline * finalRatio; ++inputScanline;
 
                         surface += finalRatio;
                     }
                 }
 
-                rSum /= surface;
-                gSum /= surface;
-                bSum /= surface;
                 aSum /= surface;
 
                 // Blend
-                BlendPixelNoneF( &outputScanline, rSum, gSum, bSum, aSum );
+                *outputScanline = aSum; ++outputScanline;
 
-                rSum = 0;
-                gSum = 0;
-                bSum = 0;
                 aSum = 0;
                 surface = 0.0;
             }

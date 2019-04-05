@@ -55,7 +55,7 @@ protected:
 
 
 private:
-    void _RenderTip( int x, int y, float iPressure, float iRotation );
+    void _RenderTip( int x, int y );
     void _BuildMipMap();
 
 

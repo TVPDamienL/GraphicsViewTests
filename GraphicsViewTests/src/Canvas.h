@@ -130,5 +130,6 @@ private:
     QPixmap*            cursorPixmap;
 
     QImage*             __DebugAlphaMaskTest__;
+    QRect               _DirtyAreaForRepaint;
 };
 

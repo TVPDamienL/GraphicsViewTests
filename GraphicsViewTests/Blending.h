@@ -65,7 +65,7 @@ inline
 void
 BlendPixelNormalF( float** pixelDestination, float r, float g, float b, float a )
 {
-    int transparencyAmountInverse = (255.F - a) / 255.F;
+    float transparencyAmountInverse = (255.F - a) / 255.F;
 
     **pixelDestination = b + **pixelDestination * transparencyAmountInverse; ++*pixelDestination;
     **pixelDestination = g + **pixelDestination * transparencyAmountInverse; ++*pixelDestination;

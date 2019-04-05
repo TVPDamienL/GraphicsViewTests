@@ -466,9 +466,11 @@ cCanvas::SetImage( QImage* iImage )
         //previousFrameGotPainted( *mItemPixmap );
     }
 
+    //qDebug() << "Up";
     mCurrentEditedImage = iImage;
     mEditableItem->mImage = iImage;
     mEditableItem->update();
+    repaint( mTransform.mapRect( _DirtyAreaForRepaint ) );
 }
 
 
@@ -481,7 +483,10 @@ cCanvas::SetClip( cClip * iClip )
     mClip->RegisterEditionCallback( [this]( cBaseData* sender, int arg ) {
 
         if( arg == cClip::eMessageClip::kDirty )
+        {
+            _DirtyAreaForRepaint = mClip->DirtyArea();
             SetImage( mClip->ComposeLayers() );
+        }
 
         });
 

@@ -29,7 +29,9 @@ public:
     void ShowImages( QVector< QImage* > images );
 
     void ShowImage( const float* image, int width, int height );
+    void ShowImageGray( const float* image, int width, int height );
     void ShowImages( QVector< const float* > images, QVector< int > widths, QVector< int > heights );
+    void ShowImagesGray( QVector< const float* > images, QVector< int > widths, QVector< int > heights );
     void Hide();
 
 private:

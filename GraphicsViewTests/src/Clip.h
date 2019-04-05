@@ -26,6 +26,7 @@ public:
 
 
     void DirtyArea( const QRect& iArea );
+    const QRect& DirtyArea() const { return mDirtyArea; }
     void DirtyAll();
 
     //Layers
