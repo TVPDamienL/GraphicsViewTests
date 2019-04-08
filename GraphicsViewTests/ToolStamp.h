@@ -12,6 +12,16 @@ class cToolStamp :
 {
     Q_OBJECT
 
+
+public:
+    enum eTipSwapStyle
+    {
+        kLinear,
+        kRandom,
+        kPingPong
+    };
+
+
 public:
     virtual ~cToolStamp();
     cToolStamp( QObject* iParent = Q_NULLPTR );
@@ -19,7 +29,7 @@ public:
 
 public:
     Qt::ItemFlags   flags( const QModelIndex& iIndex ) const override;
-    virtual  void  buildTool() = 0;
+    virtual  void   buildTool();
 
 public:
     virtual  int    getSize() const;
@@ -41,20 +51,31 @@ public:
     virtual  QRect  EndDrawing( sPointData iPointData ) override;
     virtual  void   CancelDrawing() override;
 
+public:
+    void AddTip( float* iTip );
+    void SetTipSwapStyle( eTipSwapStyle iStyle );
+
 
 protected:
+    virtual void    ClearTool();
     virtual void    PrepareTool();
 
 
 protected:
-    virtual void    RenderTip( int x, int y ) = 0;
-    void            _BuildMipMap();
+    virtual void    RenderTips( int x, int y ) = 0;
+
+    void            ClearTips();
+    void            _BuildMipMaps();
+    void            _ClearMipMaps();
 
 
 protected:
+    eTipSwapStyle                       mStyle = kLinear;
+    int                                 mCurrentTipIndex = 0;
     // Float images
-    QVector< const float* > mMipMapF;
-    float*                  mTipRenderedF = 0;
+    QVector< QVector< const float* > >  mMipMapF;
+    QVector< float* >                   mTipRenderedF;
+
     float*                  mDryBuffer = 0;
     float*                  mStampBuffer = 0;
 

@@ -30,6 +30,12 @@ cToolStamp::flags( const QModelIndex & iIndex ) const
 }
 
 
+void
+cToolStamp::buildTool()
+{
+}
+
+
 int
 cToolStamp::getSize() const
 {
@@ -41,7 +47,7 @@ void
 cToolStamp::setSize( int iSize )
 {
     cPaintToolBase::setSize( iSize );
-    PrepareTool();
+    ClearTool(); // Deletes all tips and mip maps, causing a recreation when draw start happens
 }
 
 
@@ -56,7 +62,7 @@ void
 cToolStamp::setColor( const QColor & iColor )
 {
     cPaintToolBase::setColor( iColor );
-    PrepareTool();
+    ClearTool(); // Deletes all tips and mip maps, causing a recreation when draw start happens
 }
 
 
@@ -71,7 +77,7 @@ void
 cToolStamp::setOpacity( float iOpacity )
 {
     cPaintToolBase::setOpacity( iOpacity );
-    PrepareTool();
+    ClearTool(); // Deletes all tips and mip maps, causing a recreation when draw start happens
 }
 
 
@@ -104,7 +110,9 @@ cToolStamp::StartDrawing( QImage* iImage, sPointData iPointData )
     mStampBuffer = new float[ iImage->width() * iImage->height() ];
     memset( mStampBuffer, 0, sizeof(float) * iImage->width() * iImage->height() );
 
-    PrepareTool();
+    // If no tips are there, we prepare the tool == we build tips and mip maps
+    if( mTipRenderedF.size() == 0 )
+        PrepareTool();
 
     mDirtyArea = QRect( 0, 0, 0, 0 );
 }
@@ -150,7 +158,7 @@ cToolStamp::DrawDot( float iX, float iY, float iPressure, float iRotation )
     int endingY = int( maxY + 1 ) >= mDrawingContext->height() ? mDrawingContext->height() - 1 : int( maxY + 1 );
 
     auto trans = QTransform();
-    int indexMip = std::min( log2( 1/scale ), float( mMipMapF.count() - 1 ) );
+    int indexMip = std::min( log2( 1/scale ), float( mMipMapF[mCurrentTipIndex].count() - 1 ) );
     float startingScale = indexMip == 0 ? 1 : std::pow( 0.5, indexMip );
     float remainingScale = scale / startingScale;
 
@@ -164,13 +172,18 @@ cToolStamp::DrawDot( float iX, float iY, float iPressure, float iRotation )
     const int minYI = int( minY );
     QPointF subPixelOffset( minXI - minX, minYI - minY ); // Invert the sign to have the offset from the source image perspective
 
-    MTDownscaleBoxAverageDirectAlphaFDry( mMipMapF[ indexMip ], mipMapSizeAtIndex, mipMapSizeAtIndex,
+    MTDownscaleBoxAverageDirectAlphaFDry( mMipMapF[mCurrentTipIndex][ indexMip ], mipMapSizeAtIndex, mipMapSizeAtIndex,
                                           mDryBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
                                           mStampBuffer,
                                           _mFloatBuffer,
                                           mDrawingContext,
                                           mAlphaMask, transfo, QPoint( 0, 0 ), subPixelOffset, mOpacity,
                                           red, green, blue );
+
+    if( mStyle == kLinear )
+    {
+        mCurrentTipIndex = (mCurrentTipIndex + 1) % mTipRenderedF.size();
+    }
 
     mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX + 1, endingY - startingY + 1 ) );
 }
@@ -220,53 +233,90 @@ cToolStamp::CancelDrawing()
 
 
 void
-cToolStamp::PrepareTool()
+cToolStamp::AddTip( float * iTip )
 {
-    const int toolDiameter = mToolSize * 2;
-    const int bufferSize = toolDiameter * toolDiameter;
-
-    QRect rect( 0, 0, toolDiameter, toolDiameter );
-    delete  mTipRenderedF;
-    mTipRenderedF = new float[ bufferSize ];
-    memset( mTipRenderedF, 0, sizeof(float) * bufferSize );
-
-    RenderTip( mToolSize, mToolSize );
-    _BuildMipMap();
+    mTipRenderedF.push_back( iTip );
 }
 
 
 void
-cToolStamp::_BuildMipMap()
+cToolStamp::SetTipSwapStyle( eTipSwapStyle iStyle )
 {
-    for( auto* image : mMipMapF )
+    mStyle = iStyle;
+}
+
+
+void
+cToolStamp::ClearTool()
+{
+    ClearTips();
+    _ClearMipMaps();
+}
+
+
+void
+cToolStamp::PrepareTool()
+{
+    ClearTool();
+
+    RenderTips( mToolSize, mToolSize );
+    _BuildMipMaps();
+}
+
+
+
+void
+cToolStamp::ClearTips()
+{
+    for( auto tip : mTipRenderedF )
+        delete  tip;
+
+    mTipRenderedF.clear();
+}
+
+
+void
+cToolStamp::_BuildMipMaps()
+{
+    for( auto tip : mTipRenderedF )
     {
-        delete[] image;
-    }
+        QVector< const float * > mip;
+        //QVector< int > ws;
+        //QVector< int > hs;
 
-    mMipMapF.clear();
+        int width = mToolSize*2;
+        int height = mToolSize*2;
+        QTransform t = QTransform::fromScale( 0.5, 0.5 );
 
-    //QVector< int > ws;
-    //QVector< int > hs;
+        float* tipRenderedCopy = new float[ width * height ];
+        memcpy( tipRenderedCopy, tip, sizeof( float ) * width * height );
 
-    int width = mToolSize*2;
-    int height = mToolSize*2;
-    QTransform t = QTransform::fromScale( 0.5, 0.5 );
-
-    float* tipRenderedCopy = new float[ width * height ];
-    memcpy( tipRenderedCopy, mTipRenderedF, sizeof( float ) * width * height );
-
-    mMipMapF.push_back( tipRenderedCopy );
-    //ws.push_back( width );
-    //hs.push_back( height );
-
-    while( width > 1 && height > 1 )
-    {
-        mMipMapF.push_back( DownscaleBoxAverageIntoImageFGray( mMipMapF.last(), width, height, t, &width, &height ) );
+        mip.push_back( tipRenderedCopy );
         //ws.push_back( width );
         //hs.push_back( height );
-    }
 
-    //IMAGEDEBUG->ShowImagesGray( mMipMapF, ws, hs );
+        while( width > 1 && height > 1 )
+        {
+            mip.push_back( DownscaleBoxAverageIntoImageFGray( mip.last(), width, height, t, &width, &height ) );
+            //ws.push_back( width );
+            //hs.push_back( height );
+        }
+
+        //IMAGEDEBUG->ShowImagesGray( mMipMapF, ws, hs );
+
+        mMipMapF.push_back( mip );
+    }
+}
+
+
+void
+cToolStamp::_ClearMipMaps()
+{
+    for( auto mip : mMipMapF )
+    for( auto tip : mip )
+        delete  tip;
+
+    mMipMapF.clear();
 }
 
 

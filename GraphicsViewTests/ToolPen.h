@@ -22,7 +22,7 @@ public:
 
 
 protected:
-    virtual void  RenderTip( int x, int y ) override;
+    virtual void  RenderTips( int x, int y ) override;
 
 private:
     cCurveBase< float > mProfile;
