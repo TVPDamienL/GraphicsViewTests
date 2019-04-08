@@ -316,7 +316,7 @@ cCanvas::MouseDown( const QPoint& iPos, const Qt::MouseButton& iButton, double i
                 }
                 else
                 {
-                    paintTool->SetAlphaMask( 0 );
+                    paintTool->ClearAlphaMask();
                 }
             }
 

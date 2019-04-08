@@ -1,6 +1,7 @@
 #include "PaintToolBase.h"
 
 #include "Math.Fast.h"
+#include "Image.UtilitiesMultiThreaded.h"
 
 #include <QDebug>
 
@@ -21,7 +22,7 @@ cPaintToolBase::~cPaintToolBase()
 
 cPaintToolBase::cPaintToolBase( QObject *parent ) :
     ToolBase( parent ),
-    mAlphaMask( 0 )
+    mAlphaMask( mEmptyAlpha )
 {
     mStep = 1.0;
     mLastRenderedPathIndex = 0;
@@ -116,6 +117,14 @@ cPaintToolBase::StartDrawing( QImage* iDC, sPointData iPointData )
                 _mFloatBuffer[ floatIndex + x ] = *scan; ++scan;
             }
         }
+    }
+
+    if( !mEmptyAlpha || mEmptyAlpha->width() != iDC->width() || mEmptyAlpha->height() != iDC->height() )
+    {
+        delete  mEmptyAlpha;
+        mEmptyAlpha = new QImage( iDC->width(), iDC->height(), QImage::Format::Format_ARGB32_Premultiplied );
+        MTHardFill( mEmptyAlpha, mEmptyAlpha->rect(), Qt::black );
+        mAlphaMask = mEmptyAlpha;
     }
 
     _mPreviousDrawingContext = iDC;
@@ -297,7 +306,7 @@ cPaintToolBase::SetAlphaMask( QImage* iImage )
 void
 cPaintToolBase::ClearAlphaMask()
 {
-    mAlphaMask = 0;
+    mAlphaMask = mEmptyAlpha;
 }
 
 

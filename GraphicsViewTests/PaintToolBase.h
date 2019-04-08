@@ -80,6 +80,7 @@ protected:
     float                       mOpacity;
 
     const QImage*               mAlphaMask;
+    QImage*                     mEmptyAlpha = 0;
     QRect                       mDirtyArea;
 
     int                         mLastRenderedPathIndex;

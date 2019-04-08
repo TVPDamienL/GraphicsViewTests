@@ -9,6 +9,8 @@
 #include "ThreadMachine.h"
 #include "Thread.h"
 
+#include "Image.Utilities.h"
+
 
 // Sets area with color
 // This is like a memset

@@ -178,7 +178,6 @@ cToolSmudge::DrawLine( const QPointF& iP1, const QPointF& iP2, float iPressure1,
 QRect
 cToolSmudge::EndDrawing( sPointData iPointData )
 {
-    _GPU->ClearPaintToolBuffers();
     delete mCanvasSample;
     mCanvasSample = 0;
     delete _mFloatExtract;
@@ -198,7 +197,6 @@ cToolSmudge::_GetStepInPixelValue() const
 void
 cToolSmudge::_GenerateMask()
 {
-    qDebug() << "MASK";
     float* pixelRow = mAlphaMask;
 
     const uint width = mToolSize;
