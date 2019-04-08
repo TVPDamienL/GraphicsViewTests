@@ -201,9 +201,6 @@
     <ClCompile Include="ThreadMachine.cpp">
       <Filter>src\Thread</Filter>
     </ClCompile>
-    <ClCompile Include="ToolPencil.cpp">
-      <Filter>src\ToolModel\Tools</Filter>
-    </ClCompile>
     <ClCompile Include="ToolSmudge.cpp">
       <Filter>src\ToolModel\Tools</Filter>
     </ClCompile>
@@ -220,6 +217,9 @@
       <Filter>src\Image</Filter>
     </ClCompile>
     <ClCompile Include="ToolStamp.cpp">
+      <Filter>src\ToolModel\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="ToolPen.cpp">
       <Filter>src\ToolModel\Tools</Filter>
     </ClCompile>
   </ItemGroup>
@@ -260,9 +260,6 @@
     <QtMoc Include="Rectangle.h">
       <Filter>src\ToolModel\Shapes</Filter>
     </QtMoc>
-    <QtMoc Include="ToolPencil.h">
-      <Filter>src\ToolModel\Tools</Filter>
-    </QtMoc>
     <QtMoc Include="ToolSmudge.h">
       <Filter>src\ToolModel\Tools</Filter>
     </QtMoc>
@@ -270,6 +267,9 @@
       <Filter>src\Gadget</Filter>
     </QtMoc>
     <QtMoc Include="ToolStamp.h">
+      <Filter>src\ToolModel\Tools</Filter>
+    </QtMoc>
+    <QtMoc Include="ToolPen.h">
       <Filter>src\ToolModel\Tools</Filter>
     </QtMoc>
   </ItemGroup>

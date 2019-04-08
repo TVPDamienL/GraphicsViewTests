@@ -57,10 +57,11 @@ public:
     QSpacerItem *verticalSpacer;
     QLabel *label_3;
     QGridLayout *gridLayout;
-    QPushButton *buttonToolPaint;
-    QPushButton *buttonToolSelect;
-    QPushButton *buttonRectangle;
     QPushButton *buttonSmudge;
+    QPushButton *buttonToolPaint;
+    QPushButton *buttonRectangle;
+    QPushButton *buttonToolSelect;
+    QPushButton *buttonToolPencil;
     cCanvas *canvas;
     QHBoxLayout *horizontalLayout_4;
     QSpacerItem *horizontalSpacer;
@@ -190,25 +191,30 @@ public:
         gridLayout = new QGridLayout();
         gridLayout->setSpacing(6);
         gridLayout->setObjectName(QString::fromUtf8("gridLayout"));
+        buttonSmudge = new QPushButton(centralWidget);
+        buttonSmudge->setObjectName(QString::fromUtf8("buttonSmudge"));
+
+        gridLayout->addWidget(buttonSmudge, 2, 1, 1, 1);
+
         buttonToolPaint = new QPushButton(centralWidget);
         buttonToolPaint->setObjectName(QString::fromUtf8("buttonToolPaint"));
 
         gridLayout->addWidget(buttonToolPaint, 0, 0, 1, 1);
+
+        buttonRectangle = new QPushButton(centralWidget);
+        buttonRectangle->setObjectName(QString::fromUtf8("buttonRectangle"));
+
+        gridLayout->addWidget(buttonRectangle, 2, 0, 1, 1);
 
         buttonToolSelect = new QPushButton(centralWidget);
         buttonToolSelect->setObjectName(QString::fromUtf8("buttonToolSelect"));
 
         gridLayout->addWidget(buttonToolSelect, 0, 1, 1, 1);
 
-        buttonRectangle = new QPushButton(centralWidget);
-        buttonRectangle->setObjectName(QString::fromUtf8("buttonRectangle"));
+        buttonToolPencil = new QPushButton(centralWidget);
+        buttonToolPencil->setObjectName(QString::fromUtf8("buttonToolPencil"));
 
-        gridLayout->addWidget(buttonRectangle, 1, 0, 1, 1);
-
-        buttonSmudge = new QPushButton(centralWidget);
-        buttonSmudge->setObjectName(QString::fromUtf8("buttonSmudge"));
-
-        gridLayout->addWidget(buttonSmudge, 1, 1, 1, 1);
+        gridLayout->addWidget(buttonToolPencil, 1, 0, 1, 1);
 
 
         verticalLayout->addLayout(gridLayout);
@@ -296,10 +302,11 @@ public:
         opacityLabel->setText(QApplication::translate("cMainWindow", "Opacity", nullptr));
         vectorialLabel->setText(QApplication::translate("cMainWindow", "Vectorial", nullptr));
         label_3->setText(QApplication::translate("cMainWindow", "Tools", nullptr));
-        buttonToolPaint->setText(QApplication::translate("cMainWindow", "Paint", nullptr));
-        buttonToolSelect->setText(QApplication::translate("cMainWindow", "Select", nullptr));
-        buttonRectangle->setText(QApplication::translate("cMainWindow", "Rectangle", nullptr));
         buttonSmudge->setText(QApplication::translate("cMainWindow", "Smudge", nullptr));
+        buttonToolPaint->setText(QApplication::translate("cMainWindow", "Pencil", nullptr));
+        buttonRectangle->setText(QApplication::translate("cMainWindow", "Rectangle", nullptr));
+        buttonToolSelect->setText(QApplication::translate("cMainWindow", "Select", nullptr));
+        buttonToolPencil->setText(QApplication::translate("cMainWindow", "Pen", nullptr));
         playButton->setText(QApplication::translate("cMainWindow", "Play", nullptr));
         stopButton->setText(QApplication::translate("cMainWindow", "Stop", nullptr));
     } // retranslateUi

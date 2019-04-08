@@ -43,6 +43,7 @@ public slots:
     void stepChanged( int );
     void UpdateUI();
     void ToolPaintClicked();
+    void ToolPencilClicked();
     void ToolSelectClicked();
     void ToolRectangleClicked();
     void ToolSmudgeClicked();
@@ -59,6 +60,7 @@ private:
 
     QDataWidgetMapper*  mMapper;
     cPaintToolBase*     mToolPaint;
+    cPaintToolBase*     mToolPen;
     cPaintToolBase*     mToolSelect;
     cShapeRectangle*    mRectangleShape;
     cShapeRectangle*    mRectangleSelection;

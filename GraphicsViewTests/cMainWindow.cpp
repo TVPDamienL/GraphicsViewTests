@@ -5,6 +5,7 @@
 #include <QColorDialog>
 
 #include "ToolSimpleBrush.h"
+#include "ToolPen.h"
 #include "ToolSmudge.h"
 #include "cToolSelectionTest.h"
 #include "Rectangle.h"
@@ -18,6 +19,7 @@
 cMainWindow::cMainWindow(QWidget *parent) :
     QMainWindow(parent),
     mToolPaint( new cToolSimpleBrush() ),
+    mToolPen( new cToolPen() ),
     mToolSelect( new cToolSelectionTest() ),
     mRectangleShape( new cShapeRectangle() ),
     mRectangleSelection( new cShapeRectangle() ),
@@ -69,6 +71,7 @@ cMainWindow::cMainWindow(QWidget *parent) :
 
     connect( ui.buttonToolSelect, &QPushButton::clicked, this, &cMainWindow::ToolSelectClicked );
     connect( ui.buttonToolPaint, &QPushButton::clicked, this, &cMainWindow::ToolPaintClicked );
+    connect( ui.buttonToolPencil, &QPushButton::clicked, this, &cMainWindow::ToolPencilClicked );
     connect( ui.buttonRectangle, &QPushButton::clicked, this, &cMainWindow::ToolRectangleClicked );
     connect( ui.buttonSmudge, &QPushButton::clicked, this, &cMainWindow::ToolSmudgeClicked );
 
@@ -167,6 +170,7 @@ void
 cMainWindow::sizeChanged( int iNew )
 {
     mToolPaint->setSize( iNew );
+    mToolPen->setSize( iNew );
 }
 
 
@@ -174,6 +178,7 @@ void
 cMainWindow::stepChanged( int iStep )
 {
     mToolPaint->setStep( iStep/100.F );
+    mToolPen->setStep( iStep/100.F );
 }
 
 
@@ -196,6 +201,15 @@ cMainWindow::ToolPaintClicked()
     ui.canvas->SetSelectionMode( false );
     ui.canvas->SetToolModel( mToolPaint );
 }
+
+
+void
+cMainWindow::ToolPencilClicked()
+{
+    ui.canvas->SetSelectionMode( false );
+    ui.canvas->SetToolModel( mToolPen );
+}
+
 
 
 void

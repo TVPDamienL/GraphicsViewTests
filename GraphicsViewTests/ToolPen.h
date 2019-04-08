@@ -6,14 +6,14 @@
 
 #include <QObject>
 
-class cToolSimpleBrush :
+class cToolPen :
     public cToolStamp
 {
     Q_OBJECT
 
 public:
-    virtual ~cToolSimpleBrush();
-    cToolSimpleBrush( QObject* iParent = Q_NULLPTR );
+    virtual ~cToolPen();
+    cToolPen( QObject* iParent = Q_NULLPTR );
 
 
 public:
@@ -21,17 +21,10 @@ public:
     virtual void  buildTool() override;
 
 
-public:
-    void    ApplyProfile( bool iApply );
-    bool    ApplyProfile() const;
-
-
 protected:
     virtual void  RenderTip( int x, int y ) override;
 
-
 private:
     cCurveBase< float > mProfile;
-    bool                mApplyProfile;
 };
 
