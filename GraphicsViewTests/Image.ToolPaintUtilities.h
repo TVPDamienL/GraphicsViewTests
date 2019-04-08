@@ -22,7 +22,6 @@ ReadGrayImageWithFloatArea( const QPointF& iOffset, int iX, int iY, float iTopLe
                         const float* iImage, int iImageWidth, int iImageHeight,
                         float* oAlpha )
 {
-
     const float* scanline;
     const int bpl = iImageWidth;
 
@@ -98,7 +97,16 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
 
     // Final area in float
     QRectF floatArea( point.x(), point.y(), iSourceWidth, iSourceHeight );
-    const QPointF subReadOffset = -(point - QPoint( point.x(), point.y() )); // Basically the offset representing the amount that has been cut by int
+
+    // Because int cuts will cut lower value if > 0 :  1.26 ->  1
+    //                             and upper if < 0 : -1.26 -> -1
+    QPoint intPoint( point.x(), point.y() );
+    if( point.x() < 0 )
+        intPoint.setX( intPoint.x() - 1 );
+    if( point.y() < 0 )
+        intPoint.setY( intPoint.y() - 1 );
+
+    const QPointF subReadOffset = - (point - intPoint); // Basically the offset representing the amount that has been cut by int
 
     // Keep offset between 0 and 1
     // TODO: if offset is larger than 1 or -1, need to do multiple +1 or -1 : 2.16 -> 0.16
@@ -117,7 +125,6 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
     const int maxX = minX + iSourceWidth; // Max is not min + width -1 here because we want to expand the int area by one, to handle float area entirely
     const int minY = point.y();
     const int maxY = minY + iSourceHeight; // Max is not min + width -1 here because we want to expand the int area by one, to handle float area entirely
-
 
     // Clipped bounds == iteration limits
     const int startingX = minX < 0 ? 0 : minX;
@@ -158,9 +165,6 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
 
             float yRatio = 1.F;
             float xRatio = 1.F;
-
-
-            // BUG: with the left and top clamping, it fucks with one iteration, making a glitch in the shape
 
             for( int y = startY; y < endY; ++y )
             {

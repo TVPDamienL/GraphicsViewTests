@@ -236,7 +236,7 @@ cToolSimpleBrush::DrawDot( float iX, float iY, float iPressure, float iRotation 
 
     mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX + 1, endingY - startingY + 1 ) );
 
-    IMAGEDEBUG->ShowImageGray( mStampBuffer, mDrawingContext->width(), mDrawingContext->height() );
+    //IMAGEDEBUG->ShowImageGray( mStampBuffer, mDrawingContext->width(), mDrawingContext->height() );
 }
 
 
