@@ -103,7 +103,7 @@ cPaintToolBase::StartDrawing( QImage* iDC, sPointData iPointData )
     if( _mPreviousDrawingContext != iDC )
     {
         delete[] _mFloatBuffer;
-        _mFloatBuffer = new float[ iDC->bytesPerLine() * iDC->height() ];
+        _mFloatBuffer = new float[ iDC->width() * 4 * iDC->height() ];
         uchar* data = iDC->bits();
         uchar* scan = data;
 

@@ -86,7 +86,7 @@ cToolStamp::StartDrawing( QImage* iImage, sPointData iPointData )
 {
     cPaintToolBase::StartDrawing( iImage, iPointData );
 
-    const int imageSize = iImage->bytesPerLine() * iImage->height();
+    const int imageSize = iImage->width() * 4 * iImage->height();
 
     // Initialize DryBuffer
     delete[] mDryBuffer;
@@ -96,7 +96,7 @@ cToolStamp::StartDrawing( QImage* iImage, sPointData iPointData )
 
     for( int y = 0; y < iImage->height(); ++y )
     {
-        scan = data + y * iImage->bytesPerLine();
+        scan = data + y * iImage->width() * 4;
         const int floatIndex = y * iImage->width() * 4;
 
         for( int x = 0; x < iImage->width() * 4; ++x )
@@ -107,8 +107,8 @@ cToolStamp::StartDrawing( QImage* iImage, sPointData iPointData )
 
     // Initialize StampBuffer
     delete[] mStampBuffer;
-    mStampBuffer = new float[ iImage->width() * iImage->height() ];
-    memset( mStampBuffer, 0, sizeof(float) * iImage->width() * iImage->height() );
+    mStampBuffer = new float[ imageSize ];
+    memset( mStampBuffer, 0, sizeof(float) * imageSize );
 
     // If no tips are there, we prepare the tool == we build tips and mip maps
     if( mTipRenderedF.size() == 0 )
@@ -180,7 +180,7 @@ cToolStamp::DrawDot( float iX, float iY, float iPressure, float iRotation )
                                           mAlphaMask, transfo, QPoint( 0, 0 ), subPixelOffset, mOpacity,
                                           red, green, blue );
 
-    if( mStyle == kLinear )
+    if( mStyle == kLinearLoop )
     {
         mCurrentTipIndex = (mCurrentTipIndex + 1) % mTipRenderedF.size();
     }
@@ -226,7 +226,7 @@ cToolStamp::CancelDrawing()
     }
 
     // Initialize StampBuffer
-    memset( mStampBuffer, 0, sizeof(float) * mDrawingContext->width() * mDrawingContext->height() );
+    memset( mStampBuffer, 0, sizeof(float) * mDrawingContext->width() * 4 * mDrawingContext->height() );
 
     mDirtyArea = mDrawingContext->rect();
 }

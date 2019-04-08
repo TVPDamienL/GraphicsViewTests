@@ -22,6 +22,7 @@ cToolPen::cToolPen( QObject * iParent ) :
     mColor = Qt::green;
     mStep = 0.1;
     mOpacity = 1.F;
+    mOpacity = 0.1F;
 
     buildTool();
 }
@@ -48,6 +49,7 @@ cToolPen::buildTool()
 void
 cToolPen::RenderTips( int iX, int iY )
 {
+    // Generates 5 different tips, so that this pen tool feels more natural, and less texture stamper like
     for( int i = 0; i < 5; ++i )
     {
         int bufferSize =  mDrawingContext->width() * mDrawingContext->height();

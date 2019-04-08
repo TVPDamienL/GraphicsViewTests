@@ -16,7 +16,7 @@ class cToolStamp :
 public:
     enum eTipSwapStyle
     {
-        kLinear,
+        kLinearLoop,
         kRandom,
         kPingPong
     };
@@ -70,7 +70,7 @@ protected:
 
 
 protected:
-    eTipSwapStyle                       mStyle = kLinear;
+    eTipSwapStyle                       mStyle = kLinearLoop;
     int                                 mCurrentTipIndex = 0;
     // Float images
     QVector< QVector< const float* > >  mMipMapF;
