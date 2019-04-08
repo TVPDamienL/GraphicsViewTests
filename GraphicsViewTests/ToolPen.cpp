@@ -39,9 +39,10 @@ cToolPen::buildTool()
 {
     srand( time( NULL ) );
 
-    mProfile.SetValueAtTime( 0.0, 0.0 );
-    mProfile.SetValueAtTime( 0.5, 1.0 );
-    mProfile.SetValueAtTime( 1.0, 1.0 );
+    // Represents the amount of random
+    mProfile.SetValueAtTime( 0.0, 100.0 );
+    mProfile.SetValueAtTime( 0.3, 100.0 );
+    mProfile.SetValueAtTime( 1.0, 0.0 );
 }
 
 
@@ -54,7 +55,6 @@ cToolPen::RenderTip( int iX, int iY )
     unsigned int height = mToolSize * 2;
 
     const float originA = mColor.alpha()  * mOpacity;
-    float finalA = originA;
 
     const int bytesPerLine = width;
     const int r = mToolSize;
@@ -85,8 +85,18 @@ cToolPen::RenderTip( int iX, int iY )
             const int dy = y - iY;
             if( dx * dx + dy * dy <= radiusSq )
             {
-                const float rnd = float(rand() % 101) / 100.F;
-                *pixelRow = finalA * rnd; ++pixelRow;
+                float distance = Distance2PointsSquared( QPoint( iX, iY ), QPoint( iX + dx, iY + dy ) );
+                float distanceParam = 1.0F - ( distance / radiusSq ); // 1 - distanceRatio so it goes outwards, otherwise, it's a reversed gradient
+                float val = mProfile.GetValueAtTime( distanceParam );
+
+                float alphaToBlend = originA;
+                if( ( rand() % 100 ) < int(val) ) // If doRandom
+                {
+                    const float rnd = float(rand() % 101) / 100.F;
+                    alphaToBlend *= rnd * 0.01;
+                }
+
+                *pixelRow = alphaToBlend; ++pixelRow;
             }
             else
             {
