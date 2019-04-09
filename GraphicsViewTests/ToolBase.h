@@ -34,6 +34,11 @@ public:
     virtual  QRect  EndDrawing( sPointData iPointData) = 0;
     virtual  void   CancelDrawing() = 0;
 
+
+
+public:
+    virtual void DEBUG();
+
 protected:
     QImage*     mDrawingContext = 0;
     bool        mVectorial = false;

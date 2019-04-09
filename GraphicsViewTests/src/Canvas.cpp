@@ -222,6 +222,10 @@ cCanvas::keyReleaseEvent( QKeyEvent * iEvent )
     {
         mClip->GetSelection()->ApplyTransformation();
     }
+    else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_M  )
+    {
+        mTool->DEBUG();
+    }
 
     QGraphicsView::keyReleaseEvent( iEvent );
 }

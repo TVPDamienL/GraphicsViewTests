@@ -110,6 +110,15 @@ cToolStamp::StartDrawing( QImage* iImage, sPointData iPointData )
     mStampBuffer = new float[ imageSize ];
     memset( mStampBuffer, 0, sizeof(float) * imageSize );
 
+    // Init color stamp
+    delete mColorStampF;
+    delete mColorStampFTMP;
+    const int toolDiameter = mToolSize*2;
+    mColorStampF = new float[ toolDiameter * 4 * toolDiameter ];
+    mColorStampFTMP = new float[ toolDiameter * 4 * toolDiameter ];
+    MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), mColor );
+    MTHardFillF( mColorStampFTMP, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), mColor );
+
     // If no tips are there, we prepare the tool == we build tips and mip maps
     if( mTipRenderedF.size() == 0 )
         PrepareTool();
@@ -152,10 +161,12 @@ cToolStamp::DrawDot( float iX, float iY, float iPressure, float iRotation )
     if( maxX < 0 || maxY < 0 )
         return;
 
-    int startingX = int( minX ) < 0 ? 0 : int( minX );
-    int endingX = int( maxX + 1 ) >= mDrawingContext->width() ? mDrawingContext->width() - 1 : int( maxX + 1 );
-    int startingY = int( minY ) < 0 ? 0 : int( minY );
-    int endingY = int( maxY + 1 ) >= mDrawingContext->height() ? mDrawingContext->height() - 1 : int( maxY + 1 );
+    const int startingX = int( minX ) < 0 ? 0 : int( minX );
+    const int endingX = int( maxX + 1 ) >= mDrawingContext->width() ? mDrawingContext->width() - 1 : int( maxX + 1 );
+    const int startingY = int( minY ) < 0 ? 0 : int( minY );
+    const int endingY = int( maxY + 1 ) >= mDrawingContext->height() ? mDrawingContext->height() - 1 : int( maxY + 1 );
+
+    mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX + 1, endingY - startingY + 1 ) );
 
     auto trans = QTransform();
     int indexMip = std::min( log2( 1/scale ), float( mMipMapF[mCurrentTipIndex].count() - 1 ) );
@@ -172,20 +183,26 @@ cToolStamp::DrawDot( float iX, float iY, float iPressure, float iRotation )
     const int minYI = int( minY );
     QPointF subPixelOffset( minXI - minX, minYI - minY ); // Invert the sign to have the offset from the source image perspective
 
+
+
+    MTBlendImagesF( _mFloatBuffer, mDrawingContext->width(), mDrawingContext->height(), mDirtyArea,
+                    mColorStampF, baseDiameter, baseDiameter, QPoint( 0, 0 ),
+                    mMipMapF[mCurrentTipIndex][0], baseDiameter, baseDiameter, QPoint( 0, 0 ), 0.5 );
+
+
     MTDownscaleBoxAverageDirectAlphaFDry( mMipMapF[mCurrentTipIndex][ indexMip ], mipMapSizeAtIndex, mipMapSizeAtIndex,
+                                          mColorStampF, baseDiameter, baseDiameter,
                                           mDryBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
                                           mStampBuffer,
                                           _mFloatBuffer,
                                           mDrawingContext,
-                                          mAlphaMask, transfo, QPoint( 0, 0 ), subPixelOffset, mOpacity,
-                                          red, green, blue );
+                                          mAlphaMask, transfo, QPoint( 0, 0 ), subPixelOffset, mOpacity );
+
 
     if( mStyle == kLinearLoop )
     {
         mCurrentTipIndex = (mCurrentTipIndex + 1) % mTipRenderedF.size();
     }
-
-    mDirtyArea = mDirtyArea.united( QRect( startingX, startingY, endingX - startingX + 1, endingY - startingY + 1 ) );
 }
 
 
@@ -317,6 +334,13 @@ cToolStamp::_ClearMipMaps()
         delete  tip;
 
     mMipMapF.clear();
+}
+
+
+void
+cToolStamp::DEBUG()
+{
+    IMAGEDEBUG->ShowImage( _mFloatBuffer, 2048, 1080 );
 }
 
 

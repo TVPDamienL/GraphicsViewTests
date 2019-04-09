@@ -69,16 +69,19 @@ protected:
     void            _ClearMipMaps();
 
 
+public:
+    virtual void DEBUG() override;
+
 protected:
     eTipSwapStyle                       mStyle = kLinearLoop;
     int                                 mCurrentTipIndex = 0;
     // Float images
     QVector< QVector< const float* > >  mMipMapF;
     QVector< float* >                   mTipRenderedF;
+    float*                              mColorStampFTMP = 0;
+    float*                              mColorStampF = 0;
 
     float*                  mDryBuffer = 0;
     float*                  mStampBuffer = 0;
-
-    float                   _mToolSizeAfterPressure;
 };
 

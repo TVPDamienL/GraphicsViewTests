@@ -79,6 +79,8 @@ ReadGrayImageWithFloatArea( const QPointF& iOffset, int iX, int iY, float iTopLe
 static
 void
 MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int iSourceHeight,  // Source we will blend, in Gray
+                        const float* iColorBuffer, const int iColorW, const int iColorH,   // The color stamp buffer, to lookup color to apply
+
                         const float* drybuffer, const int iWidth, const int iHeight,      // The background over which we blend
                         float* stampbuffer,
 
@@ -86,11 +88,11 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
                         QImage* iParallelRender,    // The 8bit output buffer
                         const QImage* iAlphaMask,
                         const QPointF& point,
-                        const float maxAlpha,
-                        const float red, const float green, const float blue )
+                        const float maxAlpha )
 {
     const uchar maxAlphaRanged = maxAlpha * 255.F;
     const int sourceBPL = iSourceWidth;
+    const int colorBPL = iColorW*4;
     const int buffersBPL = iWidth * 4;
 
     uchar* parallelData = iParallelRender->bits();
@@ -132,10 +134,10 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
 
     // Clipped bounds == iteration limits
     const int startingX = minX < 0 ? 0 : minX;
-    const int endingX = maxX >= iWidth ? iWidth - 1 : maxX;
+    const int endingX = maxX >= iWidth ? iWidth : maxX;
     const int startingY = minY < 0 ? 0 : minY;
-    const int endingY = maxY >= iHeight ? iHeight - 1 : maxY;
-    const int height = endingY - startingY + 1;
+    const int endingY = maxY >= iHeight ? iHeight : maxY;
+    const int height = endingY - startingY; // No +1 because we are using straight value, not a .right from QRect, that does a width() -1
 
     const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
     const int split = height / threadCount;
@@ -155,7 +157,7 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
         handles.push_back( cThreadProcessor::Instance()->AffectFunctionToThreadAndStart(
             [ = ]( cRange iOff, cRange iRange )
         {
-            const float* sourceScanline = source;
+            const float* colorScan = iColorBuffer;
             const float* dryScan = drybuffer;
             float* stampScan = stampbuffer;
             float* destScanline = destination;
@@ -174,14 +176,19 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
             for( int y = startY; y < endY; ++y )
             {
                 // Indexes and stuff
-                stampScan = stampbuffer + y * iWidth + startX;
-                sourceScanline  = source + (y - minY) * sourceBPL + (startX - minX);
+                colorScan  = iColorBuffer + (y - minY) * colorBPL + (startX - minX) * 4;
 
+                // All these are the same size
+                // This one is gray
+                stampScan = stampbuffer + y * iWidth + startX;
+
+                // Theses are BGRA, float or uint8
                 const int indexOffset = y * buffersBPL + xOffset;
-                dryScan             = drybuffer + indexOffset;
-                destScanline        = destination + indexOffset;
-                parallelScanline    = parallelData + y * parallelBPL + xOffset;
-                alphaScanline       = alphaData + y * alphaBPL + xOffset + 3;
+                dryScan             = drybuffer + indexOffset;                  // float
+                destScanline        = destination + indexOffset;                // float
+                dryScan = destScanline;                                                         // Switch to not using dry A
+                parallelScanline    = parallelData + y * parallelBPL + xOffset; // uint8
+                alphaScanline       = alphaData + y * alphaBPL + xOffset + 3;   // float
 
                 for( int x = startX; x < endX; ++x )
                 {
@@ -194,6 +201,7 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
                     {
                         stampScan++;
 
+                        colorScan += 4;
                         dryScan += 4;
                         destScanline += 4;
 
@@ -209,42 +217,57 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
 
                     // Blending in stamp buffer
                     const float inverseCeiled = (1 - (alpha / maxAlphaRanged));
-                    *stampScan  = alpha + *stampScan  * inverseCeiled;
+                    *stampScan  = alpha;// + *stampScan  * inverseCeiled;                           // Switch to not using dry B
 
 
                     // Blending stampbuffer over drybuffer in floatbuffer and parallelRender at the same time
                     const float stampAlphaNorm = *stampScan / 255.F;
                     const float transparencyAmountInverse = 1 - stampAlphaNorm;
 
-                    *destScanline = blue * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+
+                    if( *destScanline > 256 )
+                        int bp = 5;
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
+                    ++colorScan;
                     ++dryScan;
                     ++parallelScanline;
 
-                    *destScanline = green * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+
+                    if( *destScanline > 256 )
+                        int bp = 5;
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
+                    ++colorScan;
                     ++dryScan;
                     ++parallelScanline;
 
-                    *destScanline = red * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+
+                    if( *destScanline > 256 )
+                        int bp = 5;
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
+                    ++colorScan;
                     ++dryScan;
                     ++parallelScanline;
 
                     *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
+
+                    if( *destScanline > 256 )
+                        int bp = 5;
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
                     ++dryScan;
+                    ++colorScan;
                     ++parallelScanline;
-
                     ++stampScan;
                 }
             }
         },
-            cRange( startingX, startingY + i * split ), cRange( endingX - startingX + 1, split + correct ), true ) );
+            cRange( startingX, startingY + i * split ), cRange( endingX - startingX, split + correct ), true ) );
     }
 
     for( int i = 0; i < handles.size(); ++i )
@@ -266,7 +289,8 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
 // where we directly draw to output
 static
 void
-MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, const int iHeight,     // Source we will blend
+MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, const int iHeight,         // Source we will blend
+                                      const float* iColorBuffer, const int iColorW, const int iColorH,   // The color stamp buffer, to lookup color to apply
 
                                                                         // All float images MUST be the same size, this allows faster access
                                     const float* background, const int iOutputBuffersWidth, const int iOutputBuffersHeight,    // The background over which we blend
@@ -277,8 +301,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                                     const QImage* iAlphaMask,
                                     const QTransform& iTransform, const QPoint& iOrigin, // Transform and its origin to apply
                                     const QPointF& iSubPixelOffset,
-                                    const float maxalpha,
-                                    const float red, const float green, const float blue )
+                                    const float maxalpha )
 {
     const int inputWidth = iWidth;
     const int inputHeight = iHeight;
@@ -325,12 +348,12 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     if( xScaleFactorOriginal >= 1.0 || yScaleFactorOriginal >= 1.0 )
     {
         MTBlendImageNormalFDry( iInput, iWidth, iHeight,
+                                iColorBuffer, iColorW, iColorH,
                                 background, iOutputBuffersWidth, iOutputBuffersHeight,
                                 stampBuffer, iOutput,
                                 iParallelRender,
                                 iAlphaMask,
-                                subPixelPos, maxalpha,
-                                red, green, blue );
+                                subPixelPos, maxalpha );
         return;
     }
 
@@ -354,7 +377,8 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     float* outputData = iOutput;
     uchar* parallelData = iParallelRender->bits();
 
-    const int sourceBPL = iWidth;
+    const int sourceBPL = iWidth; // not *4 because gray, not bgra
+    const int colorBPL = iColorW * 4;
     const int buffersBPL = iOutputBuffersWidth * 4;
     const int parallelBPL = iParallelRender->bytesPerLine();
 
@@ -383,6 +407,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
         {
             const uchar maxAlphaRanged = maxalpha * 255.F;
             const float* sourceScanline = iInput;
+            const float* colorScan = iColorBuffer;
             const uchar* alphaScanline = alphaData + 3;
             float* stampScan = stampBuffer;
 
@@ -408,6 +433,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
             {
                 // Gray buffers
                 sourceScanline  = iInput + (y - minY) * sourceBPL + (startX - minX);
+                colorScan  = iColorBuffer + (y - minY) * colorBPL + (startX - minX);
                 stampScan = stampBuffer +  y * iOutputBuffersWidth + startX;
 
                 // Float buffers
@@ -480,27 +506,31 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                         const float stampAlphaNorm = *stampScan / 255.F;
                         const float transparencyAmountInverse = 1 - stampAlphaNorm;
 
-                        *destScanline = blue * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                        *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                         *parallelScanline = uchar( *destScanline );
                         ++destScanline;
+                        ++colorScan;
                         ++dryScan;
                         ++parallelScanline;
 
-                        *destScanline = green * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                        *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                         *parallelScanline = uchar( *destScanline );
                         ++destScanline;
+                        ++colorScan;
                         ++dryScan;
                         ++parallelScanline;
 
-                        *destScanline = red * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                        *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                         *parallelScanline = uchar( *destScanline );
                         ++destScanline;
+                        ++colorScan;
                         ++dryScan;
                         ++parallelScanline;
 
                         *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
                         *parallelScanline = uchar( *destScanline );
                         ++destScanline;
+                        ++colorScan;
                         ++dryScan;
                         ++parallelScanline;
                         ++stampScan;

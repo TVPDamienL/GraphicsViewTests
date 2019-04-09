@@ -21,3 +21,9 @@ ToolBase::DrawingContext()
 }
 
 
+void
+ToolBase::DEBUG()
+{
+}
+
+

@@ -93,7 +93,7 @@ MTHardFillF( float* dest, const int iWidth, const int iHeight, const QRect& area
     const int endingX = area.right() > iWidth - 1 ? iWidth - 1 : area.right();
     const int startingY = area.top() < 0 ? 0 : area.top();
     const int endingY = area.bottom() > iHeight - 1 ? iHeight - 1 : area.bottom();
-    const int height = endingY - startingY + 1;
+    const int height = endingY - startingY + 1; // +1 because rect.right used for endingX is width - 1, so 299 for a 300 wide rectangle
 
     const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
     const int split = height / threadCount;
@@ -227,6 +227,111 @@ MTBlendImageNormal( QImage* source, QImage* destination, const QPoint& point )
             t->WaitEndOfTask();
     }
 }
+
+
+static
+void
+MTBlendImagesF( const float* source, const int sourceW, const int sourceH, const QRect& iSourceArea,
+                float* destination, const int dstW, const int dstH, const QPoint& point,
+                const float* alphaMask, const int alphaW, const int alphaH, const QPoint& alphaPoint,
+                float iOpacity )
+{
+    int sourceBPL = sourceW*4;
+    int dstBPL = dstW*4;
+    int alphaBPL = alphaW;
+
+    // Source bbox
+    const int minX = iSourceArea.left();
+    const int maxX = iSourceArea.right();
+    const int minY = iSourceArea.top();
+    const int maxY = iSourceArea.bottom();
+
+    const QPoint offset = point - iSourceArea.topLeft();
+    const QPoint offsetAlpha = alphaPoint - iSourceArea.topLeft();
+
+    int startingX = minX < 0 ? 0 : minX;
+    int endingX = maxX >= sourceW ? sourceW - 1 : maxX;
+    int startingY = minY < 0 ? 0 : minY;
+    int endingY = maxY >= sourceH ? sourceH - 1 : maxY;
+
+    // Dst bound checks, not used later
+    const int startingXdst = startingX + offset.x() < 0 ? 0 : startingX + offset.x();
+    const int endingXdst = endingX + offset.x() >= dstW ? dstW - 1 : endingX + offset.x();
+    const int startingYdst = startingY + offset.y() < 0 ? 0 : startingY + offset.y();
+    const int endingYdst = endingY + offset.y() >= dstH ? dstH - 1 : endingY + offset.y();
+
+    // Because dst is an offset followed by a possible shrink, not a grow, of startingBox, applying offset back will not compromise startingBox's inboundness
+    startingX = startingXdst - offset.x();
+    endingX = endingXdst - offset.x();
+    startingY = startingYdst - offset.y();
+    endingY = endingYdst - offset.y();
+
+    int height = endingY - startingY + 1;
+
+    const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
+    const int split = height / threadCount;
+    const int excess = height % threadCount;
+
+    std::vector< cThreadHandle > handles;
+
+    for( int i = 0; i < threadCount; ++i )
+    {
+        int correct = 0;
+        if( i == threadCount-1 )
+            correct = excess;
+
+        handles.push_back( cThreadProcessor::Instance()->AffectFunctionToThreadAndStart(
+            [ = ]( cRange iOff, cRange iRange )
+        {
+            const float* sourceScanline = source;
+            float* destScanline = destination;
+            const float* alphaScan = alphaMask;
+
+            const int startY = iOff.mY;
+            const int endY = startY + iRange.mY;
+            const int startX = iOff.mX;
+            const int endX = startX + iRange.mX;
+
+            for( int y = startY; y < endY; ++y )
+            {
+                sourceScanline  = source + y * sourceBPL + startX * 4;
+                destScanline    = destination + (y + offset.y()) * dstBPL + (startX + offset.x()) * 4;
+                alphaScan    = alphaMask + (y + offsetAlpha.y()) * alphaBPL + (startX + offsetAlpha.x());
+
+                for( int x = startX; x < endX; ++x )
+                {
+                    float alpha = *(sourceScanline+3);
+                    if( alpha == 0 ) // Skip if alpha is nil
+                    {
+                        sourceScanline += 4;
+                        destScanline += 4;
+                        ++alphaScan;
+                        continue;
+                    }
+
+                    float v = *alphaScan / 255.F * iOpacity;
+
+                    BlendPixelNormalF( &destScanline, *(sourceScanline+2) * v, *(sourceScanline+1) * v, *(sourceScanline) * v, alpha * v );
+                    sourceScanline += 4;
+                    ++alphaScan;
+                }
+            }
+        },
+            cRange( startingX, startingY + i * split ), cRange( endingX - startingX + 1, split + correct ), true ) );
+        // +1 because we range over height amount
+        // It then works with endX being startY + iRange.mY;
+        // meaning if range is 25 ( we go 0-24 ), endY will be 25, so we THEN do < in the for
+    }
+
+    for( int i = 0; i < handles.size(); ++i )
+    {
+        auto handle = handles[ i ];
+        cThread* t = handle.GetThread();
+        if( t )
+            t->WaitEndOfTask();
+    }
+}
+
 
 
 //================================================================
