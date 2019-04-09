@@ -45,8 +45,6 @@ private:
     float*              mAlphaMask = 0;
     QImage*             mCanvasSample = 0;
 
-    float               _mToolSizeAfterPressure;
-
     float*              _mFloatExtract = 0;
 };
 

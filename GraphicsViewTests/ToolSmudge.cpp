@@ -19,7 +19,7 @@ cToolSmudge::cToolSmudge( QObject * iParent ) :
     cPaintToolBase( iParent )
 {
     // Some debug values to work with
-    mToolSize = 100;
+    mToolSize = 50;
     mColor = Qt::red;
     mStep = 0.0; // Will be clamped to 1 pixel, which is what we want
 
@@ -60,7 +60,7 @@ cToolSmudge::StartDrawing( QImage* iImage, sPointData iPointData )
     cPaintToolBase::StartDrawing( iImage, iPointData );
 
     delete  mAlphaMask;
-    mAlphaMask = new float[ mToolSize * mToolSize ];
+    mAlphaMask = new float[ mToolSize*2 * mToolSize*2 ];
     _GenerateMask();
     mDirtyArea = QRect( 0, 0, 0, 0 );
 }
@@ -81,8 +81,6 @@ cToolSmudge::DrawDot( float iX, float iY, float iPressure, float iRotation )
 {
     if( _mFloatExtract )
     {
-        _mToolSizeAfterPressure = Max( mToolSize * iPressure, 1.0F );
-
         uchar* data = mDrawingContext->bits();
         uchar* dataScanline = data;
         const int dataBPL = mDrawingContext->bytesPerLine();
@@ -94,13 +92,13 @@ cToolSmudge::DrawDot( float iX, float iY, float iPressure, float iRotation )
 
 
         const float* alphaScanline = 0;
-        const int alphaBPL = mToolSize;
+        const int alphaBPL = mToolSize*2;
 
         const float* sampleData = _mFloatExtract;
         const float* sampleScanline = 0;
-        const int sampleBPL = mToolSize * 4;
+        const int sampleBPL = mToolSize*2 * 4;
 
-        float diam = mToolSize;// * iPressure;
+        float diam = mToolSize*2;// * iPressure;
         float radius = diam / 2;
 
 
@@ -199,11 +197,11 @@ cToolSmudge::_GenerateMask()
 {
     float* pixelRow = mAlphaMask;
 
-    const uint width = mToolSize;
-    const uint height = mToolSize;
+    const uint width = mToolSize*2;
+    const uint height = mToolSize*2;
 
 
-    const uint r = (mToolSize / 2);
+    const uint r = mToolSize;
     const uint r2 = r*r;
 
     const uint centerX = r;
@@ -237,19 +235,19 @@ cToolSmudge::_GenerateMask()
 void
 cToolSmudge::_SampleFromCanvas( int ix, int iy, int size )
 {
-    float diam = mToolSize * 1.0;
-    float radius = diam / 2;
+    float diam = mToolSize * 2;
+    float radius = mToolSize;
 
     const int minX = ix - radius;
-    const int maxX = minX + mToolSize;
+    const int maxX = minX + diam;
     const int minY = iy - radius;
-    const int maxY = minY + mToolSize;
+    const int maxY = minY + diam;
 
     delete  _mFloatExtract;
-    _mFloatExtract = new float[ mToolSize * mToolSize * 4 ];
+    _mFloatExtract = new float[ diam * diam * 4 ];
 
     float* scanExtract = _mFloatExtract;
-    int extractTotalWidth = mToolSize * 4;
+    int extractTotalWidth = diam * 4;
 
     float* scanBuffer = _mFloatBuffer;
     int bufferTotalWidth = mDrawingContext->bytesPerLine();
