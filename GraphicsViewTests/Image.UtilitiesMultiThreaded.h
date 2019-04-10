@@ -249,22 +249,27 @@ MTBlendImagesF( const float* source, const int sourceW, const int sourceH, const
     const QPoint offset = point - iSourceArea.topLeft();
     const QPoint offsetAlpha = alphaPoint - iSourceArea.topLeft();
 
-    int startingX = minX < 0 ? 0 : minX;
-    int endingX = maxX >= sourceW ? sourceW - 1 : maxX;
-    int startingY = minY < 0 ? 0 : minY;
-    int endingY = maxY >= sourceH ? sourceH - 1 : maxY;
+    QRect srcArea( 0, 0, sourceW, sourceH );
+    QRect dstArea( 0, 0, dstW, dstH );
+    QRect alphaArea( 0, 0, dstW, dstH );
 
-    // Dst bound checks, not used later
-    const int startingXdst = startingX + offset.x() < 0 ? 0 : startingX + offset.x();
-    const int endingXdst = endingX + offset.x() >= dstW ? dstW - 1 : endingX + offset.x();
-    const int startingYdst = startingY + offset.y() < 0 ? 0 : startingY + offset.y();
-    const int endingYdst = endingY + offset.y() >= dstH ? dstH - 1 : endingY + offset.y();
+    // Clip to src rect
+    QRect workingArea = srcArea.intersected( iSourceArea );
 
-    // Because dst is an offset followed by a possible shrink, not a grow, of startingBox, applying offset back will not compromise startingBox's inboundness
-    startingX = startingXdst - offset.x();
-    endingX = endingXdst - offset.x();
-    startingY = startingYdst - offset.y();
-    endingY = endingYdst - offset.y();
+    // Clip to dst rect
+    workingArea = workingArea.translated( offset );
+    workingArea = workingArea.intersected( dstArea );
+    workingArea = workingArea.translated( -offset );
+
+    // Clip to alpha rect
+    workingArea = workingArea.translated( offsetAlpha );
+    workingArea = workingArea.intersected( alphaArea );
+    workingArea = workingArea.translated( -offsetAlpha );
+
+    const int startingX   = workingArea.left();
+    const int endingX     = workingArea.right();
+    const int startingY   = workingArea.top();
+    const int endingY     = workingArea.bottom();
 
     int height = endingY - startingY + 1;
 

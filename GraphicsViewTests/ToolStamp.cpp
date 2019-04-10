@@ -112,12 +112,12 @@ cToolStamp::StartDrawing( QImage* iImage, sPointData iPointData )
 
     // Init color stamp
     delete mColorStampF;
-    delete mColorStampFTMP;
+    delete mColorStampFOrigin;
     const int toolDiameter = mToolSize*2;
     mColorStampF = new float[ toolDiameter * 4 * toolDiameter ];
-    mColorStampFTMP = new float[ toolDiameter * 4 * toolDiameter ];
+    mColorStampFOrigin = new float[ toolDiameter * 4 * toolDiameter ];
     MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), mColor );
-    MTHardFillF( mColorStampFTMP, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), mColor );
+    MTHardFillF( mColorStampFOrigin, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), mColor );
 
     // If no tips are there, we prepare the tool == we build tips and mip maps
     if( mTipRenderedF.size() == 0 )
@@ -150,6 +150,8 @@ cToolStamp::DrawDot( float iX, float iY, float iPressure, float iRotation )
     const float minY = iY - radius;
     const float maxX = minX + diam;
     const float maxY = minY + diam;
+    const int intWidth = maxX - minX;
+    const int intHeight = maxY - minY;
 
     const float red = mColor.red();
     const float green = mColor.green();
@@ -183,13 +185,13 @@ cToolStamp::DrawDot( float iX, float iY, float iPressure, float iRotation )
     const int minYI = int( minY );
     QPointF subPixelOffset( minXI - minX, minYI - minY ); // Invert the sign to have the offset from the source image perspective
 
+    // Grab color from canvas
+    // Not using dirtyArea because dirtyarea is clipped already, and we need the negative part to be there, so we can blend colorStamp with the right offset
+    MTBlendImagesF( _mFloatBuffer, mDrawingContext->width(), mDrawingContext->height(), QRect( minX, minY, maxX-minX, maxY-minY ),
+                    mColorStampF, baseDiameter, baseDiameter, QPoint( (baseDiameter - intWidth)/2, (baseDiameter - intHeight)/2 ),
+                    mMipMapF[mCurrentTipIndex][0], baseDiameter, baseDiameter, QPoint( (baseDiameter - intWidth)/2, (baseDiameter - intHeight)/2 ), 0.5 );
 
-
-    MTBlendImagesF( _mFloatBuffer, mDrawingContext->width(), mDrawingContext->height(), mDirtyArea,
-                    mColorStampF, baseDiameter, baseDiameter, QPoint( 0, 0 ),
-                    mMipMapF[mCurrentTipIndex][0], baseDiameter, baseDiameter, QPoint( 0, 0 ), 0.5 );
-
-
+    // Put paint on canvas
     MTDownscaleBoxAverageDirectAlphaFDry( mMipMapF[mCurrentTipIndex][ indexMip ], mipMapSizeAtIndex, mipMapSizeAtIndex,
                                           mColorStampF, baseDiameter, baseDiameter,
                                           mDryBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
@@ -197,6 +199,11 @@ cToolStamp::DrawDot( float iX, float iY, float iPressure, float iRotation )
                                           _mFloatBuffer,
                                           mDrawingContext,
                                           mAlphaMask, transfo, QPoint( 0, 0 ), subPixelOffset, mOpacity );
+
+    // Ink back original color
+    MTBlendImagesF( mColorStampFOrigin, baseDiameter, baseDiameter, QRect( 0, 0, baseDiameter, baseDiameter ),
+                    mColorStampF, baseDiameter, baseDiameter, QPoint( 0, 0 ),
+                    mMipMapF[mCurrentTipIndex][0], baseDiameter, baseDiameter, QPoint( 0, 0 ), 0.01 );
 
 
     if( mStyle == kLinearLoop )
@@ -340,7 +347,7 @@ cToolStamp::_ClearMipMaps()
 void
 cToolStamp::DEBUG()
 {
-    IMAGEDEBUG->ShowImage( _mFloatBuffer, 2048, 1080 );
+    IMAGEDEBUG->ShowImage( mColorStampF, 300, 300 );
 }
 
 

@@ -225,9 +225,6 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
                     const float transparencyAmountInverse = 1 - stampAlphaNorm;
 
                     *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
-
-                    if( *destScanline > 256 )
-                        int bp = 5;
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
                     ++colorScan;
@@ -235,9 +232,6 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
                     ++parallelScanline;
 
                     *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
-
-                    if( *destScanline > 256 )
-                        int bp = 5;
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
                     ++colorScan;
@@ -245,9 +239,6 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
                     ++parallelScanline;
 
                     *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
-
-                    if( *destScanline > 256 )
-                        int bp = 5;
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
                     ++colorScan;
@@ -255,9 +246,6 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
                     ++parallelScanline;
 
                     *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
-
-                    if( *destScanline > 256 )
-                        int bp = 5;
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
                     ++dryScan;
@@ -314,7 +302,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     QPolygonF outputRect = MapToPolygonF( iTransform, inputArea ); // Apply transfo over inputArea not F, because transfo holds the offset already
 
     QRect transfoBBoxI = ExclusiveBoundingBox( outputRect );
-    QRectF transfoBBoxF = ExclusiveBoundingBoxF( outputRect ); debugBBox.push_back( transfoBBoxF );
+    QRectF transfoBBoxF = ExclusiveBoundingBoxF( outputRect );
     const QPointF subPixelPos = transfoBBoxF.topLeft();
     const QPointF subpixelOffset = -(subPixelPos - QPoint( subPixelPos.x(), subPixelPos.y() )); // Basically the offset representing the amount that has been cut by int
 
@@ -328,13 +316,6 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     int minY = transfoBBoxI.top();
 
     transfoBBoxI = transfoBBoxI.intersected( QRect( 0, 0, iOutputBuffersWidth, iOutputBuffersHeight ) ); // Intersected here will be inclusive, so intersection with 1080 and 1086 = 1080 for x2
-
-    int startingX = transfoBBoxI.left();
-    int startingY = transfoBBoxI.top();
-    int endingX = transfoBBoxI.right() >= iOutputBuffersWidth ? iOutputBuffersWidth - 1 : transfoBBoxI.right();
-    int endingY = transfoBBoxI.bottom() >= iOutputBuffersHeight ? iOutputBuffersHeight - 1 : transfoBBoxI.bottom();
-
-    debugBBoxI.push_back( transfoBBoxI );
 
     // Scales
     const float transfoWidth = Distance2Points( outputRect[ 0 ], outputRect[ 1 ] );
@@ -385,7 +366,14 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     const uchar* alphaData = iAlphaMask->bits();
     const int alphaBPL = iAlphaMask->bytesPerLine();
 
+    const int startingX = transfoBBoxI.left();
+    const int startingY = transfoBBoxI.top();
+    const int endingX = transfoBBoxI.right() >= iOutputBuffersWidth ? iOutputBuffersWidth - 1 : transfoBBoxI.right();
+    const int endingY = transfoBBoxI.bottom() >= iOutputBuffersHeight ? iOutputBuffersHeight - 1 : transfoBBoxI.bottom();
     const int height = endingY - startingY + 1;
+
+    const int xColorOffset = (iColorW - transfoBBoxI.width()) / 2;
+    const int yColorOffset = (iColorH - transfoBBoxI.height()) / 2;
 
     const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
     const int split = height / threadCount;
@@ -411,8 +399,9 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
             const uchar* alphaScanline = alphaData + 3;
             float* stampScan = stampBuffer;
 
-            const float* dryScan = background;
-            float* destScanline = iOutput;
+            const float*    dryScan         = background;
+            float*          destScanline    = iOutput;
+
             uchar* parallelScanline = parallelData;
 
             const int startY = iOff.mY;
@@ -432,14 +421,16 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
             for( int y = startY; y <= endY; ++y )
             {
                 // Gray buffers
-                sourceScanline  = iInput + (y - minY) * sourceBPL + (startX - minX);
-                colorScan  = iColorBuffer + (y - minY) * colorBPL + (startX - minX);
-                stampScan = stampBuffer +  y * iOutputBuffersWidth + startX;
+                sourceScanline  = iInput + (y - minY) * sourceBPL + (startX - minX);                                        // Gray
+                stampScan       = stampBuffer +  y * iOutputBuffersWidth + startX;                                          // Gray
+                colorScan       = iColorBuffer + (y - minY + yColorOffset) * colorBPL + (startX - minX + xColorOffset) * 4; // BGRA
+                //colorScan       = iColorBuffer + (y - minY + 0) * colorBPL + (startX - minX + 0) * 4; // BGRA
 
                 // Float buffers
                 const int indexOffset = y * buffersBPL + xOffset;
                 dryScan  = background + indexOffset;
                 destScanline    = iOutput + indexOffset;
+                dryScan    = destScanline;
 
                 // uchar datas
                 parallelScanline    = parallelData + y * parallelBPL + xOffset;
@@ -500,7 +491,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
 
                         // Drawing in stamp buffer
                         const float inverseCeiled = 1 - (aSum / maxAlphaRanged);
-                        *stampScan   = (aSum + *stampScan   * inverseCeiled);
+                        *stampScan   = aSum;// + *stampScan   * inverseCeiled;
 
                         // Then drawing the final stamp to the float output and 8bit final image at the same time
                         const float stampAlphaNorm = *stampScan / 255.F;

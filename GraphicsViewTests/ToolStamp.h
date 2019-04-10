@@ -78,10 +78,10 @@ protected:
     // Float images
     QVector< QVector< const float* > >  mMipMapF;
     QVector< float* >                   mTipRenderedF;
-    float*                              mColorStampFTMP = 0;
+    float*                              mColorStampFOrigin = 0;
     float*                              mColorStampF = 0;
 
-    float*                  mDryBuffer = 0;
-    float*                  mStampBuffer = 0;
+    float*                              mDryBuffer = 0;
+    float*                              mStampBuffer = 0;
 };
 
