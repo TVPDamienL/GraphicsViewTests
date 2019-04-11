@@ -88,7 +88,8 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
                         QImage* iParallelRender,    // The 8bit output buffer
                         const QImage* iAlphaMask,
                         const QPointF& point,
-                        const float maxAlpha )
+                        const float maxAlpha,
+                        bool iDryActive )
 {
     const uchar maxAlphaRanged = maxAlpha * 255.F;
     const int sourceBPL = iSourceWidth;
@@ -186,7 +187,10 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
                 const int indexOffset = y * buffersBPL + xOffset;
                 dryScan             = drybuffer + indexOffset;                  // float
                 destScanline        = destination + indexOffset;                // float
-                dryScan = destScanline;                                                         // Switch to not using dry A
+
+                if( iDryActive )
+                    dryScan = destScanline;                                                         // Switch to not using dry A
+
                 parallelScanline    = parallelData + y * parallelBPL + xOffset; // uint8
                 alphaScanline       = alphaData + y * alphaBPL + xOffset + 3;   // float
 
@@ -217,8 +221,11 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
 
                     // Blending in stamp buffer
                     const float inverseCeiled = (1 - (alpha / maxAlphaRanged));
-                    *stampScan  = alpha;// + *stampScan  * inverseCeiled;                           // Switch to not using dry B
 
+                    if( iDryActive )
+                        *stampScan  = alpha;
+                    if( !iDryActive )
+                        *stampScan  = alpha + *stampScan  * inverseCeiled;                           // Switch to not using dry B
 
                     // Blending stampbuffer over drybuffer in floatbuffer and parallelRender at the same time
                     const float stampAlphaNorm = *stampScan / 255.F;
@@ -289,7 +296,8 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                                     const QImage* iAlphaMask,
                                     const QTransform& iTransform, const QPoint& iOrigin, // Transform and its origin to apply
                                     const QPointF& iSubPixelOffset,
-                                    const float maxalpha )
+                                    const float maxalpha,
+                                    bool iDryActive )
 {
     const int inputWidth = iWidth;
     const int inputHeight = iHeight;
@@ -334,7 +342,8 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                                 stampBuffer, iOutput,
                                 iParallelRender,
                                 iAlphaMask,
-                                subPixelPos, maxalpha );
+                                subPixelPos, maxalpha,
+                                iDryActive );
         return;
     }
 
@@ -375,7 +384,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     const int xColorOffset = (iColorW - transfoBBoxI.width()) / 2;
     const int yColorOffset = (iColorH - transfoBBoxI.height()) / 2;
 
-    const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
+    const int threadCount = 1;// cThreadProcessor::Instance()->GetAvailableThreadCount();
     const int split = height / threadCount;
     const int excess = height % threadCount;
 
@@ -430,7 +439,8 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                 const int indexOffset = y * buffersBPL + xOffset;
                 dryScan  = background + indexOffset;
                 destScanline    = iOutput + indexOffset;
-                dryScan    = destScanline;
+                if( iDryActive )
+                    dryScan    = destScanline;
 
                 // uchar datas
                 parallelScanline    = parallelData + y * parallelBPL + xOffset;
@@ -438,15 +448,20 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
 
                 for( int x = startX; x <= endX; ++x )
                 {
+                    //qDebug() << "Reading dst : " << x << "," << y;
                     // Get the point in original
                     const QPointF xyMappedF = inverse.map( QPointF( x, y ) ); // To use this wee need to tune the transformation with new scale
                     const QPoint xyMapped = QPoint( xyMappedF.x(), xyMappedF.y() );
 
+                    //qDebug() << "Reading src : " << xyMappedF.x() << "," << xyMappedF.y();
                     // Get the box to read in original
-                    QRectF boxAreaF( xyMappedF.x(), xyMappedF.y(), floatBoxWidth, floatBoxHeight );
+                     QRectF boxAreaF( xyMappedF.x(), xyMappedF.y(), floatBoxWidth, floatBoxHeight );
                     QRect boxArea( boxAreaF.left(), boxAreaF.top(), 1, 1 );
                     boxArea.setRight( int(boxAreaF.right()) );
                     boxArea.setBottom( int(boxAreaF.bottom()) );
+
+                    //qDebug() << "Reading subarea : " << boxAreaF << "Being int rounded to " << boxArea;
+
 
                     // This is the security line, that prevents from reading out of source buffer
                     // Because we divide by the total surface at the end, skipping (because of interect clamp) pixels will reduce overall intensity properly
@@ -491,7 +506,12 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
 
                         // Drawing in stamp buffer
                         const float inverseCeiled = 1 - (aSum / maxAlphaRanged);
-                        *stampScan   = aSum;// + *stampScan   * inverseCeiled;
+
+                        if( iDryActive )
+                            *stampScan   = aSum;
+                        else
+                            *stampScan   = aSum + *stampScan   * inverseCeiled;
+
 
                         // Then drawing the final stamp to the float output and 8bit final image at the same time
                         const float stampAlphaNorm = *stampScan / 255.F;
@@ -531,6 +551,11 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                         //BlendPixelNormalFParrallel( &destScanline, &parallelScanline, rSum, gSum, bSum, aSum );
 
                         aSum = 0;
+                    }
+                    else
+                    {
+                        // Do all the ++ and += 4 ?
+                        int bp  =5 ;
                     }
                 }
             }

@@ -251,7 +251,7 @@ MTBlendImagesF( const float* source, const int sourceW, const int sourceH, const
 
     QRect srcArea( 0, 0, sourceW, sourceH );
     QRect dstArea( 0, 0, dstW, dstH );
-    QRect alphaArea( 0, 0, dstW, dstH );
+    QRect alphaArea( 0, 0, alphaW, alphaH );
 
     // Clip to src rect
     QRect workingArea = srcArea.intersected( iSourceArea );
@@ -290,7 +290,7 @@ MTBlendImagesF( const float* source, const int sourceW, const int sourceH, const
         {
             const float* sourceScanline = source;
             float* destScanline = destination;
-            const float* alphaScan = alphaMask;
+            //const float* alphaScan = alphaMask;
 
             const int startY = iOff.mY;
             const int endY = startY + iRange.mY;
@@ -301,7 +301,7 @@ MTBlendImagesF( const float* source, const int sourceW, const int sourceH, const
             {
                 sourceScanline  = source + y * sourceBPL + startX * 4;
                 destScanline    = destination + (y + offset.y()) * dstBPL + (startX + offset.x()) * 4;
-                alphaScan    = alphaMask + (y + offsetAlpha.y()) * alphaBPL + (startX + offsetAlpha.x());
+                //alphaScan    = alphaMask + (y + offsetAlpha.y()) * alphaBPL + (startX + offsetAlpha.x());
 
                 for( int x = startX; x < endX; ++x )
                 {
@@ -310,15 +310,16 @@ MTBlendImagesF( const float* source, const int sourceW, const int sourceH, const
                     {
                         sourceScanline += 4;
                         destScanline += 4;
-                        ++alphaScan;
+                        //++alphaScan;
                         continue;
                     }
 
-                    float v = *alphaScan / 255.F * iOpacity;
+                    // This would allow to pick color using the tip shape, but it leaves a lot of mistakes, and i dunno if it's subpixel related atm
+                    float v = /**alphaScan / 255.F **/ iOpacity;
 
                     BlendPixelNormalF( &destScanline, *(sourceScanline+2) * v, *(sourceScanline+1) * v, *(sourceScanline) * v, alpha * v );
                     sourceScanline += 4;
-                    ++alphaScan;
+                    //++alphaScan;
                 }
             }
         },
