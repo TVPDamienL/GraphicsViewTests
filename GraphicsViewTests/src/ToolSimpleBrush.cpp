@@ -26,7 +26,7 @@ cToolSimpleBrush::cToolSimpleBrush( QObject * iParent ) :
     mStep = 1.0;
     mStep = 0.1;
     mOpacity = 0.1F;
-    //mOpacity = 1.F;
+    mOpacity = 1.F;
     mApplyProfile = true;
 
     buildTool();

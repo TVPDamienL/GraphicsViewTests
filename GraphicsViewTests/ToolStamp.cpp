@@ -189,9 +189,9 @@ cToolStamp::DrawDot( float iX, float iY, float iPressure, float iRotation )
     //MTBlendImagesF( _mFloatBuffer, mDrawingContext->width(), mDrawingContext->height(), QRect( minX, minY, maxX-minX, maxY-minY ),
     //                mColorStampF, baseDiameter, baseDiameter, QPoint( (baseDiameter - intWidth)/2, (baseDiameter - intHeight)/2 ),
     //                mMipMapF[mCurrentTipIndex][0], baseDiameter, baseDiameter, QPoint( (baseDiameter - intWidth)/2, (baseDiameter - intHeight)/2 ), 0.7 );
-    //MTBlendImagesF( _mFloatBuffer, mDrawingContext->width(), mDrawingContext->height(), QRect( iX - mToolSize, iY - mToolSize, baseDiameter, baseDiameter ),
-    //                mColorStampF, baseDiameter, baseDiameter, QPoint( 0,0 ),
-    //                mMipMapF[mCurrentTipIndex][0], baseDiameter, baseDiameter, QPoint( 0,0 ), 0.7 );
+    MTBlendImagesF( _mFloatBuffer, mDrawingContext->width(), mDrawingContext->height(), QRect( iX - mToolSize, iY - mToolSize, baseDiameter, baseDiameter ),
+                    mColorStampF, baseDiameter, baseDiameter, QPoint( 0,0 ),
+                    mMipMapF[mCurrentTipIndex][0], baseDiameter, baseDiameter, QPoint( 0,0 ), 0.7 );
 
     // Put paint on canvas
     MTDownscaleBoxAverageDirectAlphaFDry( mMipMapF[mCurrentTipIndex][ indexMip ], mipMapSizeAtIndex, mipMapSizeAtIndex,

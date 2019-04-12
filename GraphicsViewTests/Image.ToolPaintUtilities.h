@@ -284,7 +284,7 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
 // where we directly draw to output
 static
 void
-MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, const int iHeight,         // Source we will blend
+MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, const int iHeight,         // Source we will blend => The mipmap subimage
                                       const float* iColorBuffer, const int iColorW, const int iColorH,   // The color stamp buffer, to lookup color to apply
 
                                                                         // All float images MUST be the same size, this allows faster access
@@ -432,8 +432,16 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                 // Gray buffers
                 sourceScanline  = iInput + (y - minY) * sourceBPL + (startX - minX);                                        // Gray
                 stampScan       = stampBuffer +  y * iOutputBuffersWidth + startX;                                          // Gray
-                colorScan       = iColorBuffer + (y - minY + yColorOffset) * colorBPL + (startX - minX + xColorOffset) * 4; // BGRA
-                //colorScan       = iColorBuffer + (y - minY + 0) * colorBPL + (startX - minX + 0) * 4; // BGRA
+
+                int yColorIndexOffset = (y - minY + yColorOffset);
+                if( yColorIndexOffset >= iColorH )
+                    yColorIndexOffset = iColorH - 1;
+
+                int xColorIndexOffset = (startX - minX + xColorOffset);
+                if( xColorIndexOffset >= iColorW )
+                    xColorIndexOffset = iColorW - 1;
+
+                colorScan       = iColorBuffer + yColorIndexOffset * colorBPL + xColorIndexOffset * 4; // BGRA
 
                 // Float buffers
                 const int indexOffset = y * buffersBPL + xOffset;
