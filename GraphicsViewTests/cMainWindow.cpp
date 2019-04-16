@@ -59,10 +59,10 @@ cMainWindow::cMainWindow(QWidget *parent) :
 
 
     // Tool controls
-    connect( ui.colorSwatch, &ColorSwatch::swatchClicked, this, &cMainWindow::AskColor );
-    connect( ui.penSizeSpinBox, SIGNAL(valueChanged(int)), this, SLOT(sizeChanged(int)) );
-    connect( ui.stepSpinBox, SIGNAL(valueChanged(int)), this, SLOT(stepChanged(int)) );
-    connect( ui.opacitySpinBox, SIGNAL(valueChanged(int)), this, SLOT(opacityChanged(int)) );
+    connect( ui.colorSwatch,    &ColorSwatch::swatchClicked,    this, &cMainWindow::AskColor );
+    connect( ui.penSizeSpinBox, SIGNAL(valueChanged(int)),      this, SLOT(sizeChanged(int)) );
+    connect( ui.stepSpinBox,    SIGNAL(valueChanged(int)),      this, SLOT(stepChanged(int)) );
+    connect( ui.opacitySpinBox, SIGNAL(valueChanged(int)),      this, SLOT(opacityChanged(int)) );
     connect( ui.antiAliasCheckBox, &QCheckBox::stateChanged, [ this ]( bool iNewState ){
         auto simpleBrush = dynamic_cast< cToolSimpleBrush* >( mToolPaint );
         if( simpleBrush )
@@ -74,15 +74,11 @@ cMainWindow::cMainWindow(QWidget *parent) :
     connect( ui.mixCheckBox, &QCheckBox::stateChanged, this, &cMainWindow::mixClicked );
     connect( ui.reinjectCheckBox, &QCheckBox::stateChanged, this, &cMainWindow::reinjectClicked );
 
-
     connect( ui.buttonToolSelect, &QPushButton::clicked, this, &cMainWindow::ToolSelectClicked );
     connect( ui.buttonToolPaint, &QPushButton::clicked, this, &cMainWindow::ToolPaintClicked );
     connect( ui.buttonToolPencil, &QPushButton::clicked, this, &cMainWindow::ToolPencilClicked );
     connect( ui.buttonRectangle, &QPushButton::clicked, this, &cMainWindow::ToolRectangleClicked );
     connect( ui.buttonSmudge, &QPushButton::clicked, this, &cMainWindow::ToolSmudgeClicked );
-
-
-
 
     CurrentFrameChanged( 0 );
 

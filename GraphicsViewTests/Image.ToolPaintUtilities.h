@@ -223,7 +223,7 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
     const int endingY = maxY >= iHeight ? iHeight : maxY;
     const int height = endingY - startingY; // No +1 because we are using straight value, not a .right from QRect, that does a width() -1
 
-    const int threadCount = 1;//cThreadProcessor::Instance()->GetAvailableThreadCount();
+    const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
     const int split = height / threadCount;
     const int excess = height % threadCount;
 
@@ -307,7 +307,7 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
 
                     if( iDryActive )
                         *stampScan  = alpha;
-                    if( !iDryActive )
+                    else
                         *stampScan  = alpha + *stampScan  * inverseCeiled;                           // Switch to not using dry B
 
                     // Blending stampbuffer over drybuffer in floatbuffer and parallelRender at the same time
@@ -373,6 +373,7 @@ void
 MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, const int iHeight,         // Source we will blend => The mipmap subimage
                                       const float* iColorBuffer, const int iColorW, const int iColorH,   // The color stamp buffer, to lookup color to apply
 
+                                      bool iIsColorUniform,
                                                                         // All float images MUST be the same size, this allows faster access
                                     const float* background, const int iOutputBuffersWidth, const int iOutputBuffersHeight,    // The background over which we blend
                                     float* stampBuffer,                                              // The buffer holding the current tool line
@@ -532,10 +533,10 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
             // Pixel averaging variables
             float stampAlphaSum = 0;
 
-            float redSum = 0;
-            float greenSum = 0;
-            float blueSum = 0;
-            float alphaSum = 0;
+            float redSum = iColorBuffer[ 2 ];
+            float greenSum = iColorBuffer[ 1 ];
+            float blueSum = iColorBuffer[ 0 ];
+            float alphaSum = iColorBuffer[ 3 ];
 
             const float surface = floatBoxWidth * floatBoxHeight;
             float xRatio = 1.0;
@@ -606,9 +607,12 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                             }
                         }
 
-                        ReadBGRAImageWithFloatArea( subReadOffset, (x - minX + xColorOffset), (y - minY + yColorOffset), topLeftRatio, topRightRatio, bottomLeftRatio, bottomRightRatio,
-                                                    iColorBuffer, iColorW, iColorH,
-                                                    &redSum, &greenSum, &blueSum, &alphaSum );
+                        if( !iIsColorUniform )
+                        {
+                            ReadBGRAImageWithFloatArea( subReadOffset, (x - minX + xColorOffset), (y - minY + yColorOffset), topLeftRatio, topRightRatio, bottomLeftRatio, bottomRightRatio,
+                                                        iColorBuffer, iColorW, iColorH,
+                                                        &redSum, &greenSum, &blueSum, &alphaSum );
+                        }
 
                         stampAlphaSum   /= surface;
 

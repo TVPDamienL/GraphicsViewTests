@@ -120,6 +120,7 @@ cToolStamp::StartDrawing( QImage* iImage, sPointData iPointData )
     //MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter/2, toolDiameter ), mColor );
     //MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  toolDiameter/2, 0, toolDiameter/2, toolDiameter ), Qt::black );
     //MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), Qt::transparent );
+    mColorUniform = true;
 
     // If no tips are there, we prepare the tool == we build tips and mip maps
     if( mTipRenderedF.size() == 0 )
@@ -198,6 +199,7 @@ cToolStamp::DrawDot( float iX, float iY, float iPressure, float iRotation )
     // Put paint on canvas
     MTDownscaleBoxAverageDirectAlphaFDry( mMipMapF[mCurrentTipIndex][ indexMip ], mipMapSizeAtIndex, mipMapSizeAtIndex,
                                           mColorStampF, baseDiameter, baseDiameter,
+                                          mColorUniform,
                                           mDryBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
                                           mStampBuffer,
                                           _mFloatBuffer,
@@ -236,7 +238,6 @@ cToolStamp::EndDrawing( sPointData iPointData )
     }
 
     int baseDiameter = mToolSize*2;
-    IMAGEDEBUG->ShowImage( mColorStampF, baseDiameter, baseDiameter );
 
     return  cPaintToolBase::EndDrawing( iPointData );
 }

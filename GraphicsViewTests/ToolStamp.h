@@ -76,6 +76,7 @@ public:
     bool                                mMixColorActivated  = false;
     bool                                mColorReinjection   = false;
     bool                                mDryActivated       = false;
+    bool                                mColorUniform       = true;
 
 protected:
     eTipSwapStyle                       mStyle = kLinearLoop;
