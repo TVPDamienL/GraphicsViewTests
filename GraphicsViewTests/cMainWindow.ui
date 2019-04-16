@@ -135,6 +135,36 @@
           <item row="5" column="1">
            <widget class="QCheckBox" name="vectorialCB"/>
           </item>
+          <item row="6" column="0">
+           <widget class="QLabel" name="dryLabel">
+            <property name="text">
+             <string>Dry</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QCheckBox" name="dryCheckBox"/>
+          </item>
+          <item row="7" column="0">
+           <widget class="QLabel" name="mixLabel">
+            <property name="text">
+             <string>Mix</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="1">
+           <widget class="QCheckBox" name="mixCheckBox"/>
+          </item>
+          <item row="8" column="0">
+           <widget class="QLabel" name="reinjectLabel">
+            <property name="text">
+             <string>Reinject</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="1">
+           <widget class="QCheckBox" name="reinjectCheckBox"/>
+          </item>
          </layout>
         </item>
         <item>

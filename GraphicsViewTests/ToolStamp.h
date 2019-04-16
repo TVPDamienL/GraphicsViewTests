@@ -72,12 +72,20 @@ protected:
 public:
     virtual void DEBUG() override;
 
+public:
+    bool                                mMixColorActivated  = false;
+    bool                                mColorReinjection   = false;
+    bool                                mDryActivated       = false;
+
 protected:
     eTipSwapStyle                       mStyle = kLinearLoop;
     int                                 mCurrentTipIndex = 0;
+
+
     // Float images
     QVector< QVector< const float* > >  mMipMapF;
     QVector< float* >                   mTipRenderedF;
+    float*                              mColorStampFOrigin = 0;
     float*                              mColorStampF = 0;
 
     float*                              mDryBuffer = 0;

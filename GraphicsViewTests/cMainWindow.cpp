@@ -62,11 +62,17 @@ cMainWindow::cMainWindow(QWidget *parent) :
     connect( ui.colorSwatch, &ColorSwatch::swatchClicked, this, &cMainWindow::AskColor );
     connect( ui.penSizeSpinBox, SIGNAL(valueChanged(int)), this, SLOT(sizeChanged(int)) );
     connect( ui.stepSpinBox, SIGNAL(valueChanged(int)), this, SLOT(stepChanged(int)) );
+    connect( ui.opacitySpinBox, SIGNAL(valueChanged(int)), this, SLOT(opacityChanged(int)) );
     connect( ui.antiAliasCheckBox, &QCheckBox::stateChanged, [ this ]( bool iNewState ){
         auto simpleBrush = dynamic_cast< cToolSimpleBrush* >( mToolPaint );
         if( simpleBrush )
             simpleBrush->ApplyProfile( iNewState );
     });
+
+    connect( ui.vectorialCB, &QCheckBox::stateChanged, this, &cMainWindow::VectorialChanged );
+    connect( ui.dryCheckBox, &QCheckBox::stateChanged, this, &cMainWindow::dryClicked );
+    connect( ui.mixCheckBox, &QCheckBox::stateChanged, this, &cMainWindow::mixClicked );
+    connect( ui.reinjectCheckBox, &QCheckBox::stateChanged, this, &cMainWindow::reinjectClicked );
 
 
     connect( ui.buttonToolSelect, &QPushButton::clicked, this, &cMainWindow::ToolSelectClicked );
@@ -76,7 +82,6 @@ cMainWindow::cMainWindow(QWidget *parent) :
     connect( ui.buttonSmudge, &QPushButton::clicked, this, &cMainWindow::ToolSmudgeClicked );
 
 
-    connect( ui.vectorialCB, &QCheckBox::stateChanged, this, &cMainWindow::VectorialChanged );
 
 
     CurrentFrameChanged( 0 );
@@ -183,6 +188,58 @@ cMainWindow::stepChanged( int iStep )
 
 
 void
+cMainWindow::opacityChanged( int iNew )
+{
+    mToolPaint->setOpacity( float(iNew)/100.F );
+    mToolPen->setOpacity( float(iNew)/100.F );
+}
+
+
+void
+cMainWindow::VectorialChanged( int state )
+{
+    mToolPaint->Vectorial( state );
+}
+
+
+void
+cMainWindow::dryClicked( int state )
+{
+    auto curr = dynamic_cast< cToolStamp* >( mToolPaint );
+    if( curr )
+    {
+        curr->mDryActivated = state;
+    }
+}
+
+
+void
+cMainWindow::mixClicked( int state )
+{
+    auto curr = dynamic_cast< cToolStamp* >( mToolPaint );
+    if( curr )
+    {
+        curr->mMixColorActivated = state;
+    }
+}
+
+
+void
+cMainWindow::reinjectClicked( int state )
+{
+    auto curr = dynamic_cast< cToolStamp* >( mToolPaint );
+    if( curr )
+    {
+        curr->mColorReinjection = state;
+    }
+}
+
+
+
+
+
+
+void
 cMainWindow::UpdateUI()
 {
     ui.penSizeSpinBox->setValue( mToolPaint->getSize() );
@@ -231,13 +288,6 @@ void
 cMainWindow::ToolSmudgeClicked()
 {
     ui.canvas->SetToolModel( mToolSmudge );
-}
-
-
-void
-cMainWindow::VectorialChanged( int state )
-{
-    mToolPaint->Vectorial( state );
 }
 
 

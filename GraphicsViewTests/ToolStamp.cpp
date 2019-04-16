@@ -113,10 +113,12 @@ cToolStamp::StartDrawing( QImage* iImage, sPointData iPointData )
     // Init color stamp
     delete mColorStampF;
     const int toolDiameter = mToolSize*2;
+    mColorStampFOrigin = new float[ toolDiameter * 4 * toolDiameter ];
     mColorStampF = new float[ toolDiameter * 4 * toolDiameter ];
-    //MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), mColor );
-    MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter/2, toolDiameter ), mColor );
-    MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  toolDiameter/2, 0, toolDiameter/2, toolDiameter ), Qt::black );
+    MTHardFillF( mColorStampFOrigin, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), mColor );
+    MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), mColor );
+    //MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter/2, toolDiameter ), mColor );
+    //MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  toolDiameter/2, 0, toolDiameter/2, toolDiameter ), Qt::black );
     //MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), Qt::transparent );
 
     // If no tips are there, we prepare the tool == we build tips and mip maps
@@ -186,12 +188,12 @@ cToolStamp::DrawDot( float iX, float iY, float iPressure, float iRotation )
 
     // Grab color from canvas
     // Not using dirtyArea because dirtyarea is clipped already, and we need the negative part to be there, so we can blend colorStamp with the right offset
-    //MTBlendImagesF( _mFloatBuffer, mDrawingContext->width(), mDrawingContext->height(), QRect( minX, minY, maxX-minX, maxY-minY ),
-    //                mColorStampF, baseDiameter, baseDiameter, QPoint( (baseDiameter - intWidth)/2, (baseDiameter - intHeight)/2 ),
-    //                mMipMapF[mCurrentTipIndex][0], baseDiameter, baseDiameter, QPoint( (baseDiameter - intWidth)/2, (baseDiameter - intHeight)/2 ), 0.7 );
-    //MTBlendImagesF( _mFloatBuffer, mDrawingContext->width(), mDrawingContext->height(), QRect( iX - mToolSize, iY - mToolSize, baseDiameter, baseDiameter ),
-    //                mColorStampF, baseDiameter, baseDiameter, QPoint( 0,0 ),
-    //                mMipMapF[mCurrentTipIndex][0], baseDiameter, baseDiameter, QPoint( 0,0 ), 0.7 );
+    if( mMixColorActivated )
+    {
+        MTBlendImagesF( _mFloatBuffer, mDrawingContext->width(), mDrawingContext->height(), QRect( iX - mToolSize, iY - mToolSize, baseDiameter, baseDiameter ),
+                        mColorStampF, baseDiameter, baseDiameter, QPoint( 0,0 ),
+                        mMipMapF[mCurrentTipIndex][0], baseDiameter, baseDiameter, QPoint( 0,0 ), 0.7 );
+    }
 
     // Put paint on canvas
     MTDownscaleBoxAverageDirectAlphaFDry( mMipMapF[mCurrentTipIndex][ indexMip ], mipMapSizeAtIndex, mipMapSizeAtIndex,
@@ -201,13 +203,15 @@ cToolStamp::DrawDot( float iX, float iY, float iPressure, float iRotation )
                                           _mFloatBuffer,
                                           mDrawingContext,
                                           mAlphaMask, transfo, QPoint( 0, 0 ), mOpacity,
-                                          true );
+                                          (mDryActivated || mMixColorActivated) );
 
     // Ink back original color
-    //MTBlendImagesF( mColorStampFOrigin, baseDiameter, baseDiameter, QRect( 0, 0, baseDiameter, baseDiameter ),
-    //                mColorStampF, baseDiameter, baseDiameter, QPoint( 0, 0 ),
-    //                mMipMapF[mCurrentTipIndex][0], baseDiameter, baseDiameter, QPoint( 0, 0 ), 0.001 );
-
+    if( mColorReinjection )
+    {
+        MTBlendImagesF( mColorStampFOrigin, baseDiameter, baseDiameter, QRect( 0, 0, baseDiameter, baseDiameter ),
+                        mColorStampF, baseDiameter, baseDiameter, QPoint( 0, 0 ),
+                        mMipMapF[mCurrentTipIndex][0], baseDiameter, baseDiameter, QPoint( 0, 0 ), 0.01 );
+    }
 
     if( mStyle == kLinearLoop )
     {

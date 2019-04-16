@@ -54,6 +54,12 @@ public:
     QSpinBox *opacitySpinBox;
     QLabel *vectorialLabel;
     QCheckBox *vectorialCB;
+    QLabel *dryLabel;
+    QCheckBox *dryCheckBox;
+    QLabel *mixLabel;
+    QCheckBox *mixCheckBox;
+    QLabel *reinjectLabel;
+    QCheckBox *reinjectCheckBox;
     QSpacerItem *verticalSpacer;
     QLabel *label_3;
     QGridLayout *gridLayout;
@@ -175,6 +181,36 @@ public:
         vectorialCB->setObjectName(QString::fromUtf8("vectorialCB"));
 
         formLayout->setWidget(5, QFormLayout::FieldRole, vectorialCB);
+
+        dryLabel = new QLabel(centralWidget);
+        dryLabel->setObjectName(QString::fromUtf8("dryLabel"));
+
+        formLayout->setWidget(6, QFormLayout::LabelRole, dryLabel);
+
+        dryCheckBox = new QCheckBox(centralWidget);
+        dryCheckBox->setObjectName(QString::fromUtf8("dryCheckBox"));
+
+        formLayout->setWidget(6, QFormLayout::FieldRole, dryCheckBox);
+
+        mixLabel = new QLabel(centralWidget);
+        mixLabel->setObjectName(QString::fromUtf8("mixLabel"));
+
+        formLayout->setWidget(7, QFormLayout::LabelRole, mixLabel);
+
+        mixCheckBox = new QCheckBox(centralWidget);
+        mixCheckBox->setObjectName(QString::fromUtf8("mixCheckBox"));
+
+        formLayout->setWidget(7, QFormLayout::FieldRole, mixCheckBox);
+
+        reinjectLabel = new QLabel(centralWidget);
+        reinjectLabel->setObjectName(QString::fromUtf8("reinjectLabel"));
+
+        formLayout->setWidget(8, QFormLayout::LabelRole, reinjectLabel);
+
+        reinjectCheckBox = new QCheckBox(centralWidget);
+        reinjectCheckBox->setObjectName(QString::fromUtf8("reinjectCheckBox"));
+
+        formLayout->setWidget(8, QFormLayout::FieldRole, reinjectCheckBox);
 
 
         verticalLayout->addLayout(formLayout);
@@ -301,6 +337,9 @@ public:
         stepLabel->setText(QApplication::translate("cMainWindow", "Step", nullptr));
         opacityLabel->setText(QApplication::translate("cMainWindow", "Opacity", nullptr));
         vectorialLabel->setText(QApplication::translate("cMainWindow", "Vectorial", nullptr));
+        dryLabel->setText(QApplication::translate("cMainWindow", "Dry", nullptr));
+        mixLabel->setText(QApplication::translate("cMainWindow", "Mix", nullptr));
+        reinjectLabel->setText(QApplication::translate("cMainWindow", "Reinject", nullptr));
         label_3->setText(QApplication::translate("cMainWindow", "Tools", nullptr));
         buttonSmudge->setText(QApplication::translate("cMainWindow", "Smudge", nullptr));
         buttonToolPaint->setText(QApplication::translate("cMainWindow", "Pencil", nullptr));

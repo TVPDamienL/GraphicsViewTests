@@ -41,14 +41,20 @@ signals:
 public slots:
     void sizeChanged( int );
     void stepChanged( int );
+    void opacityChanged( int );
     void UpdateUI();
+    void VectorialChanged( int );
+    void dryClicked( int state );
+    void mixClicked( int state );
+    void reinjectClicked( int state );
+
+
     void ToolPaintClicked();
     void ToolPencilClicked();
     void ToolSelectClicked();
     void ToolRectangleClicked();
     void ToolSmudgeClicked();
 
-    void VectorialChanged( int );
 
 private:
     Ui::cMainWindow     ui;
