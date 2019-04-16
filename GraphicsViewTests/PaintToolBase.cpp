@@ -210,7 +210,7 @@ cPaintToolBase::DrawPathFromPointToPoint( int a, int b )
         {
             float ratio = 1.0 - (remainingDistance)/distance;
             float pressure = pressure_p1 + subPression * ratio;
-            //pressure = 0.5;
+            //pressure = 0.3;
 
             debugDots.push_back( startingPoint + stepSum );
             __DrawDotVectorTruc_RequiresAName_( startingPoint, stepSum, pressure, rotation_p1 );

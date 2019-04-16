@@ -72,8 +72,91 @@ ReadGrayImageWithFloatArea( const QPointF& iOffset, int iX, int iY, float iTopLe
 }
 
 
+static
+inline
+void
+ReadBGRAImageWithFloatArea( const QPointF& iOffset, int iX, int iY, float iTopLeftRatio, float iTopRightRatio, float iBottomLeftRatio, float iBottomRightRatio,
+                            const float* iImage, int iWidth, int iHeight,
+                            float* oRed, float* oGreen, float* oBlue, float* oAlpha )
+{
+    const float* scanline;
+    const int bpl = iWidth * 4;
 
+    // Cuz int cut on negative value cuts up, down down : 1.2 -> 1 ==> Reduction :: -1.2 -> -1.0 ==> Increase
+    int offX = iOffset.x();
+    if( iOffset.x() < 0 )
+        offX -= 1;
 
+    int minX = iX + offX;
+
+    // Cuz int cut on negative value cuts up, down down : 1.2 -> 1 ==> Reduction :: -1.2 -> -1.0 ==> Increase
+    int offY = iOffset.y();
+    if( iOffset.y() < 0 )
+        offY -= 1;
+
+    int minY = iY + offY;
+
+    const int maxX = minX + 1;
+    const int maxY = minY + 1;
+
+    const int width = iWidth;
+    const int height = iHeight;
+
+    *oRed   = 0.F;
+    *oGreen = 0.F;
+    *oBlue  = 0.F;
+    *oAlpha = 0.F;
+
+    scanline = iImage + minY * bpl + minX * 4;
+    // Top left
+    if( minX >= 0 && minX < width && minY >= 0 && minY < height )
+    {
+        *oBlue  += *scanline * iTopLeftRatio;++scanline;
+        *oGreen += *scanline * iTopLeftRatio;++scanline;
+        *oRed   += *scanline * iTopLeftRatio;++scanline;
+        *oAlpha += *scanline * iTopLeftRatio;++scanline;
+    }
+    else
+    {
+        scanline += 4;
+    }
+
+    // Top right
+    if( maxX >= 0 && maxX < width && minY >= 0 && minY < height )
+    {
+        *oBlue  += *scanline * iTopRightRatio;++scanline;
+        *oGreen += *scanline * iTopRightRatio;++scanline;
+        *oRed   += *scanline * iTopRightRatio;++scanline;
+        *oAlpha += *scanline * iTopRightRatio;++scanline;
+    }
+    else
+    {
+        scanline += 4;
+    }
+
+    scanline += bpl - 8;
+    // Bottom left
+    if( minX >= 0 && minX < width && maxY >= 0 && maxY < height )
+    {
+        *oBlue  += *scanline * iBottomLeftRatio;++scanline;
+        *oGreen += *scanline * iBottomLeftRatio;++scanline;
+        *oRed   += *scanline * iBottomLeftRatio;++scanline;
+        *oAlpha += *scanline * iBottomLeftRatio;++scanline;
+    }
+    else
+    {
+        scanline += 4;
+    }
+
+    // Bottom Right
+    if( maxX >= 0 && maxX < width && maxY >= 0 && maxY < height )
+    {
+        *oBlue  += *scanline * iBottomRightRatio;++scanline;
+        *oGreen += *scanline * iBottomRightRatio;++scanline;
+        *oRed   += *scanline * iBottomRightRatio;++scanline;
+        *oAlpha += *scanline * iBottomRightRatio;++scanline;
+    }
+}
 
 
 static
@@ -140,7 +223,7 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
     const int endingY = maxY >= iHeight ? iHeight : maxY;
     const int height = endingY - startingY; // No +1 because we are using straight value, not a .right from QRect, that does a width() -1
 
-    const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
+    const int threadCount = 1;//cThreadProcessor::Instance()->GetAvailableThreadCount();
     const int split = height / threadCount;
     const int excess = height % threadCount;
 
@@ -229,8 +312,11 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
 
                     // Blending stampbuffer over drybuffer in floatbuffer and parallelRender at the same time
                     const float stampAlphaNorm = *stampScan / 255.F;
-                    const float transparencyAmountInverse = 1 - stampAlphaNorm;
 
+                    // Inverse of the alpha of the combination of color and stamp
+                    const float transparencyAmountInverse = 1 - *(colorScan+3)/255.F * stampAlphaNorm;
+
+                    // Then we blend final color, being color * stamp alpha, into the dry buffer
                     *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
@@ -252,7 +338,7 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
                     ++dryScan;
                     ++parallelScanline;
 
-                    *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
+                    *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
                     ++dryScan;
@@ -295,7 +381,6 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                                     QImage* iParallelRender,                                             // The uchar buffer we wanna write to at the same time
                                     const QImage* iAlphaMask,
                                     const QTransform& iTransform, const QPoint& iOrigin, // Transform and its origin to apply
-                                    const QPointF& iSubPixelOffset,
                                     const float maxalpha,
                                     bool iDryActive )
 {
@@ -304,7 +389,6 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     QRect inputArea = QRect( 0, 0, iWidth, iHeight );
     inputArea.moveTopLeft( iOrigin );
     QRectF inputAreaF = QRect( 0, 0, iWidth, iHeight );
-    inputAreaF.translate( iSubPixelOffset );
 
     // Transformed bbox
     QPolygonF outputRect = MapToPolygonF( iTransform, inputArea ); // Apply transfo over inputArea not F, because transfo holds the offset already
@@ -342,7 +426,8 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                                 stampBuffer, iOutput,
                                 iParallelRender,
                                 iAlphaMask,
-                                subPixelPos, maxalpha,
+                                subPixelPos,
+                                maxalpha,
                                 iDryActive );
         return;
     }
@@ -364,27 +449,51 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
 
     // Data iteration
     const float * inputData = iInput;
-    float* outputData = iOutput;
-    uchar* parallelData = iParallelRender->bits();
+    float* outputData       = iOutput;
+    uchar* parallelData     = iParallelRender->bits();
 
-    const int sourceBPL = iWidth; // not *4 because gray, not bgra
-    const int colorBPL = iColorW * 4;
-    const int buffersBPL = iOutputBuffersWidth * 4;
-    const int parallelBPL = iParallelRender->bytesPerLine();
+    const int sourceBPL     = iWidth; // not *4 because gray, not bgra
+    const int colorBPL      = iColorW * 4;
+    const int buffersBPL    = iOutputBuffersWidth * 4;
+    const int parallelBPL   = iParallelRender->bytesPerLine();
 
-    const uchar* alphaData = iAlphaMask->bits();
-    const int alphaBPL = iAlphaMask->bytesPerLine();
+    const uchar* alphaData  = iAlphaMask->bits();
+    const int alphaBPL      = iAlphaMask->bytesPerLine();
 
     const int startingX = transfoBBoxI.left();
     const int startingY = transfoBBoxI.top();
-    const int endingX = transfoBBoxI.right() >= iOutputBuffersWidth ? iOutputBuffersWidth - 1 : transfoBBoxI.right();
-    const int endingY = transfoBBoxI.bottom() >= iOutputBuffersHeight ? iOutputBuffersHeight - 1 : transfoBBoxI.bottom();
-    const int height = endingY - startingY + 1;
+    const int endingX   = transfoBBoxI.right() >= iOutputBuffersWidth ? iOutputBuffersWidth - 1 : transfoBBoxI.right();
+    const int endingY   = transfoBBoxI.bottom() >= iOutputBuffersHeight ? iOutputBuffersHeight - 1 : transfoBBoxI.bottom();
+    const int height    = endingY - startingY + 1;
 
-    const int xColorOffset = (iColorW - transfoBBoxI.width()) / 2;
-    const int yColorOffset = (iColorH - transfoBBoxI.height()) / 2;
 
-    const int threadCount = 1;// cThreadProcessor::Instance()->GetAvailableThreadCount();
+    // Because int cuts will cut lower value if > 0 :  1.26 ->  1
+    //                             and upper if < 0 : -1.26 -> -1
+    QPoint intPoint = transfoBBoxI.topLeft();   // The very final box' top left int rounded
+    QPointF point = transfoBBoxF.topLeft();     // The very final box' top left
+    if( point.x() < 0 )
+        intPoint.setX( intPoint.x() - 1 );
+    if( point.y() < 0 )
+        intPoint.setY( intPoint.y() - 1 );
+
+    const QPointF subReadOffset = - (point - intPoint); // Basically the offset representing the amount that has been cut by int
+
+    QPointF offsetFinal = subReadOffset;
+    offsetFinal.setX( offsetFinal.x() + 1 );
+    offsetFinal.setY( offsetFinal.y() + 1 );
+
+    float topLeftRatio      = (1-offsetFinal.y())   * (1-offsetFinal.x());
+    float topRightRatio     = (1-offsetFinal.y())   * offsetFinal.x();
+    float bottomRightRatio  = offsetFinal.y()       * offsetFinal.x();
+    float bottomLeftRatio   = offsetFinal.y()       * (1-offsetFinal.x());
+
+
+    // We offset to the mipmap's full image, so we then apply the same ratios used in downsampling to read the colorstamp
+    const int xColorOffset = (iColorW - transfoBBoxI.width())  / 2  +1; // +1 seems to center properly the colorBox, but i'm not sure why .. Otherwise it shifts bottom right ( == we read too much topLeft )
+    const int yColorOffset = (iColorH - transfoBBoxI.height()) / 2  +1;
+
+
+    const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
     const int split = height / threadCount;
     const int excess = height % threadCount;
 
@@ -421,7 +530,13 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
             const int xOffset = startX * 4;
 
             // Pixel averaging variables
-            float aSum = 0;
+            float stampAlphaSum = 0;
+
+            float redSum = 0;
+            float greenSum = 0;
+            float blueSum = 0;
+            float alphaSum = 0;
+
             const float surface = floatBoxWidth * floatBoxHeight;
             float xRatio = 1.0;
             float yRatio = 1.0;
@@ -432,16 +547,6 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                 // Gray buffers
                 sourceScanline  = iInput + (y - minY) * sourceBPL + (startX - minX);                                        // Gray
                 stampScan       = stampBuffer +  y * iOutputBuffersWidth + startX;                                          // Gray
-
-                int yColorIndexOffset = (y - minY + yColorOffset);
-                if( yColorIndexOffset >= iColorH )
-                    yColorIndexOffset = iColorH - 1;
-
-                int xColorIndexOffset = (startX - minX + xColorOffset);
-                if( xColorIndexOffset >= iColorW )
-                    xColorIndexOffset = iColorW - 1;
-
-                colorScan       = iColorBuffer + yColorIndexOffset * colorBPL + xColorIndexOffset * 4; // BGRA
 
                 // Float buffers
                 const int indexOffset = y * buffersBPL + xOffset;
@@ -456,21 +561,15 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
 
                 for( int x = startX; x <= endX; ++x )
                 {
-                    //qDebug() << "Reading dst : " << x << "," << y;
                     // Get the point in original
                     const QPointF xyMappedF = inverse.map( QPointF( x, y ) ); // To use this wee need to tune the transformation with new scale
                     const QPoint xyMapped = QPoint( xyMappedF.x(), xyMappedF.y() );
 
-                    //qDebug() << "Reading src : " << xyMappedF.x() << "," << xyMappedF.y();
                     // Get the box to read in original
-                     QRectF boxAreaF( xyMappedF.x(), xyMappedF.y(), floatBoxWidth, floatBoxHeight );
+                    QRectF boxAreaF( xyMappedF.x(), xyMappedF.y(), floatBoxWidth, floatBoxHeight );
                     QRect boxArea( boxAreaF.left(), boxAreaF.top(), 1, 1 );
                     boxArea.setRight( int(boxAreaF.right()) );
                     boxArea.setBottom( int(boxAreaF.bottom()) );
-
-                    //qDebug() << "Reading subarea : " << boxAreaF << "Being int rounded to " << boxArea;
-
-
                     // This is the security line, that prevents from reading out of source buffer
                     // Because we divide by the total surface at the end, skipping (because of interect clamp) pixels will reduce overall intensity properly
                     // ( they will count as 0, which is correct because out of buffer = transparency )
@@ -491,6 +590,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                             }
 
                             sourceScanline = dataOffset + j * sourceBPL;
+
                             for( int i = boxArea.left(); i <= boxArea.right(); ++i )
                             {
                                 xRatio = 1.F - (boxAreaF.left() - i);
@@ -502,63 +602,60 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
 
                                 finalRatio = xRatio * yRatio;
 
-                                aSum += *sourceScanline * finalRatio; ++sourceScanline;
+                                stampAlphaSum   += *sourceScanline * finalRatio; ++sourceScanline;
                             }
                         }
 
-                        aSum /= surface;
+                        ReadBGRAImageWithFloatArea( subReadOffset, (x - minX + xColorOffset), (y - minY + yColorOffset), topLeftRatio, topRightRatio, bottomLeftRatio, bottomRightRatio,
+                                                    iColorBuffer, iColorW, iColorH,
+                                                    &redSum, &greenSum, &blueSum, &alphaSum );
+
+                        stampAlphaSum   /= surface;
 
                         const float alphaMaskMult = *alphaScanline / 255.F;
-                        aSum *= alphaMaskMult;
+                        stampAlphaSum *= alphaMaskMult;
                         alphaScanline += 4;
 
                         // Drawing in stamp buffer
-                        const float inverseCeiled = 1 - (aSum / maxAlphaRanged);
+                        const float inverseCeiled = 1 - (stampAlphaSum / maxAlphaRanged);
 
                         if( iDryActive )
-                            *stampScan   = aSum;
+                            *stampScan   = stampAlphaSum;
                         else
-                            *stampScan   = aSum + *stampScan   * inverseCeiled;
-
+                            *stampScan   = stampAlphaSum + *stampScan   * inverseCeiled;
 
                         // Then drawing the final stamp to the float output and 8bit final image at the same time
                         const float stampAlphaNorm = *stampScan / 255.F;
-                        const float transparencyAmountInverse = 1 - stampAlphaNorm;
 
-                        *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                        // Inverse of the alpha of the combination of color and stamp
+                        const float transparencyAmountInverse = 1 - alphaSum/255.F * stampAlphaNorm;
+
+                        *destScanline = blueSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                         *parallelScanline = uchar( *destScanline );
                         ++destScanline;
-                        ++colorScan;
                         ++dryScan;
                         ++parallelScanline;
 
-                        *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                        *destScanline = greenSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                         *parallelScanline = uchar( *destScanline );
                         ++destScanline;
-                        ++colorScan;
                         ++dryScan;
                         ++parallelScanline;
 
-                        *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                        *destScanline = redSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                         *parallelScanline = uchar( *destScanline );
                         ++destScanline;
-                        ++colorScan;
                         ++dryScan;
                         ++parallelScanline;
 
-                        *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
+                        *destScanline = alphaSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                         *parallelScanline = uchar( *destScanline );
                         ++destScanline;
-                        ++colorScan;
                         ++dryScan;
                         ++parallelScanline;
                         ++stampScan;
 
-
-                        // Blend
-                        //BlendPixelNormalFParrallel( &destScanline, &parallelScanline, rSum, gSum, bSum, aSum );
-
-                        aSum = 0;
+                        stampAlphaSum = 0;
                     }
                     else
                     {
