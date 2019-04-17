@@ -434,23 +434,14 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     }
 
 
-    // We decide to work with ratios resulting from the rounded result
-    // Any scale would provide a floating output size, let's say 4.48 for example
-    // Final result will be 4 pixels wide, not 4.48, as we need int values.
-    // Now, dividing the image in 4.48 will result in missing datas (because for loop below will go 4 iterations, not 4.48,, and 4*X < 4.48*X),
-    // and thus, uneven results at lower sizes
-    // So we take the final int size, compute the scale this represents, and set this one as the transformation scale, so we can evenly cover the original image
+
+
     QTransform inverse = iTransform.inverted();
 
     const float floatBoxWidth = inputAreaF.width() / transfoWidth;
     const float floatBoxHeight = inputAreaF.height() / transfoHeight;
 
-    //float xBaseRatio      = 1+subpixelOffset.x(); // Because subpixelOffset is always < 0
-
-
     // Data iteration
-    const float * inputData = iInput;
-    float* outputData       = iOutput;
     uchar* parallelData     = iParallelRender->bits();
 
     const int sourceBPL     = iWidth; // not *4 because gray, not bgra
@@ -533,10 +524,10 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
             // Pixel averaging variables
             float stampAlphaSum = 0;
 
-            float redSum = iColorBuffer[ 2 ];
-            float greenSum = iColorBuffer[ 1 ];
-            float blueSum = iColorBuffer[ 0 ];
-            float alphaSum = iColorBuffer[ 3 ];
+            float redSum    = iColorBuffer[ 2 ];
+            float greenSum  = iColorBuffer[ 1 ];
+            float blueSum   = iColorBuffer[ 0 ];
+            float alphaSum  = iColorBuffer[ 3 ];
 
             const float surface = floatBoxWidth * floatBoxHeight;
             float xRatio = 1.0;
@@ -546,13 +537,13 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
             for( int y = startY; y <= endY; ++y )
             {
                 // Gray buffers
-                sourceScanline  = iInput + (y - minY) * sourceBPL + (startX - minX);                                        // Gray
-                stampScan       = stampBuffer +  y * iOutputBuffersWidth + startX;                                          // Gray
+                sourceScanline  = iInput + (y - minY) * sourceBPL + (startX - minX);    // Gray
+                stampScan       = stampBuffer +  y * iOutputBuffersWidth + startX;      // Gray
 
                 // Float buffers
                 const int indexOffset = y * buffersBPL + xOffset;
                 dryScan  = background + indexOffset;
-                destScanline    = iOutput + indexOffset;
+                destScanline   = iOutput + indexOffset;
                 if( iDryActive )
                     dryScan    = destScanline;
 
@@ -563,7 +554,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                 for( int x = startX; x <= endX; ++x )
                 {
                     // Get the point in original
-                    const QPointF xyMappedF = inverse.map( QPointF( x, y ) ); // To use this wee need to tune the transformation with new scale
+                    const QPointF xyMappedF = inverse.map( QPointF( x, y ) );
                     const QPoint xyMapped = QPoint( xyMappedF.x(), xyMappedF.y() );
 
                     // Get the box to read in original
@@ -574,10 +565,11 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                     // This is the security line, that prevents from reading out of source buffer
                     // Because we divide by the total surface at the end, skipping (because of interect clamp) pixels will reduce overall intensity properly
                     // ( they will count as 0, which is correct because out of buffer = transparency )
+
                     if( x == startingX || x == endingX || y == startingY || y == endingY )
                         boxArea = boxArea.intersected( inputArea );
 
-                    const float* dataOffset = inputData + boxArea.left();
+                    const float* dataOffset = iInput + boxArea.left();
 
                     if( !boxArea.isEmpty() )
                     {
