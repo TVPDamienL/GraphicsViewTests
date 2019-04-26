@@ -66,12 +66,11 @@ cToolSimpleBrush::ApplyProfile() const
 void
 cToolSimpleBrush::RenderTips( int iX, int iY )
 {
-    int bufferSize =  mDrawingContext->width() * mDrawingContext->height();
+    int bufferSize =  mToolSize*2 * mToolSize*2;
     float* tipRendered = new float[ bufferSize ];
     memset( tipRendered, 0, sizeof(float) * bufferSize );
 
-    float* data = tipRendered;
-    float* pixelRow = data;
+    float* pixelRow = tipRendered;
     unsigned int width = mToolSize * 2;
     unsigned int height = mToolSize * 2;
 
@@ -99,7 +98,7 @@ cToolSimpleBrush::RenderTips( int iX, int iY )
 
     for( int y = bboxMinY; y <= bboxMaxY ; ++y )
     {
-        pixelRow = data + y * bytesPerLine + bboxMinX;
+        pixelRow = tipRendered + y * bytesPerLine + bboxMinX;
 
         for( int x = bboxMinX; x <= bboxMaxX ; ++x )
         {

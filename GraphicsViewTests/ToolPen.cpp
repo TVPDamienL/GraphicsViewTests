@@ -52,12 +52,11 @@ cToolPen::RenderTips( int iX, int iY )
     // Generates 5 different tips, so that this pen tool feels more natural, and less texture stamper like
     for( int i = 0; i < 5; ++i )
     {
-        int bufferSize =  mDrawingContext->width() * mDrawingContext->height();
+        int bufferSize =  mToolSize*2 * mToolSize*2;
         float* tipRendered = new float[ bufferSize ];
         memset( tipRendered, 0, sizeof(float) * bufferSize );
 
-        float* data = tipRendered;
-        float* pixelRow = data;
+        float* pixelRow = tipRendered;
         unsigned int width = mToolSize * 2;
         unsigned int height = mToolSize * 2;
 
@@ -84,7 +83,7 @@ cToolPen::RenderTips( int iX, int iY )
 
         for( int y = bboxMinY; y <= bboxMaxY ; ++y )
         {
-            pixelRow = data + y * bytesPerLine + bboxMinX;
+            pixelRow = tipRendered + y * bytesPerLine + bboxMinX;
 
             for( int x = bboxMinX; x <= bboxMaxX ; ++x )
             {

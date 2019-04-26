@@ -116,11 +116,11 @@ cToolStamp::StartDrawing( QImage* iImage, sPointData iPointData )
     mColorStampFOrigin = new float[ toolDiameter * 4 * toolDiameter ];
     mColorStampF = new float[ toolDiameter * 4 * toolDiameter ];
     MTHardFillF( mColorStampFOrigin, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), mColor );
-    MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), mColor );
-    //MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter/2, toolDiameter ), mColor );
-    //MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  toolDiameter/2, 0, toolDiameter/2, toolDiameter ), Qt::black );
+    //MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), mColor );
+    MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter/2, toolDiameter ), mColor );
+    MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  toolDiameter/2, 0, toolDiameter/2, toolDiameter ), Qt::black );
     //MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), Qt::transparent );
-    mColorUniform = true;
+    mColorUniform = false;
 
     // If no tips are there, we prepare the tool == we build tips and mip maps
     if( mTipRenderedF.size() == 0 )
@@ -155,6 +155,8 @@ cToolStamp::DrawDot( float iX, float iY, float iPressure, float iRotation )
     const float maxY = minY + diam;
     const int   intWidth = maxX - minX;
     const int   intHeight = maxY - minY;
+
+    const QPointF mouseSubPixel( iX - int(iX), iY - int(iY) );
 
     const float red = mColor.red();
     const float green = mColor.green();
@@ -199,20 +201,21 @@ cToolStamp::DrawDot( float iX, float iY, float iPressure, float iRotation )
     // Put paint on canvas
     MTDownscaleBoxAverageDirectAlphaFDry( mMipMapF[mCurrentTipIndex][ indexMip ], mipMapSizeAtIndex, mipMapSizeAtIndex,
                                           mColorStampF, baseDiameter, baseDiameter,
-                                          mColorUniform,
+                                          (mColorUniform && !mMixColorActivated),
                                           mDryBuffer, mDrawingContext->bytesPerLine()/4, mDrawingContext->height(),
                                           mStampBuffer,
                                           _mFloatBuffer,
                                           mDrawingContext,
                                           mAlphaMask, transfo, QPoint( 0, 0 ), mOpacity,
-                                          (mDryActivated || mMixColorActivated) );
+                                          (mDryActivated || mMixColorActivated),
+                                          mouseSubPixel );
 
     // Ink back original color
     if( mColorReinjection )
     {
         MTBlendImagesF( mColorStampFOrigin, baseDiameter, baseDiameter, QRect( 0, 0, baseDiameter, baseDiameter ),
                         mColorStampF, baseDiameter, baseDiameter, QPoint( 0, 0 ),
-                        mMipMapF[mCurrentTipIndex][0], baseDiameter, baseDiameter, QPoint( 0, 0 ), 0.01 );
+                        mMipMapF[mCurrentTipIndex][0], baseDiameter, baseDiameter, QPoint( 0, 0 ), 0.2*iPressure );
     }
 
     if( mStyle == kLinearLoop )
