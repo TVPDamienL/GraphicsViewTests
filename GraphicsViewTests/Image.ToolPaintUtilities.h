@@ -404,7 +404,6 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     QRect transfoBBoxI = ExclusiveBoundingBox( outputRect );
     QRectF transfoBBoxF = ExclusiveBoundingBoxF( outputRect );
     const QPointF subPixelPos = transfoBBoxF.topLeft();
-    const QPointF subpixelOffset = -(subPixelPos - QPoint( subPixelPos.x(), subPixelPos.y() )); // Basically the offset representing the amount that has been cut by int
 
     // Add one because float will go from 0.2 to 1.2 for example
     // So we need to cover pixels from 0 to 2
@@ -441,7 +440,10 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     }
 
 
-
+    //qDebug() << "========================================================================";
+    //qDebug() << "========================================================================";
+    //qDebug() << "========================================================================";
+    //qDebug() << "========================================================================";
 
     QTransform inverse = iTransform.inverted();
 
@@ -466,38 +468,17 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     const int height    = endingY - startingY + 1;
 
 
-    // Because int cuts will cut lower value if > 0 :  1.26 ->  1
-    //                             and upper if < 0 : -1.26 -> -1
-    QPoint intPoint = transfoBBoxI.topLeft();   // The very final box' top left int rounded
-    QPointF point = transfoBBoxF.topLeft();     // The very final box' top left
-    if( point.x() < 0 )
-        intPoint.setX( intPoint.x() - 1 );
-    if( point.y() < 0 )
-        intPoint.setY( intPoint.y() - 1 );
-
-    QPointF offsetFinal = subpixelOffset;
-    offsetFinal.setX( offsetFinal.x() + 1 );
-    offsetFinal.setY( offsetFinal.y() + 1 );
-
-
-
-
-
-
-
-
-
-
-
-    float topLeftRatio      = (1-offsetFinal.y())   * (1-offsetFinal.x());
-    float topRightRatio     = (1-offsetFinal.y())   * offsetFinal.x();
-    float bottomRightRatio  = offsetFinal.y()       * offsetFinal.x();
-    float bottomLeftRatio   = offsetFinal.y()       * (1-offsetFinal.x());
-
-
     // We offset to the mipmap's full image, so we then apply the same ratios used in downsampling to read the colorstamp
     const float xColorOffset = (iColorW - transfoBBoxF.width())  / 2;
     const float yColorOffset = (iColorH - transfoBBoxF.height()) / 2;
+
+    //qDebug() << "Center : " << transfoBBoxF.center() << "  TopLeft : " << transfoBBoxF.topLeft();
+    //qDebug() << "X : " << xColorOffset << "Y : " << yColorOffset;
+
+    //QRect debugRect( xColorOffset, yColorOffset, transfoBBoxF.width(), transfoBBoxF.height() );
+    //QRect debugRect( 0, 0, iColorW, iColorH );
+    //IMAGEDEBUG->ShowImage( iColorBuffer, iColorW, iColorH, debugRect );
+
 
     // Without shema, honestly, you can't understand what's going on below
     // Vaguely, we are getting ratios of the bboxFloat of the final stamp transposed onto the center of the colorstamp, to get the colors to blend in the final stamp area.
@@ -510,7 +491,6 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     float ratioBX = 0;
     float lastRatioX = 0;
 
-
     const float firstPixelOffsetY = transfoBBoxI.top() + 1 - transfoBBoxF.top();
     const float firstPixelOffsetColorY = int(yColorOffset) + 1 - yColorOffset;
 
@@ -518,78 +498,84 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     float ratioAY = 0;
     float ratioBY = 0;
     float lastRatioY = 0;
-
-
-    if( firstPixelOffsetColorX < firstPixelOffsetX )
+    if( !iSkipColorSubSampling )
     {
-        firstRatioX = 1 - firstPixelOffsetColorX;
-        ratioAX = 1 - firstPixelOffsetX - firstPixelOffsetColorX;
-        ratioBX = 1 - ratioAX;
 
-        float excess = std::fmodf( transfoBBoxF.width() - firstPixelOffsetX, 1 );
-        if( int( transfoBBoxF.width() - excess ) == int( transfoBBoxF.right() ) )
+
+        if( firstPixelOffsetColorX < firstPixelOffsetX )
         {
-            lastRatioX = excess;
+            qDebug() << "firstPixelOffsetColorX < firstPixelOffsetX";
+            firstRatioX = firstPixelOffsetColorX;
+            ratioAX = firstPixelOffsetX - firstPixelOffsetColorX;
+            ratioBX = 1 - ratioAX;
+
+            float excess = std::fmodf( transfoBBoxF.width() - firstPixelOffsetX, 1 );
+            if( int( transfoBBoxF.width() - excess ) == int( transfoBBoxF.right() ) )
+            {
+                lastRatioX = excess;
+            }
+            else
+            {
+                lastRatioX = excess - ratioAX;
+            }
         }
         else
         {
-            lastRatioX = excess - ratioAX;
-        }
-    }
-    else
-    {
-        firstRatioX = firstPixelOffsetX;
-        ratioAX = firstPixelOffsetColorX - firstPixelOffsetX;
-        ratioBX = 1 - ratioAX;
+            qDebug() << "firstPixelOffsetColorX >= firstPixelOffsetX";
+            firstRatioX = firstPixelOffsetX;
+            ratioAX = firstPixelOffsetColorX - firstPixelOffsetX;
+            ratioBX = 1 - ratioAX;
 
-        float excess = std::fmodf( transfoBBoxF.width() - firstPixelOffsetX, 1 );
-        if( int( transfoBBoxF.width() - excess ) == int( transfoBBoxF.right() ) )
+            float excess = std::fmodf( transfoBBoxF.width() - firstPixelOffsetX, 1 );
+            if( int( transfoBBoxF.width() - excess ) == int( transfoBBoxF.right() ) )
+            {
+                lastRatioX = excess;
+            }
+            else
+            {
+                lastRatioX = excess - ratioAX;
+            }
+        }
+
+        if( firstPixelOffsetColorY < firstPixelOffsetY )
         {
-            lastRatioX = excess;
+            qDebug() << "firstPixelOffsetColorY < firstPixelOffsetY";
+            firstRatioY = firstPixelOffsetColorY;
+            ratioAY = firstPixelOffsetY - firstPixelOffsetColorY;
+            ratioBY = 1 - ratioAY;
+
+            float excess = std::fmodf( transfoBBoxF.height() - firstPixelOffsetY, 1 );
+            if( int( transfoBBoxF.height() - excess ) == int( transfoBBoxF.bottom() ) )
+            {
+                lastRatioX = excess;
+            }
+            else
+            {
+                lastRatioX = excess - ratioAY;
+            }
         }
         else
         {
-            lastRatioX = excess - ratioAX;
+            qDebug() << "firstPixelOffsetColorY >= firstPixelOffsetY";
+            firstRatioY = firstPixelOffsetY;
+            ratioAY = firstPixelOffsetColorY - firstPixelOffsetY;
+            ratioBY = 1 - ratioAY;
+
+            float excess = std::fmodf( transfoBBoxF.height() - firstPixelOffsetY, 1 );
+            if( int( transfoBBoxF.height() - excess ) == int( transfoBBoxF.bottom() ) )
+            {
+                lastRatioY = excess;
+            }
+            else
+            {
+                lastRatioY = excess - ratioAY;
+            }
         }
+
+
     }
-
-    if( firstPixelOffsetColorY < firstPixelOffsetY )
-    {
-        firstRatioY = 1 - firstPixelOffsetColorY;
-        ratioAY = 1 - firstPixelOffsetY - firstPixelOffsetColorY;
-        ratioBY = 1 - ratioAY;
-
-        float excess = std::fmodf( transfoBBoxF.height() - firstPixelOffsetY, 1 );
-        if( int( transfoBBoxF.height() - excess ) == int( transfoBBoxF.bottom() ) )
-        {
-            lastRatioX = excess;
-        }
-        else
-        {
-            lastRatioX = excess - ratioAY;
-        }
-    }
-    else
-    {
-        firstRatioX = firstPixelOffsetX;
-        ratioAX = firstPixelOffsetColorX - firstPixelOffsetX;
-        ratioBX = 1 - ratioAX;
-
-        float excess = std::fmodf( transfoBBoxF.width() - firstPixelOffsetX, 1 );
-        if( int( transfoBBoxF.width() - excess ) == int( transfoBBoxF.right() ) )
-        {
-            lastRatioX = excess;
-        }
-        else
-        {
-            lastRatioX = excess - ratioAX;
-        }
-    }
-
-
-
-
-
+    const float finalMarginX = transfoBBoxI.right() - transfoBBoxF.right();
+    const float finalMarginY = transfoBBoxI.bottom() - transfoBBoxF.bottom();
 
 
     const int threadCount = 1;//cThreadProcessor::Instance()->GetAvailableThreadCount();
@@ -701,19 +687,169 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                                 }
 
                                 finalRatio = xRatio * yRatio;
+
                                 stampAlphaSum   += *sourceScanline * finalRatio; ++sourceScanline;
                             }
                         }
 
+                        stampAlphaSum   /= surface;
+
                         if( !iSkipColorSubSampling )
                         {
-                            //To change
-                            ReadBGRAImageWithFloatArea( subpixelOffset, (x - minX + xColorOffset), (y - minY + yColorOffset), topLeftRatio, topRightRatio, bottomLeftRatio, bottomRightRatio,
-                                                        iColorBuffer, iColorW, iColorH,
-                                                        &redSum, &greenSum, &blueSum, &alphaSum );
+                            redSum    = 0;
+                            greenSum  = 0;
+                            blueSum   = 0;
+                            alphaSum  = 0;
+
+                            int colorIndex =  (int(yColorOffset) + (y - startingY)) * colorBPL + (int(xColorOffset) + (x - startingX)) * 4;
+
+                            float fRatioX = 0;
+                            float fRatioY = 0;
+                            float sRatioX = 0;
+                            float sRatioY = 0;
+
+                            if( firstPixelOffsetColorX < firstPixelOffsetX )
+                            {
+                                if( x == startingX )
+                                {
+                                    fRatioX = firstRatioX;
+                                    sRatioX = ratioAX;
+                                }
+                                else if( x == endingX )
+                                {
+                                    if( finalMarginX > firstPixelOffsetX )
+                                    {
+                                        fRatioX = ratioBX;
+                                        sRatioX = lastRatioX;
+                                    }
+                                    else
+                                    {
+                                        fRatioX = lastRatioX;
+                                        sRatioX = 0;
+                                    }
+                                }
+                                else
+                                {
+                                    fRatioX = ratioBX;
+                                    sRatioX = ratioAX;
+                                }
+                            }
+                            else
+                            {
+                                colorIndex -= 4;
+                                if( x == startingX )
+                                {
+                                    fRatioX = 0;
+                                    sRatioX = firstRatioX;
+                                }
+                                else if( x == endingX )
+                                {
+                                    if( finalMarginX > firstPixelOffsetX )
+                                    {
+                                        fRatioX = ratioBX;
+                                        sRatioX = lastRatioX;
+                                    }
+                                    else
+                                    {
+                                        fRatioY = lastRatioX;
+                                        sRatioY = 0;
+                                    }
+                                }
+                                else
+                                {
+                                    fRatioX = ratioAX;
+                                    sRatioX = ratioBX;
+                                }
+                            }
+
+                            if( firstPixelOffsetColorY < firstPixelOffsetY )
+                            {
+                                if( y == startingY )
+                                {
+                                    sRatioY = ratioAY;
+                                    fRatioY = firstRatioY;
+                                }
+                                else if( y == endingY )
+                                {
+                                    if( finalMarginY > firstPixelOffsetY )
+                                    {
+                                        fRatioY = ratioBY;
+                                        sRatioY = lastRatioY;
+                                    }
+                                    else
+                                    {
+                                        fRatioY = lastRatioY;
+                                        sRatioY = 0;
+                                    }
+                                }
+                                else
+                                {
+                                    fRatioY = ratioBY;
+                                    sRatioY = ratioAY;
+                                }
+                            }
+                            else
+                            {
+                                colorIndex -= colorBPL;
+
+                                if( y == startingY )
+                                {
+                                    fRatioY = 0;
+                                    sRatioY = firstRatioY;
+                                }
+                                else if( y == endingY )
+                                {
+                                    if( finalMarginY > firstPixelOffsetY )
+                                    {
+                                        fRatioY = ratioBY;
+                                        sRatioY = lastRatioY;
+                                    }
+                                    else
+                                    {
+                                        fRatioY = lastRatioY;
+                                        sRatioY = 0;
+                                    }
+                                }
+                                else
+                                {
+                                    fRatioY = ratioAX;
+                                    sRatioY = ratioBX;
+                                }
+                            }
+
+                            float tlFinalRatio = fRatioX * fRatioY;
+                            float trFinalRatio = sRatioX * fRatioY;
+                            float blFinalRatio = fRatioX * sRatioY;
+                            float brFinalRatio = sRatioX * sRatioY;
+
+                            redSum += iColorBuffer[ colorIndex+2 ] * tlFinalRatio;
+                            greenSum += iColorBuffer[ colorIndex+1 ] * tlFinalRatio;
+                            blueSum += iColorBuffer[ colorIndex+0 ] * tlFinalRatio;
+                            alphaSum += iColorBuffer[ colorIndex+3 ] * tlFinalRatio;
+
+                            colorIndex += 4;
+
+                            redSum += iColorBuffer[ colorIndex+2 ] * trFinalRatio;
+                            greenSum += iColorBuffer[ colorIndex+1 ] * trFinalRatio;
+                            blueSum += iColorBuffer[ colorIndex+0 ] * trFinalRatio;
+                            alphaSum += iColorBuffer[ colorIndex+3 ] * trFinalRatio;
+
+                            colorIndex += colorBPL - 4;
+
+                            redSum += iColorBuffer[ colorIndex+2 ] * blFinalRatio;
+                            greenSum += iColorBuffer[ colorIndex+1 ] * blFinalRatio;
+                            blueSum += iColorBuffer[ colorIndex+0 ] * blFinalRatio;
+                            alphaSum += iColorBuffer[ colorIndex+3 ] * blFinalRatio;
+
+                            colorIndex += 4;
+
+                            redSum += iColorBuffer[ colorIndex+2 ] * brFinalRatio;
+                            greenSum += iColorBuffer[ colorIndex+1 ] * brFinalRatio;
+                            blueSum += iColorBuffer[ colorIndex+0 ] * brFinalRatio;
+                            alphaSum += iColorBuffer[ colorIndex+3 ] * brFinalRatio;
                         }
 
-                        stampAlphaSum   /= surface;
+                        //qDebug() << (int(xColorOffset) + (x - startingX)) << ", " << (int(yColorOffset) + (y - startingY)) << " : " << redSum << " - " << greenSum << " - " << blueSum << " - " << alphaSum;
 
                         const float alphaMaskMult = *alphaScanline / 255.F;
                         stampAlphaSum *= alphaMaskMult;
@@ -759,6 +895,14 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                         ++stampScan;
 
                         stampAlphaSum = 0;
+
+                        if( !iSkipColorSubSampling )
+                        {
+                            redSum = 0;
+                            greenSum = 0;
+                            blueSum = 0;
+                            alphaSum = 0;
+                        }
                     }
                     else
                     {

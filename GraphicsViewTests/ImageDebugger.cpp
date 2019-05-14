@@ -106,6 +106,29 @@ cImageDebugger::ShowImage( const float * image, int width, int height )
 
 
 void
+cImageDebugger::ShowImage( const float * image, int width, int height, const QRect& iArea )
+{
+    QImage* img = new QImage( width, height, QImage::Format_ARGB32_Premultiplied );
+    img->fill( Qt::transparent );
+    uchar* data = img->bits();
+
+    const int bpl = width * 4;
+
+    for( int y = iArea.top(); y <= iArea.bottom(); ++y )
+        for( int x = iArea.left(); x <= iArea.right(); ++x )
+        {
+            int index = y * bpl + x * 4;
+            data[ index+0 ] = uchar( image[ index+0 ] );
+            data[ index+1 ] = uchar( image[ index+1 ] );
+            data[ index+2 ] = uchar( image[ index+2 ] );
+            data[ index+3 ] = uchar( image[ index+3 ] );
+        }
+
+    ShowImage( img );
+}
+
+
+void
 cImageDebugger::ShowImageGray( const float * image, int width, int height )
 {
     QImage* img = new QImage( width, height, QImage::Format_ARGB32_Premultiplied );
