@@ -202,8 +202,8 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
     // TODO: if offset is larger than 1 or -1, need to do multiple +1 or -1 : 2.16 -> 0.16
     // noneed: indeed sudReadBuffer is the subtraction between a flot and its int cut, which can't be > 1
     QPointF offsetFinal = subReadOffset;
-    offsetFinal.setX( offsetFinal.x() + 1 );
-    offsetFinal.setY( offsetFinal.y() + 1 );
+    offsetFinal.setX( fmodf( offsetFinal.x() + 1, 1 ) );
+    offsetFinal.setY( fmodf( offsetFinal.y() + 1, 1 ) );
 
     float topLeftRatio      = (1-offsetFinal.y())   * (1-offsetFinal.x());
     float topRightRatio     = (1-offsetFinal.y())   * offsetFinal.x();
@@ -368,6 +368,59 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
 
 
 
+static
+void
+Trussssc( float* oSum, const QPointF& iPoint, const float iBoxWidth, const float iBoxHeight, const float* srcImage, const int sourceBPL, bool iTruncate, const QRect& iTruncateArea )
+{
+    // Get the box to read in original
+    QRectF boxAreaF( iPoint.x(), iPoint.y(), iBoxWidth, iBoxHeight );
+    QRect boxArea( boxAreaF.left(), boxAreaF.top(), 1, 1 );
+    boxArea.setRight( int(boxAreaF.right()) );
+    boxArea.setBottom( int(boxAreaF.bottom()) );
+
+    // This is the security line, that prevents from reading out of source buffer
+    // Because we divide by the total surface at the end, skipping (because of interect clamp) pixels will reduce overall intensity properly
+    // ( they will count as 0, which is correct because out of buffer = transparency )
+    if( iTruncate )
+        boxArea = boxArea.intersected( iTruncateArea );
+
+    *oSum = 0;
+    const float* dataOffset = srcImage + boxArea.left();
+    const float surface = iBoxWidth * iBoxHeight;
+    float xRatio = 1.0;
+    float yRatio = 1.0;
+    float finalRatio = 1.0;
+
+    if( !boxArea.isEmpty() )
+    {
+        // Sum of all pixel values
+        for( int j = boxArea.top(); j <= boxArea.bottom(); ++j )
+        {
+            yRatio = 1 - (boxAreaF.top() - j);
+            if( yRatio > 1.0 )
+            {
+                yRatio = std::min( 1.F - (float(j+1) - float(boxAreaF.bottom())), 1.F);
+            }
+
+            const float* sourceScanline = dataOffset + j * sourceBPL;
+            for( int i = boxArea.left(); i <= boxArea.right(); ++i )
+            {
+                xRatio = 1.F - (boxAreaF.left() - i);
+
+                if( xRatio > 1.0 )
+                {
+                    xRatio = std::min( 1.F - (float(i+1) - float(boxAreaF.right())), 1.F );
+                }
+
+                finalRatio = xRatio * yRatio;
+
+                *oSum += *sourceScanline * finalRatio; ++sourceScanline;
+            }
+        }
+
+        *oSum /= surface;
+    }
+}
 
 
 // iTransform should be a downscale, otherwise it's not ment to work
@@ -646,268 +699,216 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
 
                 for( int x = startX; x <= endX; ++x )
                 {
-                    // Get the point in original
-                    const QPointF xyMappedF = inverse.map( QPointF( x, y ) );
-                    const QPoint xyMapped = QPoint( xyMappedF.x(), xyMappedF.y() );
+                    Trussssc( &alphaSum, inverse.map( QPointF( x, y ) ), floatBoxWidth, floatBoxHeight, iInput, sourceBPL, x == startingX || x == endingX || y == startingY || y == endingY, inputArea );
 
-                    // Get the box to read in original
-                    QRectF boxAreaF( xyMappedF.x(), xyMappedF.y(), floatBoxWidth, floatBoxHeight );
-                    QRect boxArea( boxAreaF.left(), boxAreaF.top(), 1, 1 );
-                    boxArea.setRight( int(boxAreaF.right()) );
-                    boxArea.setBottom( int(boxAreaF.bottom()) );
-                    // This is the security line, that prevents from reading out of source buffer
-                    // Because we divide by the total surface at the end, skipping (because of interect clamp) pixels will reduce overall intensity properly
-                    // ( they will count as 0, which is correct because out of buffer = transparency )
-
-                    if( x == startingX || x == endingX || y == startingY || y == endingY )
-                        boxArea = boxArea.intersected( inputArea );
-
-                    const float* dataOffset = iInput + boxArea.left();
-
-                    if( !boxArea.isEmpty() )
+                    if( !iSkipColorSubSampling )
                     {
-                        // Sum of all pixel values
-                        for( int j = boxArea.top(); j <= boxArea.bottom(); ++j )
+                        redSum    = 0;
+                        greenSum  = 0;
+                        blueSum   = 0;
+                        alphaSum  = 0;
+
+                        int colorIndex =  (int(yColorOffset) + (y - startingY)) * colorBPL + (int(xColorOffset) + (x - startingX)) * 4;
+
+                        float fRatioX = 0;
+                        float fRatioY = 0;
+                        float sRatioX = 0;
+                        float sRatioY = 0;
+
+                        if( firstPixelOffsetColorX < firstPixelOffsetX )
                         {
-                            yRatio = 1 - (boxAreaF.top() - j);
-                            if( yRatio > 1.0 )
+                            if( x == startingX )
                             {
-                                yRatio = std::min( 1.F - (float(j+1) - float(boxAreaF.bottom())), 1.F);
+                                fRatioX = firstRatioX;
+                                sRatioX = ratioAX;
                             }
-
-                            sourceScanline = dataOffset + j * sourceBPL;
-
-                            for( int i = boxArea.left(); i <= boxArea.right(); ++i )
+                            else if( x == endingX )
                             {
-                                xRatio = 1.F - (boxAreaF.left() - i);
-
-                                if( xRatio > 1.0 )
-                                {
-                                    xRatio = std::min( 1.F - (float(i+1) - float(boxAreaF.right())), 1.F );
-                                }
-
-                                finalRatio = xRatio * yRatio;
-
-                                stampAlphaSum   += *sourceScanline * finalRatio; ++sourceScanline;
-                            }
-                        }
-
-                        stampAlphaSum   /= surface;
-
-                        if( !iSkipColorSubSampling )
-                        {
-                            redSum    = 0;
-                            greenSum  = 0;
-                            blueSum   = 0;
-                            alphaSum  = 0;
-
-                            int colorIndex =  (int(yColorOffset) + (y - startingY)) * colorBPL + (int(xColorOffset) + (x - startingX)) * 4;
-
-                            float fRatioX = 0;
-                            float fRatioY = 0;
-                            float sRatioX = 0;
-                            float sRatioY = 0;
-
-                            if( firstPixelOffsetColorX < firstPixelOffsetX )
-                            {
-                                if( x == startingX )
-                                {
-                                    fRatioX = firstRatioX;
-                                    sRatioX = ratioAX;
-                                }
-                                else if( x == endingX )
-                                {
-                                    if( finalMarginX > firstPixelOffsetX )
-                                    {
-                                        fRatioX = ratioBX;
-                                        sRatioX = lastRatioX;
-                                    }
-                                    else
-                                    {
-                                        fRatioX = lastRatioX;
-                                        sRatioX = 0;
-                                    }
-                                }
-                                else
+                                if( finalMarginX > firstPixelOffsetX )
                                 {
                                     fRatioX = ratioBX;
-                                    sRatioX = ratioAX;
+                                    sRatioX = lastRatioX;
+                                }
+                                else
+                                {
+                                    fRatioX = lastRatioX;
+                                    sRatioX = 0;
                                 }
                             }
                             else
                             {
-                                colorIndex -= 4;
-                                if( x == startingX )
+                                fRatioX = ratioBX;
+                                sRatioX = ratioAX;
+                            }
+                        }
+                        else
+                        {
+                            colorIndex -= 4;
+                            if( x == startingX )
+                            {
+                                fRatioX = 0;
+                                sRatioX = firstRatioX;
+                            }
+                            else if( x == endingX )
+                            {
+                                if( finalMarginX > firstPixelOffsetX )
                                 {
-                                    fRatioX = 0;
-                                    sRatioX = firstRatioX;
-                                }
-                                else if( x == endingX )
-                                {
-                                    if( finalMarginX > firstPixelOffsetX )
-                                    {
-                                        fRatioX = ratioBX;
-                                        sRatioX = lastRatioX;
-                                    }
-                                    else
-                                    {
-                                        fRatioY = lastRatioX;
-                                        sRatioY = 0;
-                                    }
+                                    fRatioX = ratioBX;
+                                    sRatioX = lastRatioX;
                                 }
                                 else
                                 {
-                                    fRatioX = ratioAX;
-                                    sRatioX = ratioBX;
+                                    fRatioY = lastRatioX;
+                                    sRatioY = 0;
                                 }
                             }
-
-                            if( firstPixelOffsetColorY < firstPixelOffsetY )
+                            else
                             {
-                                if( y == startingY )
-                                {
-                                    sRatioY = ratioAY;
-                                    fRatioY = firstRatioY;
-                                }
-                                else if( y == endingY )
-                                {
-                                    if( finalMarginY > firstPixelOffsetY )
-                                    {
-                                        fRatioY = ratioBY;
-                                        sRatioY = lastRatioY;
-                                    }
-                                    else
-                                    {
-                                        fRatioY = lastRatioY;
-                                        sRatioY = 0;
-                                    }
-                                }
-                                else
+                                fRatioX = ratioAX;
+                                sRatioX = ratioBX;
+                            }
+                        }
+
+                        if( firstPixelOffsetColorY < firstPixelOffsetY )
+                        {
+                            if( y == startingY )
+                            {
+                                sRatioY = ratioAY;
+                                fRatioY = firstRatioY;
+                            }
+                            else if( y == endingY )
+                            {
+                                if( finalMarginY > firstPixelOffsetY )
                                 {
                                     fRatioY = ratioBY;
-                                    sRatioY = ratioAY;
+                                    sRatioY = lastRatioY;
+                                }
+                                else
+                                {
+                                    fRatioY = lastRatioY;
+                                    sRatioY = 0;
                                 }
                             }
                             else
                             {
-                                colorIndex -= colorBPL;
+                                fRatioY = ratioBY;
+                                sRatioY = ratioAY;
+                            }
+                        }
+                        else
+                        {
+                            colorIndex -= colorBPL;
 
-                                if( y == startingY )
+                            if( y == startingY )
+                            {
+                                fRatioY = 0;
+                                sRatioY = firstRatioY;
+                            }
+                            else if( y == endingY )
+                            {
+                                if( finalMarginY > firstPixelOffsetY )
                                 {
-                                    fRatioY = 0;
-                                    sRatioY = firstRatioY;
-                                }
-                                else if( y == endingY )
-                                {
-                                    if( finalMarginY > firstPixelOffsetY )
-                                    {
-                                        fRatioY = ratioBY;
-                                        sRatioY = lastRatioY;
-                                    }
-                                    else
-                                    {
-                                        fRatioY = lastRatioY;
-                                        sRatioY = 0;
-                                    }
+                                    fRatioY = ratioBY;
+                                    sRatioY = lastRatioY;
                                 }
                                 else
                                 {
-                                    fRatioY = ratioAX;
-                                    sRatioY = ratioBX;
+                                    fRatioY = lastRatioY;
+                                    sRatioY = 0;
                                 }
                             }
-
-                            float tlFinalRatio = fRatioX * fRatioY;
-                            float trFinalRatio = sRatioX * fRatioY;
-                            float blFinalRatio = fRatioX * sRatioY;
-                            float brFinalRatio = sRatioX * sRatioY;
-
-                            redSum += iColorBuffer[ colorIndex+2 ] * tlFinalRatio;
-                            greenSum += iColorBuffer[ colorIndex+1 ] * tlFinalRatio;
-                            blueSum += iColorBuffer[ colorIndex+0 ] * tlFinalRatio;
-                            alphaSum += iColorBuffer[ colorIndex+3 ] * tlFinalRatio;
-
-                            colorIndex += 4;
-
-                            redSum += iColorBuffer[ colorIndex+2 ] * trFinalRatio;
-                            greenSum += iColorBuffer[ colorIndex+1 ] * trFinalRatio;
-                            blueSum += iColorBuffer[ colorIndex+0 ] * trFinalRatio;
-                            alphaSum += iColorBuffer[ colorIndex+3 ] * trFinalRatio;
-
-                            colorIndex += colorBPL - 4;
-
-                            redSum += iColorBuffer[ colorIndex+2 ] * blFinalRatio;
-                            greenSum += iColorBuffer[ colorIndex+1 ] * blFinalRatio;
-                            blueSum += iColorBuffer[ colorIndex+0 ] * blFinalRatio;
-                            alphaSum += iColorBuffer[ colorIndex+3 ] * blFinalRatio;
-
-                            colorIndex += 4;
-
-                            redSum += iColorBuffer[ colorIndex+2 ] * brFinalRatio;
-                            greenSum += iColorBuffer[ colorIndex+1 ] * brFinalRatio;
-                            blueSum += iColorBuffer[ colorIndex+0 ] * brFinalRatio;
-                            alphaSum += iColorBuffer[ colorIndex+3 ] * brFinalRatio;
+                            else
+                            {
+                                fRatioY = ratioAX;
+                                sRatioY = ratioBX;
+                            }
                         }
 
-                        //qDebug() << (int(xColorOffset) + (x - startingX)) << ", " << (int(yColorOffset) + (y - startingY)) << " : " << redSum << " - " << greenSum << " - " << blueSum << " - " << alphaSum;
+                        float tlFinalRatio = fRatioX * fRatioY;
+                        float trFinalRatio = sRatioX * fRatioY;
+                        float blFinalRatio = fRatioX * sRatioY;
+                        float brFinalRatio = sRatioX * sRatioY;
 
-                        const float alphaMaskMult = *alphaScanline / 255.F;
-                        stampAlphaSum *= alphaMaskMult;
-                        alphaScanline += 4;
+                        redSum += iColorBuffer[ colorIndex+2 ] * tlFinalRatio;
+                        greenSum += iColorBuffer[ colorIndex+1 ] * tlFinalRatio;
+                        blueSum += iColorBuffer[ colorIndex+0 ] * tlFinalRatio;
+                        alphaSum += iColorBuffer[ colorIndex+3 ] * tlFinalRatio;
 
-                        // Drawing in stamp buffer
-                        const float inverseCeiled = 1 - (stampAlphaSum / maxAlphaRanged);
+                        colorIndex += 4;
 
-                        if( iDryActive )
-                            *stampScan   = stampAlphaSum;
-                        else
-                            *stampScan   = stampAlphaSum + *stampScan   * inverseCeiled;
+                        redSum += iColorBuffer[ colorIndex+2 ] * trFinalRatio;
+                        greenSum += iColorBuffer[ colorIndex+1 ] * trFinalRatio;
+                        blueSum += iColorBuffer[ colorIndex+0 ] * trFinalRatio;
+                        alphaSum += iColorBuffer[ colorIndex+3 ] * trFinalRatio;
 
-                        // Then drawing the final stamp to the float output and 8bit final image at the same time
-                        const float stampAlphaNorm = *stampScan / 255.F;
+                        colorIndex += colorBPL - 4;
 
-                        // Inverse of the alpha of the combination of color and stamp
-                        const float transparencyAmountInverse = 1 - alphaSum/255.F * stampAlphaNorm;
+                        redSum += iColorBuffer[ colorIndex+2 ] * blFinalRatio;
+                        greenSum += iColorBuffer[ colorIndex+1 ] * blFinalRatio;
+                        blueSum += iColorBuffer[ colorIndex+0 ] * blFinalRatio;
+                        alphaSum += iColorBuffer[ colorIndex+3 ] * blFinalRatio;
 
-                        *destScanline = blueSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
-                        *parallelScanline = uchar( *destScanline );
-                        ++destScanline;
-                        ++dryScan;
-                        ++parallelScanline;
+                        colorIndex += 4;
 
-                        *destScanline = greenSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
-                        *parallelScanline = uchar( *destScanline );
-                        ++destScanline;
-                        ++dryScan;
-                        ++parallelScanline;
-
-                        *destScanline = redSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
-                        *parallelScanline = uchar( *destScanline );
-                        ++destScanline;
-                        ++dryScan;
-                        ++parallelScanline;
-
-                        *destScanline = alphaSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
-                        *parallelScanline = uchar( *destScanline );
-                        ++destScanline;
-                        ++dryScan;
-                        ++parallelScanline;
-                        ++stampScan;
-
-                        stampAlphaSum = 0;
-
-                        if( !iSkipColorSubSampling )
-                        {
-                            redSum = 0;
-                            greenSum = 0;
-                            blueSum = 0;
-                            alphaSum = 0;
-                        }
+                        redSum += iColorBuffer[ colorIndex+2 ] * brFinalRatio;
+                        greenSum += iColorBuffer[ colorIndex+1 ] * brFinalRatio;
+                        blueSum += iColorBuffer[ colorIndex+0 ] * brFinalRatio;
+                        alphaSum += iColorBuffer[ colorIndex+3 ] * brFinalRatio;
                     }
+
+                    //qDebug() << (int(xColorOffset) + (x - startingX)) << ", " << (int(yColorOffset) + (y - startingY)) << " : " << redSum << " - " << greenSum << " - " << blueSum << " - " << alphaSum;
+
+                    const float alphaMaskMult = *alphaScanline / 255.F;
+                    stampAlphaSum *= alphaMaskMult;
+                    alphaScanline += 4;
+
+                    // Drawing in stamp buffer
+                    const float inverseCeiled = 1 - (stampAlphaSum / maxAlphaRanged);
+
+                    if( iDryActive )
+                        *stampScan   = stampAlphaSum;
                     else
+                        *stampScan   = stampAlphaSum + *stampScan   * inverseCeiled;
+
+                    // Then drawing the final stamp to the float output and 8bit final image at the same time
+                    const float stampAlphaNorm = *stampScan / 255.F;
+
+                    // Inverse of the alpha of the combination of color and stamp
+                    const float transparencyAmountInverse = 1 - alphaSum/255.F * stampAlphaNorm;
+
+                    *destScanline = blueSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *parallelScanline = uchar( *destScanline );
+                    ++destScanline;
+                    ++dryScan;
+                    ++parallelScanline;
+
+                    *destScanline = greenSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *parallelScanline = uchar( *destScanline );
+                    ++destScanline;
+                    ++dryScan;
+                    ++parallelScanline;
+
+                    *destScanline = redSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *parallelScanline = uchar( *destScanline );
+                    ++destScanline;
+                    ++dryScan;
+                    ++parallelScanline;
+
+                    *destScanline = alphaSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *parallelScanline = uchar( *destScanline );
+                    ++destScanline;
+                    ++dryScan;
+                    ++parallelScanline;
+                    ++stampScan;
+
+                    stampAlphaSum = 0;
+
+                    if( !iSkipColorSubSampling )
                     {
-                        // Do all the ++ and += 4 ?
-                        int bp  =5 ;
+                        redSum = 0;
+                        greenSum = 0;
+                        blueSum = 0;
+                        alphaSum = 0;
                     }
                 }
             }
