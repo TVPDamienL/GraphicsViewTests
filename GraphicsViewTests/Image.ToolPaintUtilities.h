@@ -112,12 +112,12 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
 
     const QPointF subReadOffset = - (point - intPoint); // Basically the offset representing the amount that has been cut by int
 
-    // Keep offset between 0 and 1
+    // Keep offset between 0 and <1
     // TODO: if offset is larger than 1 or -1, need to do multiple +1 or -1 : 2.16 -> 0.16
     // noneed: indeed sudReadBuffer is the subtraction between a flot and its int cut, which can't be > 1
     QPointF offsetFinal = subReadOffset;
-    offsetFinal.setX( offsetFinal.x() + 1 );
-    offsetFinal.setY( offsetFinal.y() + 1 );
+    offsetFinal.setX( fmodf( offsetFinal.x() + 1, 1 ) );
+    offsetFinal.setY( fmodf( offsetFinal.y() + 1, 1) );
 
     float topLeftRatio      = (1-offsetFinal.y())   * (1-offsetFinal.x());
     float topRightRatio     = (1-offsetFinal.y())   * offsetFinal.x();
@@ -258,6 +258,60 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
 
 
 
+static
+void
+Trussssc( float* oSum, const QPointF& iPoint, const float iBoxWidth, const float iBoxHeight, const float* srcImage, const int sourceBPL, bool iTruncate, const QRect& iTruncateArea )
+{
+    // Get the box to read in original
+    QRectF boxAreaF( iPoint.x(), iPoint.y(), iBoxWidth, iBoxHeight );
+    QRect boxArea( boxAreaF.left(), boxAreaF.top(), 1, 1 );
+    boxArea.setRight( int(boxAreaF.right()) );
+    boxArea.setBottom( int(boxAreaF.bottom()) );
+
+    // This is the security line, that prevents from reading out of source buffer
+    // Because we divide by the total surface at the end, skipping (because of interect clamp) pixels will reduce overall intensity properly
+    // ( they will count as 0, which is correct because out of buffer = transparency )
+    if( iTruncate )
+        boxArea = boxArea.intersected( iTruncateArea );
+
+    *oSum = 0;
+    const float* dataOffset = srcImage + boxArea.left();
+    const float surface = iBoxWidth * iBoxHeight;
+    float xRatio = 1.0;
+    float yRatio = 1.0;
+    float finalRatio = 1.0;
+
+    if( !boxArea.isEmpty() )
+    {
+        // Sum of all pixel values
+        for( int j = boxArea.top(); j <= boxArea.bottom(); ++j )
+        {
+            yRatio = 1 - (boxAreaF.top() - j);
+            if( yRatio > 1.0 )
+            {
+                yRatio = std::min( 1.F - (float(j+1) - float(boxAreaF.bottom())), 1.F);
+            }
+
+            const float* sourceScanline = dataOffset + j * sourceBPL;
+            for( int i = boxArea.left(); i <= boxArea.right(); ++i )
+            {
+                xRatio = 1.F - (boxAreaF.left() - i);
+
+                if( xRatio > 1.0 )
+                {
+                    xRatio = std::min( 1.F - (float(i+1) - float(boxAreaF.right())), 1.F );
+                }
+
+                finalRatio = xRatio * yRatio;
+
+                *oSum += *sourceScanline * finalRatio; ++sourceScanline;
+            }
+        }
+
+        *oSum /= surface;
+    }
+}
+
 
 
 // iTransform should be a downscale, otherwise it's not ment to work
@@ -348,7 +402,6 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
 
     //float xBaseRatio      = 1+subpixelOffset.x(); // Because subpixelOffset is always < 0
 
-
     // Data iteration
     const float * inputData = iInput;
     float* outputData = iOutput;
@@ -421,96 +474,44 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
 
                 for( int x = startX; x <= endX; ++x )
                 {
-                    // Get the point in original
-                    const QPointF xyMappedF = inverse.map( QPointF( x, y ) ); // To use this wee need to tune the transformation with new scale
-                    const QPoint xyMapped = QPoint( xyMappedF.x(), xyMappedF.y() );
+                    Trussssc( &aSum, inverse.map( QPointF( x, y ) ), floatBoxWidth, floatBoxHeight, inputData, sourceBPL, x == startingX || x == endingX || y == startingY || y == endingY, inputArea );
 
-                    // Get the box to read in original
-                    QRectF boxAreaF( xyMappedF.x(), xyMappedF.y(), floatBoxWidth, floatBoxHeight );
-                    QRect boxArea( boxAreaF.left(), boxAreaF.top(), 1, 1 );
-                    boxArea.setRight( int(boxAreaF.right()) );
-                    boxArea.setBottom( int(boxAreaF.bottom()) );
+                    const float alphaMaskMult = *alphaScanline / 255.F;
+                    aSum *= alphaMaskMult;
+                    alphaScanline += 4;
 
-                    // This is the security line, that prevents from reading out of source buffer
-                    // Because we divide by the total surface at the end, skipping (because of interect clamp) pixels will reduce overall intensity properly
-                    // ( they will count as 0, which is correct because out of buffer = transparency )
-                    if( x == startingX || x == endingX || y == startingY || y == endingY )
-                        boxArea = boxArea.intersected( inputArea );
+                    // Drawing in stamp buffer
+                    const float inverseCeiled = 1 - (aSum / maxAlphaRanged);
+                    *stampScan   = (aSum + *stampScan   * inverseCeiled);
 
-                    const float* dataOffset = inputData + boxArea.left();
+                    // Then drawing the final stamp to the float output and 8bit final image at the same time
+                    const float stampAlphaNorm = *stampScan / 255.F;
+                    const float transparencyAmountInverse = 1 - stampAlphaNorm;
 
-                    if( !boxArea.isEmpty() )
-                    {
-                        // Sum of all pixel values
-                        for( int j = boxArea.top(); j <= boxArea.bottom(); ++j )
-                        {
-                            yRatio = 1 - (boxAreaF.top() - j);
-                            if( yRatio > 1.0 )
-                            {
-                                yRatio = std::min( 1.F - (float(j+1) - float(boxAreaF.bottom())), 1.F);
-                            }
+                    *destScanline = blue * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *parallelScanline = uchar( *destScanline );
+                    ++destScanline;
+                    ++dryScan;
+                    ++parallelScanline;
 
-                            sourceScanline = dataOffset + j * sourceBPL;
-                            for( int i = boxArea.left(); i <= boxArea.right(); ++i )
-                            {
-                                xRatio = 1.F - (boxAreaF.left() - i);
+                    *destScanline = green * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *parallelScanline = uchar( *destScanline );
+                    ++destScanline;
+                    ++dryScan;
+                    ++parallelScanline;
 
-                                if( xRatio > 1.0 )
-                                {
-                                    xRatio = std::min( 1.F - (float(i+1) - float(boxAreaF.right())), 1.F );
-                                }
+                    *destScanline = red * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *parallelScanline = uchar( *destScanline );
+                    ++destScanline;
+                    ++dryScan;
+                    ++parallelScanline;
 
-                                finalRatio = xRatio * yRatio;
-
-                                aSum += *sourceScanline * finalRatio; ++sourceScanline;
-                            }
-                        }
-
-                        aSum /= surface;
-
-                        const float alphaMaskMult = *alphaScanline / 255.F;
-                        aSum *= alphaMaskMult;
-                        alphaScanline += 4;
-
-                        // Drawing in stamp buffer
-                        const float inverseCeiled = 1 - (aSum / maxAlphaRanged);
-                        *stampScan   = (aSum + *stampScan   * inverseCeiled);
-
-                        // Then drawing the final stamp to the float output and 8bit final image at the same time
-                        const float stampAlphaNorm = *stampScan / 255.F;
-                        const float transparencyAmountInverse = 1 - stampAlphaNorm;
-
-                        *destScanline = blue * stampAlphaNorm + *dryScan * transparencyAmountInverse;
-                        *parallelScanline = uchar( *destScanline );
-                        ++destScanline;
-                        ++dryScan;
-                        ++parallelScanline;
-
-                        *destScanline = green * stampAlphaNorm + *dryScan * transparencyAmountInverse;
-                        *parallelScanline = uchar( *destScanline );
-                        ++destScanline;
-                        ++dryScan;
-                        ++parallelScanline;
-
-                        *destScanline = red * stampAlphaNorm + *dryScan * transparencyAmountInverse;
-                        *parallelScanline = uchar( *destScanline );
-                        ++destScanline;
-                        ++dryScan;
-                        ++parallelScanline;
-
-                        *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
-                        *parallelScanline = uchar( *destScanline );
-                        ++destScanline;
-                        ++dryScan;
-                        ++parallelScanline;
-                        ++stampScan;
-
-
-                        // Blend
-                        //BlendPixelNormalFParrallel( &destScanline, &parallelScanline, rSum, gSum, bSum, aSum );
-
-                        aSum = 0;
-                    }
+                    *destScanline = *stampScan + *dryScan * transparencyAmountInverse;
+                    *parallelScanline = uchar( *destScanline );
+                    ++destScanline;
+                    ++dryScan;
+                    ++parallelScanline;
+                    ++stampScan;
                 }
             }
         },
@@ -525,7 +526,6 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
             t->WaitEndOfTask();
     }
 }
-
 
 
 
