@@ -120,23 +120,23 @@ cToolStamp::StartDrawing( QImage* iImage, sPointData iPointData )
     //MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter/2, toolDiameter ), mColor );
     //MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  toolDiameter/2, 0, toolDiameter/2, toolDiameter ), Qt::black );
     //MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), Qt::transparent );
-    mColorUniform = true;
+    mColorUniform = false;
 
-    //QImage* colorPatern = new QImage( "Resources/ColorPatern.png" );
-    //for( int y = 0; y < colorPatern->height(); ++y )
-    //{
-    //    uchar* scanner = colorPatern->bits() + y * colorPatern->width() * 4;
+    QImage* colorPatern = new QImage( "Resources/ColorPatern.png" );
+    for( int y = 0; y < colorPatern->height(); ++y )
+    {
+        uchar* scanner = colorPatern->bits() + y * colorPatern->width() * 4;
 
-    //    for( int x = 0; x < colorPatern->width(); ++x )
-    //    {
-    //        const int floatIndex = y * colorPatern->width() * 4 + x*4;
+        for( int x = 0; x < colorPatern->width(); ++x )
+        {
+            const int floatIndex = y * colorPatern->width() * 4 + x*4;
 
-    //        mColorStampF[ floatIndex + 2 ] = *scanner; ++scanner;
-    //        mColorStampF[ floatIndex + 1 ] = *scanner; ++scanner;
-    //        mColorStampF[ floatIndex + 0 ] = *scanner; ++scanner;
-    //        mColorStampF[ floatIndex + 3 ] = *scanner; ++scanner;
-    //    }
-    //}
+            mColorStampF[ floatIndex + 2 ] = *scanner; ++scanner;
+            mColorStampF[ floatIndex + 1 ] = *scanner; ++scanner;
+            mColorStampF[ floatIndex + 0 ] = *scanner; ++scanner;
+            mColorStampF[ floatIndex + 3 ] = *scanner; ++scanner;
+        }
+    }
 
 
 
