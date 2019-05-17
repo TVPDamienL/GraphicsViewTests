@@ -207,6 +207,7 @@ cToolStamp::DrawDot( float iX, float iY, float iPressure, float iRotation )
     const int minXI = int( minX );
     const int minYI = int( minY );
 
+
     // Grab color from canvas
     // Not using dirtyArea because dirtyarea is clipped already, and we need the negative part to be there, so we can blend colorStamp with the right offset
     if( mMixColorActivated )
@@ -214,7 +215,13 @@ cToolStamp::DrawDot( float iX, float iY, float iPressure, float iRotation )
         MTBlendImagesF( _mFloatBuffer, mDrawingContext->width(), mDrawingContext->height(), QRect( iX - mToolSize, iY - mToolSize, baseDiameter, baseDiameter ),
                         mColorStampF, baseDiameter, baseDiameter, QPoint( 0,0 ),
                         mMipMapF[mCurrentTipIndex][0], baseDiameter, baseDiameter, QPoint( 0,0 ), 0.7 );
+        //MTBlendImageNormalFSubpixel( _mFloatBuffer, mDrawingContext->width(), mDrawingContext->height(), QRectF( minX, minY, baseDiameter, baseDiameter ),
+        //                mColorStampF, baseDiameter, baseDiameter, QPoint( 0,0 ),
+        //                0.7 );
     }
+
+    //IMAGEDEBUG->ShowImage( mColorStampF, baseDiameter, baseDiameter );
+    //IMAGEDEBUG->ShowImageGray( mMipMapF[mCurrentTipIndex][ indexMip ], baseDiameter, baseDiameter );
 
     // Put paint on canvas
     MTDownscaleBoxAverageDirectAlphaFDry( mMipMapF[mCurrentTipIndex][ indexMip ], mipMapSizeAtIndex, mipMapSizeAtIndex,

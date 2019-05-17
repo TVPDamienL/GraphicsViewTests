@@ -18,26 +18,15 @@
 static
 inline
 void
-ReadGrayImageWithFloatArea( const QPointF& iOffset, int iX, int iY, float iTopLeftRatio, float iTopRightRatio, float iBottomLeftRatio, float iBottomRightRatio,
+ReadGrayImageWithFloatArea( int iX, int iY, float iTopLeftRatio, float iTopRightRatio, float iBottomLeftRatio, float iBottomRightRatio,
                         const float* iImage, int iImageWidth, int iImageHeight,
                         float* oAlpha )
 {
     const float* scanline;
     const int bpl = iImageWidth;
 
-    // Cuz int cut on negative value cuts up, down down : 1.2 -> 1 ==> Reduction :: -1.2 -> -1.0 ==> Increase
-    int offX = iOffset.x();
-    if( iOffset.x() < 0 )
-        offX -= 1;
-
-    int minX = iX + offX;
-
-    // Cuz int cut on negative value cuts up, down down : 1.2 -> 1 ==> Reduction :: -1.2 -> -1.0 ==> Increase
-    int offY = iOffset.y();
-    if( iOffset.y() < 0 )
-        offY -= 1;
-
-    int minY = iY + offY;
+    int minX = iX - 1;
+    int minY = iY - 1;
 
     const int maxX = minX + 1;
     const int maxY = minY + 1;
@@ -75,26 +64,15 @@ ReadGrayImageWithFloatArea( const QPointF& iOffset, int iX, int iY, float iTopLe
 static
 inline
 void
-ReadBGRAImageWithFloatArea( const QPointF& iOffset, int iX, int iY, float iTopLeftRatio, float iTopRightRatio, float iBottomLeftRatio, float iBottomRightRatio,
+ReadBGRAImageWithFloatArea( int iX, int iY, float iTopLeftRatio, float iTopRightRatio, float iBottomLeftRatio, float iBottomRightRatio,
                             const float* iImage, int iWidth, int iHeight,
                             float* oRed, float* oGreen, float* oBlue, float* oAlpha )
 {
     const float* scanline;
     const int bpl = iWidth * 4;
 
-    // Cuz int cut on negative value cuts up, down down : 1.2 -> 1 ==> Reduction :: -1.2 -> -1.0 ==> Increase
-    int offX = iOffset.x();
-    if( iOffset.x() < 0 )
-        offX -= 1;
-
-    int minX = iX + offX;
-
-    // Cuz int cut on negative value cuts up, down down : 1.2 -> 1 ==> Reduction :: -1.2 -> -1.0 ==> Increase
-    int offY = iOffset.y();
-    if( iOffset.y() < 0 )
-        offY -= 1;
-
-    int minY = iY + offY;
+    int minX = iX - 1;
+    int minY = iY - 1;
 
     const int maxX = minX + 1;
     const int maxY = minY + 1;
@@ -161,6 +139,129 @@ ReadBGRAImageWithFloatArea( const QPointF& iOffset, int iX, int iY, float iTopLe
 
 static
 void
+MTBlendImageNormalFSubpixel(    const float* iSource, const int iSourceWidth, const int iSourceHeight, const QRectF& iSourceArea,
+                                float* iDestination, const int iDestinationWidth, const int iDestinationHeight, const QPoint& iPoint,
+                                const float iOpacity )
+{
+    int sourceBPL = iSourceWidth*4;
+    int dstBPL = iDestinationWidth*4;
+    //int alphaBPL = alphaW;
+
+    const QPointF srcDstOffset = iPoint - iSourceArea.topLeft();
+    //const QPoint offsetAlpha = alphaPoint - iSourceArea.topLeft();
+
+    QRectF srcArea( 0, 0, iSourceWidth, iSourceHeight );
+    QRectF dstArea( 0, 0, iDestinationWidth, iDestinationHeight );
+    //QRect alphaArea( 0, 0, alphaW, alphaH );
+
+    // Clip to src rect
+    QRectF workingArea = srcArea.intersected( iSourceArea );
+
+    // Clip to dst rect
+    workingArea = workingArea.translated( srcDstOffset );
+    workingArea = workingArea.intersected( dstArea );
+    workingArea = workingArea.translated( -srcDstOffset );
+
+    // Clip to alpha rect
+    //workingArea = workingArea.translated( offsetAlpha );
+    //workingArea = workingArea.intersected( alphaArea );
+    //workingArea = workingArea.translated( -offsetAlpha );
+
+    const QPointF point = iSourceArea.topLeft();
+    const QPoint intPoint( point.x(), point.y() );
+    const QPointF subReadOffset = - (point - intPoint); // Basically the offset representing the amount that has been cut by int
+
+                                                        // Keep offset between 0 and 1
+                                                        // TODO: if offset is larger than 1 or -1, need to do multiple +1 or -1 : 2.16 -> 0.16
+                                                        // noneed: indeed sudReadBuffer is the subtraction between a flot and its int cut, which can't be > 1
+    QPointF offsetFinal = subReadOffset;
+    offsetFinal.setX( offsetFinal.x() + 1 );
+    offsetFinal.setY( offsetFinal.y() + 1 );
+
+    float topLeftRatio      = (1-offsetFinal.y())   * (1-offsetFinal.x());
+    float topRightRatio     = (1-offsetFinal.y())   * offsetFinal.x();
+    float bottomRightRatio  = offsetFinal.y()       * offsetFinal.x();
+    float bottomLeftRatio   = offsetFinal.y()       * (1-offsetFinal.x());
+
+
+
+    const int startingX   = workingArea.left();
+    const int endingX     = workingArea.right() + 1;
+    const int startingY   = workingArea.top();
+    const int endingY     = workingArea.bottom() + 1;
+
+    int height = endingY - startingY;
+
+    const int threadCount = 1;//cThreadProcessor::Instance()->GetAvailableThreadCount();
+    const int split = height / threadCount;
+    const int excess = height % threadCount;
+
+    std::vector< cThreadHandle > handles;
+
+    for( int i = 0; i < threadCount; ++i )
+    {
+        int correct = 0;
+        if( i == threadCount-1 )
+            correct = excess;
+
+        handles.push_back( cThreadProcessor::Instance()->AffectFunctionToThreadAndStart(
+            [ = ]( cRange iOff, cRange iRange )
+        {
+            const float* sourceScanline = iSource;
+            float* destScanline = iDestination;
+            //const float* alphaScan = alphaMask;
+
+            const int startY = iOff.mY;
+            const int endY = startY + iRange.mY;
+            const int startX = iOff.mX;
+            const int endX = startX + iRange.mX;
+
+            for( int y = startY; y < endY; ++y )
+            {
+                sourceScanline  = iSource + y * sourceBPL + startX * 4;
+                //destScanline    = iDestination + (y + int(srcDstOffset.y())) * dstBPL + (startX + int(srcDstOffset.x())) * 4;
+                //destScanline    = iDestination + (y - startingY) * dstBPL;
+                destScanline    = iDestination  + (y - startingY) * dstBPL;
+
+                //alphaScan    = alphaMask + (y + offsetAlpha.y()) * alphaBPL + (startX + offsetAlpha.x());
+
+                for( int x = startX; x < endX; ++x )
+                {
+                    if( (y - startingY) >= iDestinationHeight || (x - startingX) >= iDestinationWidth )
+                        qDebug() << "Merde";
+
+                    float red, green, blue, alp;
+                    ReadBGRAImageWithFloatArea( x, y, topLeftRatio, topRightRatio, bottomLeftRatio, bottomRightRatio,
+                                                iSource, iSourceWidth, iSourceHeight,
+                                                &red, &green, &blue, &alp );
+
+                    if( alp == 0 ) // Skip if alpha is nil
+                    {
+                        sourceScanline += 4;
+                        destScanline += 4;
+                        //++alphaScan;
+                        continue;
+                    }
+
+                    // This would allow to pick color using the tip shape, but it leaves a lot of mistakes, and i dunno if it's subpixel related atm
+                    float v = /**alphaScan / 255.F **/ iOpacity;
+
+                    BlendPixelNormalF( &destScanline, red * v, green * v, blue * v, alp * v );
+                    sourceScanline += 4;
+                    //++alphaScan;
+                }
+            }
+        },
+            cRange( startingX, startingY + i * split ), cRange( endingX - startingX, split + correct ), true ) );
+        // +1 because we range over height amount
+        // It then works with endX being startY + iRange.mY;
+        // meaning if range is 25 ( we go 0-24 ), endY will be 25, so we THEN do < in the for
+    }
+}
+
+
+static
+void
 MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int iSourceHeight,  // Source we will blend, in Gray
                         const float* iColorBuffer, const int iColorW, const int iColorH,   // The color stamp buffer, to lookup color to apply
 
@@ -174,6 +275,9 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
                         const float maxAlpha,
                         bool iDryActive )
 {
+    //float* tmp = new float[ (iSourceWidth+1)*4 * (iSourceHeight+1) ];
+
+
     const uchar maxAlphaRanged = maxAlpha * 255.F;
     const int sourceBPL = iSourceWidth;
     const int colorBPL = iColorW*4;
@@ -202,8 +306,10 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
     // TODO: if offset is larger than 1 or -1, need to do multiple +1 or -1 : 2.16 -> 0.16
     // noneed: indeed sudReadBuffer is the subtraction between a flot and its int cut, which can't be > 1
     QPointF offsetFinal = subReadOffset;
-    offsetFinal.setX( fmodf( offsetFinal.x() + 1, 1 ) );
-    offsetFinal.setY( fmodf( offsetFinal.y() + 1, 1 ) );
+    offsetFinal.setX( offsetFinal.x() + 1 );
+    offsetFinal.setY( offsetFinal.y() + 1 );
+    //offsetFinal.setX( fmodf( offsetFinal.x() + 1, 1 ) );
+    //offsetFinal.setY( fmodf( offsetFinal.y() + 1, 1 ) );
 
     float topLeftRatio      = (1-offsetFinal.y())   * (1-offsetFinal.x());
     float topRightRatio     = (1-offsetFinal.y())   * offsetFinal.x();
@@ -212,18 +318,18 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
 
     // Source bbox
     const int minX = point.x();
-    const int maxX = minX + iSourceWidth; // Max is not min + width -1 here because we want to expand the int area by one, to handle float area entirely
+    const int maxX = minX + iSourceWidth + 1; // +1 Because we want to go over one more pixel, as float will reach things like 1.2, need to not stop at pixel 1, but 2
     const int minY = point.y();
-    const int maxY = minY + iSourceHeight; // Max is not min + width -1 here because we want to expand the int area by one, to handle float area entirely
+    const int maxY = minY + iSourceHeight + 1;
 
     // Clipped bounds == iteration limits
     const int startingX = minX < 0 ? 0 : minX;
     const int endingX = maxX >= iWidth ? iWidth : maxX;
     const int startingY = minY < 0 ? 0 : minY;
     const int endingY = maxY >= iHeight ? iHeight : maxY;
-    const int height = endingY - startingY; // No +1 because we are using straight value, not a .right from QRect, that does a width() -1
+    const int height = endingY - startingY;
 
-    const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
+    const int threadCount = 1;//cThreadProcessor::Instance()->GetAvailableThreadCount();
     const int split = height / threadCount;
     const int excess = height % threadCount;
 
@@ -280,14 +386,14 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
                 for( int x = startX; x < endX; ++x )
                 {
                     float alpha = 0;
-                    ReadGrayImageWithFloatArea( subReadOffset, (x - minX), (y - minY), topLeftRatio, topRightRatio, bottomLeftRatio, bottomRightRatio,
+                    ReadGrayImageWithFloatArea( (x - minX), (y - minY), topLeftRatio, topRightRatio, bottomLeftRatio, bottomRightRatio,
                                             source, iSourceWidth, iSourceHeight,
                                             &alpha );
 
+                    //tmp[ (y - minY) * (iSourceWidth+1) + (x - minX) ] = alpha;
                     if( alpha == 0 ) // Skip if alpha is nil
                     {
                         stampScan++;
-
                         colorScan += 4;
                         dryScan += 4;
                         destScanline += 4;
@@ -298,9 +404,15 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
                     }
 
                     float red, green, blue, alp;
-                    ReadBGRAImageWithFloatArea( subReadOffset, (x - minX), (y - minY), topLeftRatio, topRightRatio, bottomLeftRatio, bottomRightRatio,
+                    ReadBGRAImageWithFloatArea( (x - minX), (y - minY), topLeftRatio, topRightRatio, bottomLeftRatio, bottomRightRatio,
                                                 iColorBuffer, iColorW, iColorH,
                                                 &red, &green, &blue, &alp );
+
+
+                    //tmp[ (y - minY) * (iSourceWidth+1)*4 + (x - minX)*4 + 0 ] = blue;
+                    //tmp[ (y - minY) * (iSourceWidth+1)*4 + (x - minX)*4 + 1 ] = green;
+                    //tmp[ (y - minY) * (iSourceWidth+1)*4 + (x - minX)*4 + 2 ] = red;
+                    //tmp[ (y - minY) * (iSourceWidth+1)*4 + (x - minX)*4 + 3 ] = alp;
 
 
                     // Alpha masking
@@ -320,7 +432,7 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
                     const float stampAlphaNorm = *stampScan / 255.F;
 
                     // Inverse of the alpha of the combination of color and stamp
-                    const float transparencyAmountInverse = 1 - *(colorScan+3)/255.F * stampAlphaNorm;
+                    const float transparencyAmountInverse = 1 - alp/255.F * stampAlphaNorm;
 
                     // Then we blend final color, being color * stamp alpha, into the dry buffer
                     *destScanline = blue * stampAlphaNorm + *dryScan * transparencyAmountInverse;
@@ -351,6 +463,7 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
                     ++colorScan;
                     ++parallelScanline;
                     ++stampScan;
+
                 }
             }
         },
@@ -364,6 +477,9 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
         if( t )
             t->WaitEndOfTask();
     }
+
+    //IMAGEDEBUG->ShowImage( tmp, (iSourceWidth+1), (iSourceHeight+1) );
+    //qDebug() << "Off : " << -subReadOffset;
 }
 
 

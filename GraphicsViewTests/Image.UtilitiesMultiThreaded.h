@@ -240,12 +240,6 @@ MTBlendImagesF( const float* source, const int sourceW, const int sourceH, const
     int dstBPL = dstW*4;
     int alphaBPL = alphaW;
 
-    // Source bbox
-    const int minX = iSourceArea.left();
-    const int maxX = iSourceArea.right();
-    const int minY = iSourceArea.top();
-    const int maxY = iSourceArea.bottom();
-
     const QPoint offset = point - iSourceArea.topLeft();
     const QPoint offsetAlpha = alphaPoint - iSourceArea.topLeft();
 
