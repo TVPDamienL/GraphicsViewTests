@@ -318,9 +318,9 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
 
     // Source bbox
     const int minX = point.x();
-    const int maxX = minX + iSourceWidth + 1; // +1 Because we want to go over one more pixel, as float will reach things like 1.2, need to not stop at pixel 1, but 2
+    const int maxX = minX + iSourceWidth; // +1 Because we want to go over one more pixel, as float will reach things like 1.2, need to not stop at pixel 1, but 2
     const int minY = point.y();
-    const int maxY = minY + iSourceHeight + 1;
+    const int maxY = minY + iSourceHeight;
 
     // Clipped bounds == iteration limits
     const int startingX = minX < 0 ? 0 : minX;
@@ -432,31 +432,31 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
                     const float stampAlphaNorm = *stampScan / 255.F;
 
                     // Inverse of the alpha of the combination of color and stamp
-                    const float transparencyAmountInverse = 1 - alp/255.F * stampAlphaNorm;
+                    const float transparencyAmountInverse = 1 - *(colorScan+3)/255.F * stampAlphaNorm;
 
                     // Then we blend final color, being color * stamp alpha, into the dry buffer
-                    *destScanline = blue * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
                     ++colorScan;
                     ++dryScan;
                     ++parallelScanline;
 
-                    *destScanline = green * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
                     ++colorScan;
                     ++dryScan;
                     ++parallelScanline;
 
-                    *destScanline = red * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
                     ++colorScan;
                     ++dryScan;
                     ++parallelScanline;
 
-                    *destScanline = alp * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                     *parallelScanline = uchar( *destScanline );
                     ++destScanline;
                     ++dryScan;
@@ -626,7 +626,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                                     const QTransform& iTransform, const QPoint& iOrigin, // Transform and its origin to apply
                                     const float maxalpha,
                                     bool iDryActive,
-                                    const QPointF& mouseSubPixel )
+                                    const QPointF& colorOffset )
 {
     const int inputWidth = iWidth;
     const int inputHeight = iHeight;
@@ -680,6 +680,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     //qDebug() << "========================================================================";
     //qDebug() << "========================================================================";
     //qDebug() << "========================================================================";
+
 
     QTransform inverse = iTransform.inverted();
 
@@ -870,6 +871,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                 stampScan       = stampBuffer +  y * iOutputBuffersWidth + startX;      // Gray
 
                 // Float buffers
+                //colorScan = iColorBuffer + ((y-startY) + int(colorOffset.y()+1)) * colorBPL + int(colorOffset.x()+1) * 4;
                 const int indexOffset = y * buffersBPL + xOffset;
                 dryScan  = background + indexOffset;
                 destScanline   = iOutput + indexOffset;
@@ -887,7 +889,8 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                     if( !iSkipColorSubSampling )
                     {
                         QPointF sub = transfoBBoxF.topLeft() - transfoBBoxI.topLeft();
-                        QPointF pos( xColorOffset - sub.x() + (x - startingX), yColorOffset - sub.y() + (y - startingY) );
+                        //QPointF pos( xColorOffset - sub.x() + (x - startingX), yColorOffset - sub.y() + (y - startingY) ); // This is for perfect inner subpixel
+                        QPointF pos( colorOffset + QPoint( (x - startingX), (y - startingY) ) ); // This is to get the best mix consistency ( least amount of shift towards bottom right or top left )
                         TrusssscRGBA( &redSum, &greenSum, &blueSum, &alphaSum, pos, 1.F, 1.F, iColorBuffer, colorBPL, x == startingX || x == endingX || y == startingY || y == endingY, QRect( 0, 0, iColorW, iColorH ) );
                     }
 
@@ -907,28 +910,37 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                     const float stampAlphaNorm = *stampScan / 255.F;
 
                     // Inverse of the alpha of the combination of color and stamp
+                    //const float transparencyAmountInverse = 1 - *(colorScan+3)/255.F * stampAlphaNorm;
                     const float transparencyAmountInverse = 1 - alphaSum/255.F * stampAlphaNorm;
 
+                    //*destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                     *destScanline = blueSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                     *parallelScanline = uchar( *destScanline );
+                    //++colorScan;
                     ++destScanline;
                     ++dryScan;
                     ++parallelScanline;
 
+                    //*destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                     *destScanline = greenSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                     *parallelScanline = uchar( *destScanline );
+                    //++colorScan;
                     ++destScanline;
                     ++dryScan;
                     ++parallelScanline;
 
+                    //*destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                     *destScanline = redSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                     *parallelScanline = uchar( *destScanline );
+                    //++colorScan;
                     ++destScanline;
                     ++dryScan;
                     ++parallelScanline;
 
+                    //*destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                     *destScanline = alphaSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                     *parallelScanline = uchar( *destScanline );
+                    //++colorScan;
                     ++destScanline;
                     ++dryScan;
                     ++parallelScanline;
