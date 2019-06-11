@@ -13,7 +13,12 @@
 #include "BenchmarkStuff.h"
 #include <thread>
 #include "Thread.h"
-
+#include <condition_variable>
+#include <mutex>
+#include <thread>
+#include <iostream>
+#include <queue>
+#include <chrono>
 
 
 
@@ -135,10 +140,22 @@ public:
 };
 
 
-
-
 int main(int argc, char *argv[])
 {
+    //std::string aa = "abc";
+    //std::string b = "abc";
+    //std::string c = "bbc";
+
+    //if( aa == b )
+    //    qDebug() << "EQB";
+    //if( aa == c )
+    //    qDebug() << "EQC";
+
+    //if( aa < c )
+    //    qDebug() << "STC";
+    //if( aa > c )
+    //    qDebug() << "GTC";
+
     //QApplication::setAttribute( Qt::AA_EnableHighDpiScaling ); // DPI support
     //QCoreApplication::setAttribute( Qt::AA_UseHighDpiPixmaps ); //HiDPI pixmaps
     //qputenv( "QT_SCALE_FACTOR", "2" );
@@ -147,20 +164,21 @@ int main(int argc, char *argv[])
 
 
     //MTTest test;
+    //const int loops = 10000;
 
     //qDebug() << "Mono -------------------";
-    //BENCHSTART( 10 )
+    //BENCHSTART( loops )
     //test.MonoThread();
-    //BENCHEND( 10 )
+    //BENCHEND( loops )
 
     //if( !test.SanityCheck( 5 ) )
     //    qDebug() << "ERROR";
 
 
     //qDebug() << "Multi -------------------";
-    //BENCHSTART( 10 )
+    //BENCHSTART( loops )
     //test.MultiThread1();
-    //BENCHEND( 10 )
+    //BENCHEND( loops )
 
     //if( !test.SanityCheck( 1 ) )
     //    qDebug() << "ERROR";
@@ -168,9 +186,9 @@ int main(int argc, char *argv[])
     //cThreadProcessor::Instance();
 
     //qDebug() << "Multi with processor -------------------";
-    //BENCHSTART( 10 )
+    //BENCHSTART( loops )
     //test.MultiThreadProc();
-    //BENCHEND( 10 )
+    //BENCHEND( loops )
 
     //if( !test.SanityCheck( 1 ) )
     //    qDebug() << "ERROR";

@@ -35,7 +35,15 @@ public:
     void ShowImagesGray( QVector< const float* > images, QVector< int > widths, QVector< int > heights );
     void Hide();
 
+public:
+    void AddImage( const QImage* iImage );
+    void AddImage( const float* image, int width, int height );
+    void AddImage( const float* image, int width, int height, const QRect& iArea );
+    void ShowNextImage();
+    void ClearImages();
+
 private:
     QGraphicsView* mView;
+    std::vector< const QImage* > mImages;
 };
 

@@ -20,6 +20,8 @@
 #include <QDebug>
 #include <QScrollBar>
 
+#include "ImageDebugger.h"
+
 
 cCanvas::cCanvas( QWidget *parent ) :
     QGraphicsView( parent ),
@@ -226,6 +228,14 @@ cCanvas::keyReleaseEvent( QKeyEvent * iEvent )
     {
         mTool->DEBUG();
     }
+    else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_B  )
+    {
+        IMAGEDEBUG->ShowNextImage();
+    }
+    else if( iEvent->modifiers() & Qt::ControlModifier && iEvent->key() == Qt::Key_N  )
+    {
+        IMAGEDEBUG->ClearImages();
+    }
 
     QGraphicsView::keyReleaseEvent( iEvent );
 }
@@ -332,7 +342,15 @@ cCanvas::MouseDown( const QPoint& iPos, const Qt::MouseButton& iButton, double i
             point.mPressure = 1.0F;
             point.mRotation = 0.0F;
 
+            //point.mPosition = QPointF( 150, 100 );
+
             mTool->StartDrawing( mClip->CurrentLayer()->Image(), point );
+
+            //point.mPosition = QPointF( 150, 100 );
+            //mClip->DirtyArea( mTool->MoveDrawing( point ) );
+            //point.mPosition = QPointF( 119, 150 );
+            //mClip->DirtyArea( mTool->MoveDrawing( point ) );
+
 
             if( mToolType == kEraser )
                 mPainter->setCompositionMode( QPainter::CompositionMode_Clear );

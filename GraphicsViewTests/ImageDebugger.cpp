@@ -221,3 +221,75 @@ cImageDebugger::Hide()
 {
     hide();
 }
+
+
+void
+cImageDebugger::AddImage( const QImage * iImage )
+{
+    mImages.push_back( iImage );
+}
+
+
+void
+cImageDebugger::AddImage( const float * image, int width, int height )
+{
+    QImage* img = new QImage( width, height, QImage::Format_ARGB32_Premultiplied );
+    uchar* data = img->bits();
+
+    const int bpl = width * 4;
+
+    for( int x = 0; x < bpl; ++x )
+        for( int y = 0; y < height; ++y )
+        {
+            int index = y * bpl + x;
+            data[ index ] = uchar( image[ index ] );
+        }
+
+    AddImage( img );
+}
+
+
+void
+cImageDebugger::AddImage( const float * image, int width, int height, const QRect & iArea )
+{
+    QImage* img = new QImage( width, height, QImage::Format_ARGB32_Premultiplied );
+    img->fill( Qt::transparent );
+    uchar* data = img->bits();
+
+    const int bpl = width * 4;
+
+    for( int y = iArea.top(); y <= iArea.bottom(); ++y )
+        for( int x = iArea.left(); x <= iArea.right(); ++x )
+        {
+            int index = y * bpl + x * 4;
+            data[ index+0 ] = uchar( image[ index+0 ] );
+            data[ index+1 ] = uchar( image[ index+1 ] );
+            data[ index+2 ] = uchar( image[ index+2 ] );
+            data[ index+3 ] = uchar( image[ index+3 ] );
+        }
+
+    AddImage( img );
+}
+
+
+void
+cImageDebugger::ShowNextImage()
+{
+    if( mImages.size() > 0 )
+    {
+        auto img = mImages.front();
+        ShowImage( img );
+        mImages.erase( mImages.begin() );
+        delete img;
+    }
+}
+
+
+void
+cImageDebugger::ClearImages()
+{
+    for( auto img : mImages )
+        delete  img;
+
+    mImages.clear();
+}

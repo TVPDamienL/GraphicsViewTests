@@ -192,7 +192,7 @@ MTBlendImageNormalFSubpixel(    const float* iSource, const int iSourceWidth, co
 
     int height = endingY - startingY;
 
-    const int threadCount = 1;//cThreadProcessor::Instance()->GetAvailableThreadCount();
+    const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
     const int split = height / threadCount;
     const int excess = height % threadCount;
 
@@ -329,7 +329,7 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
     const int endingY = maxY >= iHeight ? iHeight : maxY;
     const int height = endingY - startingY;
 
-    const int threadCount = 1;//cThreadProcessor::Instance()->GetAvailableThreadCount();
+    const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
     const int split = height / threadCount;
     const int excess = height % threadCount;
 
@@ -402,17 +402,6 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
                         alphaScanline += 4;
                         continue;
                     }
-
-                    float red, green, blue, alp;
-                    ReadBGRAImageWithFloatArea( (x - minX), (y - minY), topLeftRatio, topRightRatio, bottomLeftRatio, bottomRightRatio,
-                                                iColorBuffer, iColorW, iColorH,
-                                                &red, &green, &blue, &alp );
-
-
-                    //tmp[ (y - minY) * (iSourceWidth+1)*4 + (x - minX)*4 + 0 ] = blue;
-                    //tmp[ (y - minY) * (iSourceWidth+1)*4 + (x - minX)*4 + 1 ] = green;
-                    //tmp[ (y - minY) * (iSourceWidth+1)*4 + (x - minX)*4 + 2 ] = red;
-                    //tmp[ (y - minY) * (iSourceWidth+1)*4 + (x - minX)*4 + 3 ] = alp;
 
 
                     // Alpha masking
@@ -709,113 +698,12 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     const float xColorOffset = (iColorW - transfoBBoxF.width())  / 2;
     const float yColorOffset = (iColorH - transfoBBoxF.height()) / 2;
 
-    //qDebug() << "Center : " << transfoBBoxF.center() << "  TopLeft : " << transfoBBoxF.topLeft();
-    //qDebug() << "X : " << xColorOffset << "Y : " << yColorOffset;
-
-    //QRect debugRect( xColorOffset, yColorOffset, transfoBBoxF.width(), transfoBBoxF.height() );
-    //QRect debugRect( 0, 0, iColorW, iColorH );
-    //IMAGEDEBUG->ShowImage( iColorBuffer, iColorW, iColorH, debugRect );
-
-
-    // Without shema, honestly, you can't understand what's going on below
-    // Vaguely, we are getting ratios of the bboxFloat of the final stamp transposed onto the center of the colorstamp, to get the colors to blend in the final stamp area.
-    // This involves two subpixel ratios : the final blend, and the colorstamp, below is the color stamp
-    //const float firstPixelOffsetX = transfoBBoxI.left() + 1 - transfoBBoxF.left();
-    //const float firstPixelOffsetColorX = int(xColorOffset) + 1 - xColorOffset;
-
-    //float firstRatioX = 0;
-    //float ratioAX = 0;
-    //float ratioBX = 0;
-    //float lastRatioX = 0;
-
-    //const float firstPixelOffsetY = transfoBBoxI.top() + 1 - transfoBBoxF.top();
-    //const float firstPixelOffsetColorY = int(yColorOffset) + 1 - yColorOffset;
-
-    //float firstRatioY = 0;
-    //float ratioAY = 0;
-    //float ratioBY = 0;
-    //float lastRatioY = 0;
-    //if( !iSkipColorSubSampling )
-    //{
-
-
-    //    if( firstPixelOffsetColorX < firstPixelOffsetX )
-    //    {
-    //        qDebug() << "firstPixelOffsetColorX < firstPixelOffsetX";
-    //        firstRatioX = firstPixelOffsetColorX;
-    //        ratioAX = firstPixelOffsetX - firstPixelOffsetColorX;
-    //        ratioBX = 1 - ratioAX;
-
-    //        float excess = std::fmodf( transfoBBoxF.width() - firstPixelOffsetX, 1 );
-    //        if( int( transfoBBoxF.width() - excess ) == int( transfoBBoxF.right() ) )
-    //        {
-    //            lastRatioX = excess;
-    //        }
-    //        else
-    //        {
-    //            lastRatioX = excess - ratioAX;
-    //        }
-    //    }
-    //    else
-    //    {
-    //        qDebug() << "firstPixelOffsetColorX >= firstPixelOffsetX";
-    //        firstRatioX = firstPixelOffsetX;
-    //        ratioAX = firstPixelOffsetColorX - firstPixelOffsetX;
-    //        ratioBX = 1 - ratioAX;
-
-    //        float excess = std::fmodf( transfoBBoxF.width() - firstPixelOffsetX, 1 );
-    //        if( int( transfoBBoxF.width() - excess ) == int( transfoBBoxF.right() ) )
-    //        {
-    //            lastRatioX = excess;
-    //        }
-    //        else
-    //        {
-    //            lastRatioX = excess - ratioAX;
-    //        }
-    //    }
-
-    //    if( firstPixelOffsetColorY < firstPixelOffsetY )
-    //    {
-    //        qDebug() << "firstPixelOffsetColorY < firstPixelOffsetY";
-    //        firstRatioY = firstPixelOffsetColorY;
-    //        ratioAY = firstPixelOffsetY - firstPixelOffsetColorY;
-    //        ratioBY = 1 - ratioAY;
-
-    //        float excess = std::fmodf( transfoBBoxF.height() - firstPixelOffsetY, 1 );
-    //        if( int( transfoBBoxF.height() - excess ) == int( transfoBBoxF.bottom() ) )
-    //        {
-    //            lastRatioX = excess;
-    //        }
-    //        else
-    //        {
-    //            lastRatioX = excess - ratioAY;
-    //        }
-    //    }
-    //    else
-    //    {
-    //        qDebug() << "firstPixelOffsetColorY >= firstPixelOffsetY";
-    //        firstRatioY = firstPixelOffsetY;
-    //        ratioAY = firstPixelOffsetColorY - firstPixelOffsetY;
-    //        ratioBY = 1 - ratioAY;
-
-    //        float excess = std::fmodf( transfoBBoxF.height() - firstPixelOffsetY, 1 );
-    //        if( int( transfoBBoxF.height() - excess ) == int( transfoBBoxF.bottom() ) )
-    //        {
-    //            lastRatioY = excess;
-    //        }
-    //        else
-    //        {
-    //            lastRatioY = excess - ratioAY;
-    //        }
-    //    }
-
-
-    //}
     const float finalMarginX = transfoBBoxI.right() - transfoBBoxF.right();
     const float finalMarginY = transfoBBoxI.bottom() - transfoBBoxF.bottom();
 
 
-    const int threadCount = 1;//cThreadProcessor::Instance()->GetAvailableThreadCount();
+    //const int threadCount = 1;
+    const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
     const int split = height / threadCount;
     const int excess = height % threadCount;
 
@@ -853,16 +741,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
 
             // Pixel averaging variables
             float stampAlphaSum = 0;
-
-            float redSum    = iColorBuffer[ 2 ];
-            float greenSum  = iColorBuffer[ 1 ];
-            float blueSum   = iColorBuffer[ 0 ];
-            float alphaSum  = iColorBuffer[ 3 ];
-
-            const float surface = floatBoxWidth * floatBoxHeight;
-            float xRatio = 1.0;
-            float yRatio = 1.0;
-            float finalRatio = 1.0;
+            float colorAlpha  = iColorBuffer[ 3 ];
 
             for( int y = startY; y <= endY; ++y )
             {
@@ -871,7 +750,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                 stampScan       = stampBuffer +  y * iOutputBuffersWidth + startX;      // Gray
 
                 // Float buffers
-                //colorScan = iColorBuffer + ((y-startY) + int(colorOffset.y()+1)) * colorBPL + int(colorOffset.x()+1) * 4;
+                colorScan = iColorBuffer + ((y-startY) + int(colorOffset.y())) * colorBPL + int(colorOffset.x()) * 4;
                 const int indexOffset = y * buffersBPL + xOffset;
                 dryScan  = background + indexOffset;
                 destScanline   = iOutput + indexOffset;
@@ -886,13 +765,6 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                 {
                     Trussssc( &stampAlphaSum, inverse.map( QPointF( x, y ) ), floatBoxWidth, floatBoxHeight, iInput, sourceBPL, x == startingX || x == endingX || y == startingY || y == endingY, inputArea );
 
-                    if( !iSkipColorSubSampling )
-                    {
-                        QPointF sub = transfoBBoxF.topLeft() - transfoBBoxI.topLeft();
-                        //QPointF pos( xColorOffset - sub.x() + (x - startingX), yColorOffset - sub.y() + (y - startingY) ); // This is for perfect inner subpixel
-                        QPointF pos( colorOffset + QPoint( (x - startingX), (y - startingY) ) ); // This is to get the best mix consistency ( least amount of shift towards bottom right or top left )
-                        TrusssscRGBA( &redSum, &greenSum, &blueSum, &alphaSum, pos, 1.F, 1.F, iColorBuffer, colorBPL, x == startingX || x == endingX || y == startingY || y == endingY, QRect( 0, 0, iColorW, iColorH ) );
-                    }
 
                     const float alphaMaskMult = *alphaScanline / 255.F;
                     stampAlphaSum *= alphaMaskMult;
@@ -911,50 +783,38 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
 
                     // Inverse of the alpha of the combination of color and stamp
                     //const float transparencyAmountInverse = 1 - *(colorScan+3)/255.F * stampAlphaNorm;
-                    const float transparencyAmountInverse = 1 - alphaSum/255.F * stampAlphaNorm;
+                    const float transparencyAmountInverse = 1 - colorAlpha/255.F * stampAlphaNorm;
 
-                    //*destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
-                    *destScanline = blueSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                     *parallelScanline = uchar( *destScanline );
-                    //++colorScan;
+                    ++colorScan;
                     ++destScanline;
                     ++dryScan;
                     ++parallelScanline;
 
-                    //*destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
-                    *destScanline = greenSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                     *parallelScanline = uchar( *destScanline );
-                    //++colorScan;
+                    ++colorScan;
                     ++destScanline;
                     ++dryScan;
                     ++parallelScanline;
 
-                    //*destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
-                    *destScanline = redSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                     *parallelScanline = uchar( *destScanline );
-                    //++colorScan;
+                    ++colorScan;
                     ++destScanline;
                     ++dryScan;
                     ++parallelScanline;
 
-                    //*destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
-                    *destScanline = alphaSum * stampAlphaNorm + *dryScan * transparencyAmountInverse;
+                    *destScanline = *colorScan * stampAlphaNorm + *dryScan * transparencyAmountInverse;
                     *parallelScanline = uchar( *destScanline );
-                    //++colorScan;
+                    ++colorScan;
                     ++destScanline;
                     ++dryScan;
                     ++parallelScanline;
                     ++stampScan;
 
                     stampAlphaSum = 0;
-
-                    if( !iSkipColorSubSampling )
-                    {
-                        redSum = 0;
-                        greenSum = 0;
-                        blueSum = 0;
-                        alphaSum = 0;
-                    }
                 }
             }
         },

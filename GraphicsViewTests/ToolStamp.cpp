@@ -218,9 +218,8 @@ cToolStamp::DrawDot( float iX, float iY, float iPressure, float iRotation )
         //                0.7 );
     }
 
-    //IMAGEDEBUG->ShowImage( mColorStampF, baseDiameter, baseDiameter );
-    //IMAGEDEBUG->ShowImageGray( mMipMapF[mCurrentTipIndex][ indexMip ], baseDiameter, baseDiameter );
-    const QPointF colorOffset = QPointF( minX, minY ) - QPointF( iX - mToolSize, iY - mToolSize );// - QPointF( 0.1,0.1 );
+    // Doing diff in int is the way to go, this is what prevent an offset to the left, shifting paint to the right
+    const QPointF colorOffset = QPoint( minX, minY ) - QPoint( iX - mToolSize, iY - mToolSize );// - QPointF( 0.1,0.1 );
 
     // Put paint on canvas
     MTDownscaleBoxAverageDirectAlphaFDry( mMipMapF[mCurrentTipIndex][ indexMip ], mipMapSizeAtIndex, mipMapSizeAtIndex,
