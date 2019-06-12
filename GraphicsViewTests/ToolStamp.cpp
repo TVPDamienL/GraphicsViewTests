@@ -111,15 +111,18 @@ cToolStamp::StartDrawing( QImage* iImage, sPointData iPointData )
     memset( mStampBuffer, 0, sizeof(float) * imageSize );
 
     // Init color stamp
-    delete mColorStampF;
     const int toolDiameter = mToolSize*2;
     mColorStampFOrigin = new float[ toolDiameter * 4 * toolDiameter ];
-    mColorStampF = new float[ toolDiameter * 4 * toolDiameter ];
+
+    //delete mColorStampF;
+    //mColorStampF = new float[ toolDiameter * 4 * toolDiameter ];
+
     MTHardFillF( mColorStampFOrigin, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), mColor );
-    MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), mColor );
+    //MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), mColor );
     //MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter/2, toolDiameter ), mColor );
     //MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  toolDiameter/2, 0, toolDiameter/2, toolDiameter ), Qt::black );
     //MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), Qt::transparent );
+
     mColorUniform = true;
 
     //QImage* colorPatern = new QImage( "Resources/ColorPatern.png" );
@@ -174,10 +177,6 @@ cToolStamp::DrawDot( float iX, float iY, float iPressure, float iRotation )
     const int   intWidth = maxX - minX;
     const int   intHeight = maxY - minY;
 
-    const float red = mColor.red();
-    const float green = mColor.green();
-    const float blue = mColor.blue();
-
     // Basic out of bounds elimination
     if( minX >= mDrawingContext->width() || minY >= mDrawingContext->height() )
         return;
@@ -213,9 +212,6 @@ cToolStamp::DrawDot( float iX, float iY, float iPressure, float iRotation )
         MTBlendImagesF( _mFloatBuffer, mDrawingContext->width(), mDrawingContext->height(), QRect( iX - mToolSize, iY - mToolSize, baseDiameter, baseDiameter ),
                         mColorStampF, baseDiameter, baseDiameter, QPoint( 0,0 ),
                         mMipMapF[mCurrentTipIndex][0], baseDiameter, baseDiameter, QPoint( 0,0 ), 0.7 );
-        //MTBlendImageNormalFSubpixel( _mFloatBuffer, mDrawingContext->width(), mDrawingContext->height(), QRectF( minX, minY, baseDiameter, baseDiameter ),
-        //                mColorStampF, baseDiameter, baseDiameter, QPoint( 0,0 ),
-        //                0.7 );
     }
 
     // Doing diff in int is the way to go, this is what prevent an offset to the left, shifting paint to the right
@@ -318,7 +314,13 @@ cToolStamp::ClearTool()
 void
 cToolStamp::PrepareTool()
 {
+    qDebug() << "Clear";
     ClearTool();
+
+    const int toolDiameter = mToolSize*2;
+    delete mColorStampF;
+    mColorStampF = new float[ toolDiameter * 4 * toolDiameter ];
+    MTHardFillF( mColorStampF, toolDiameter, toolDiameter, QRect(  0, 0, toolDiameter, toolDiameter ), mColor );
 
     RenderTips( mToolSize, mToolSize );
     _BuildMipMaps();

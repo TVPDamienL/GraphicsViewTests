@@ -475,7 +475,7 @@ MTBlendImageNormalFDry( const float* source, const int iSourceWidth, const int i
 
 static
 void
-Trussssc( float* oSum, const QPointF& iPoint, const float iBoxWidth, const float iBoxHeight, const float* srcImage, const int sourceBPL, bool iTruncate, const QRect& iTruncateArea )
+ReadSubPixelGreyF( float* oSum, const QPointF& iPoint, const float iBoxWidth, const float iBoxHeight, const float* srcImage, const int sourceBPL, bool iTruncate, const QRect& iTruncateArea )
 {
     // Get the box to read in original
     QRectF boxAreaF( iPoint.x(), iPoint.y(), iBoxWidth, iBoxHeight );
@@ -672,6 +672,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
 
 
     QTransform inverse = iTransform.inverted();
+    const uchar maxAlphaRanged = maxalpha * 255.F;
 
     const float floatBoxWidth = inputAreaF.width() / transfoWidth;
     const float floatBoxHeight = inputAreaF.height() / transfoHeight;
@@ -721,7 +722,6 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
         handles.push_back( cThreadProcessor::Instance()->AffectFunctionToThreadAndStart(
             [ = ]( cRange iOff, cRange iRange )
         {
-            const uchar maxAlphaRanged = maxalpha * 255.F;
             const float* sourceScanline = iInput;
             const float* colorScan = iColorBuffer;
             const uchar* alphaScanline = alphaData + 3;
@@ -750,7 +750,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
                 stampScan       = stampBuffer +  y * iOutputBuffersWidth + startX;      // Gray
 
                 // Float buffers
-                colorScan = iColorBuffer + ((y-startY) + int(colorOffset.y())) * colorBPL + int(colorOffset.x()) * 4;
+                colorScan = iColorBuffer + ((y-startingY) + int(colorOffset.y())) * colorBPL + int(colorOffset.x()) * 4;
                 const int indexOffset = y * buffersBPL + xOffset;
                 dryScan  = background + indexOffset;
                 destScanline   = iOutput + indexOffset;
@@ -763,9 +763,13 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
 
                 for( int x = startX; x <= endX; ++x )
                 {
-                    Trussssc( &stampAlphaSum, inverse.map( QPointF( x, y ) ), floatBoxWidth, floatBoxHeight, iInput, sourceBPL, x == startingX || x == endingX || y == startingY || y == endingY, inputArea );
+                    // Reads the tip with subpixel, so the output tip shape is subpixeled
+                    // The color isn't subpixeled so it doesn't shift from one sample to the next
+                    ReadSubPixelGreyF( &stampAlphaSum, inverse.map( QPointF( x, y ) ), floatBoxWidth, floatBoxHeight, iInput, sourceBPL, x == startingX || x == endingX || y == startingY || y == endingY, inputArea );
 
-
+                    // Here alpha is used as opacity mask
+                    // If we want to use alpha as a light map, do the same but multiply the amount of light by this 0-1 value etc...
+                    // This would prolly require a new alpha image though, as this alpha is the one used for selection mask etc..., so it can't be replaced
                     const float alphaMaskMult = *alphaScanline / 255.F;
                     stampAlphaSum *= alphaMaskMult;
                     alphaScanline += 4;
