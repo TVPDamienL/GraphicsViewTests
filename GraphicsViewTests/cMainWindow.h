@@ -13,6 +13,7 @@
 
 class cCustomGraphicsView;
 class cShapeRectangle;
+class cShapePolygon;
 class cToolSmudge;
 
 class cMainWindow :
@@ -69,7 +70,10 @@ private:
     cPaintToolBase*     mToolPen;
     cPaintToolBase*     mToolSelect;
     cShapeRectangle*    mRectangleShape;
+    cShapePolygon*      mPolygonShape;
+
     cShapeRectangle*    mRectangleSelection;
+    cShapePolygon*      mPolygonSelection;
     cToolSmudge*        mToolSmudge;
 
     cClip*              mClip;

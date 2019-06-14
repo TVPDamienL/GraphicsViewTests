@@ -138,8 +138,6 @@ NormalFill( QImage* dest, const QRect& area, const QColor& color )
 }
 
 
-
-
 // Copies source to destination at point
 static
 void
@@ -176,7 +174,6 @@ CopyImage( QImage* source, QImage* destination, const QPoint& point )
         }
     }
 }
-
 
 
 static

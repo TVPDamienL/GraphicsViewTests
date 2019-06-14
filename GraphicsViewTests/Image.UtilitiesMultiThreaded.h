@@ -150,6 +150,89 @@ MTHardFillF( float* dest, const int iWidth, const int iHeight, const QRect& area
 
 static
 void
+MTBlendImageNone( QImage* source, const QRect& iSrcArea,
+                  QImage* destination, const QPoint& point )
+{
+    uchar* sourceData = source->bits();
+    int sourceBPL = source->bytesPerLine();
+
+    uchar* destData = destination->bits();
+    int dstBPL = destination->bytesPerLine();
+
+    // Source bbox
+    const int minX = iSrcArea.left();
+    const int maxX = minX + iSrcArea.width() - 1;
+    const int minY = iSrcArea.top();
+    const int maxY = minY + iSrcArea.height() - 1;
+
+    const int startingX = minX < 0 ? 0 : minX;
+    const int endingX = maxX >= destination->width() ? destination->width() - 1 : maxX;
+    const int startingY = minY < 0 ? 0 : minY;
+    const int endingY = maxY >= destination->height() ? destination->height() - 1 : maxY;
+    const int height = endingY - startingY + 1;
+
+    const int threadCount = cThreadProcessor::Instance()->GetAvailableThreadCount();
+    const int split = height / threadCount;
+    const int excess = height % threadCount;
+
+    std::vector< cThreadHandle > handles;
+
+    for( int i = 0; i < threadCount; ++i )
+    {
+        int correct = 0;
+        if( i == threadCount-1 )
+            correct = excess;
+
+        handles.push_back( cThreadProcessor::Instance()->AffectFunctionToThreadAndStart(
+            [ sourceData, destData, sourceBPL, dstBPL, minX, minY ]( cRange iOff, cRange iRange )
+        {
+            uchar* sourceScanline = sourceData;
+            uchar* destScanline = destData;
+
+            const int startY = iOff.mY;
+            const int endY = startY + iRange.mY;
+            const int startX = iOff.mX;
+            const int endX = startX + iRange.mX;
+
+            for( int y = startY; y < endY; ++y )
+            {
+                sourceScanline  = sourceData + y * sourceBPL + startX * 4;
+                destScanline    = destData + (y+1) * dstBPL + (startX+1) * 4;
+
+                for( int x = startX; x < endX; ++x )
+                {
+                    uchar alpha = *(sourceScanline+3);
+                    if( alpha == 0 ) // Skip if alpha is nil
+                    {
+                        sourceScanline += 4;
+                        destScanline += 4;
+                        continue;
+                    }
+
+                    BlendPixelNone( &destScanline, *(sourceScanline+2), *(sourceScanline+1), *(sourceScanline), alpha );
+                    sourceScanline += 4;
+                }
+            }
+        },
+            cRange( startingX, startingY + i * split ), cRange( endingX - startingX + 1, split + correct ), true ) );
+        // +1 because we range over height amount
+        // It then works with endX being startY + iRange.mY;
+        // meaning if range is 25 ( we go 0-24 ), endY will be 25, so we THEN do < in the for
+    }
+
+    for( int i = 0; i < handles.size(); ++i )
+    {
+        auto handle = handles[ i ];
+        cThread* t = handle.GetThread();
+        if( t )
+            t->WaitEndOfTask();
+    }
+}
+
+
+
+static
+void
 MTBlendImageNormal( QImage* source, QImage* destination, const QPoint& point )
 {
     uchar* sourceData = source->bits();

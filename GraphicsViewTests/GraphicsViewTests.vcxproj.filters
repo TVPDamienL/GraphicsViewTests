@@ -222,6 +222,9 @@
     <ClCompile Include="ToolPen.cpp">
       <Filter>src\ToolModel\Tools</Filter>
     </ClCompile>
+    <ClCompile Include="Polygon.cpp">
+      <Filter>src\ToolModel\Shapes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="cMainWindow.h">
@@ -383,6 +386,9 @@
     </ClInclude>
     <ClInclude Include="Debug.h">
       <Filter>src\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="Polygon.h">
+      <Filter>src\ToolModel\Shapes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

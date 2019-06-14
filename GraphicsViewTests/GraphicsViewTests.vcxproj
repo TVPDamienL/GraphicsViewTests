@@ -139,6 +139,7 @@
     <ClCompile Include="ImageDebugger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PaintToolBase.cpp" />
+    <ClCompile Include="Polygon.cpp" />
     <ClCompile Include="powerslider.cpp" />
     <ClCompile Include="Rectangle.cpp" />
     <ClCompile Include="ShapeBase.cpp" />
@@ -182,6 +183,10 @@
       <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);.\src;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(INHERIT);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\include</IncludePath>
     </QtMoc>
     <ClInclude Include="PointData.h" />
+    <ClInclude Include="Polygon.h">
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);.\tester;.\src;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(INHERIT);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\include</IncludePath>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);.\src;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(INHERIT);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\include</IncludePath>
+    </ClInclude>
     <ClInclude Include="Thread.h" />
     <ClInclude Include="ThreadMachine.h" />
     <ClInclude Include="Image.ToolPaintUtilities.h" />

@@ -9,6 +9,7 @@
 #include "ToolSmudge.h"
 #include "cToolSelectionTest.h"
 #include "Rectangle.h"
+#include "Polygon.h"
 
 #include "cLayer.h"
 
@@ -22,7 +23,9 @@ cMainWindow::cMainWindow(QWidget *parent) :
     mToolPen( new cToolPen() ),
     mToolSelect( new cToolSelectionTest() ),
     mRectangleShape( new cShapeRectangle() ),
+    mPolygonShape( new cShapePolygon() ),
     mRectangleSelection( new cShapeRectangle() ),
+    mPolygonSelection( new cShapePolygon() ),
     mToolSmudge( new cToolSmudge() )
 {
     ui.setupUi(this);
@@ -86,7 +89,9 @@ cMainWindow::cMainWindow(QWidget *parent) :
     //mToolPaint->SetAlphaMask( mClip->GetSelection()->GetSelectionMask() );
     dynamic_cast< cToolSelectionTest* >( mToolSelect )->SetSelection( mClip->GetSelection() );
     mRectangleShape->SetPaintTool( mToolPaint );
+    mPolygonShape->SetPaintTool( mToolPaint );
     mRectangleSelection->SetPaintTool( mToolSelect );
+    mPolygonSelection->SetPaintTool( mToolSelect );
 
     cImageDebugger::Instance( this );
 }
@@ -269,14 +274,16 @@ void
 cMainWindow::ToolSelectClicked()
 {
     ui.canvas->SetSelectionMode( true );
-    ui.canvas->SetToolModel( mRectangleSelection );
+    //ui.canvas->SetToolModel( mRectangleSelection );
+    //ui.canvas->SetToolModel( mPolygonSelection );
+    ui.canvas->SetToolModel( mToolPaint );
 }
 
 
 void
 cMainWindow::ToolRectangleClicked()
 {
-    ui.canvas->SetToolModel( mRectangleShape );
+    ui.canvas->SetToolModel( mPolygonShape );
 }
 
 

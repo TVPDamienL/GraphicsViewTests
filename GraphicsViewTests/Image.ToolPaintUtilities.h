@@ -650,7 +650,7 @@ MTDownscaleBoxAverageDirectAlphaFDry( const float* iInput, const int iWidth, con
     const double xScaleFactorRounded = int(transfoWidth) /  inputAreaF.width() ;
     const double yScaleFactorRounded = int(transfoHeight) / inputAreaF.height();
 
-    if( xScaleFactorOriginal >= 1.0 || yScaleFactorOriginal >= 1.0 )
+    if( xScaleFactorOriginal >= 1.0 && yScaleFactorOriginal >= 1.0 )
     {
         MTBlendImageNormalFDry( iInput, iWidth, iHeight,
                                 iColorBuffer, iColorW, iColorH,
